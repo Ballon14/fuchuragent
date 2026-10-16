@@ -7,6 +7,7 @@ class AppConstants {
   static const String logoAsset = 'assets/images/logo.png';
   static const String currencyCode = 'IDR';
   static const String timezone = 'Asia/Jakarta';
+  static const String superAdminEmail = 'iqbal140605@gmail.com';
 
   // Currency Formatter: Rp 135.000
   static String formatRupiah(int amount) {

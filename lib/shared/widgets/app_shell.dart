@@ -176,7 +176,7 @@ class AppShell extends ConsumerWidget {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
-                                    (userProfile?.role ?? 'staff').toUpperCase(),
+                                    userProfile?.isSuperAdmin == true ? 'SUPER ADMIN' : (userProfile?.role ?? 'staff').toUpperCase(),
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
@@ -486,7 +486,7 @@ class AppShell extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            (userProfile?.role ?? 'staff').toUpperCase(),
+                            userProfile?.isSuperAdmin == true ? 'SUPER ADMIN' : (userProfile?.role ?? 'staff').toUpperCase(),
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,

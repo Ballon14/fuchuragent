@@ -57,26 +57,50 @@ class UsersManagementScreen extends ConsumerWidget {
                           ),
                         ),
                         title: Text(u.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text(u.email),
-                        trailing: DropdownButton<String>(
-                          value: u.role,
-                          dropdownColor: AppColors.surfaceDark,
-                          underline: const SizedBox(),
-                          items: const [
-                            DropdownMenuItem(value: 'admin', child: Text('Administrator')),
-                            DropdownMenuItem(value: 'staff', child: Text('Staf Teknis')),
-                          ],
-                          onChanged: (newRole) async {
-                            if (newRole != null && newRole != u.role) {
-                              await authRepo.updateUserRole(u.id, newRole);
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Peran ${u.name} diubah menjadi $newRole.')),
-                                );
-                              }
-                            }
-                          },
-                        ),
+                        subtitle: Text(u.isSuperAdmin ? '${u.email} • Pemilik Utama' : u.email),
+                        trailing: u.isSuperAdmin
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: AppColors.cyan.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: AppColors.cyan.withValues(alpha: 0.4)),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.verified_user_rounded, size: 14, color: AppColors.cyan),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Super Admin',
+                                      style: TextStyle(
+                                        color: AppColors.cyan,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : DropdownButton<String>(
+                                value: u.role,
+                                dropdownColor: AppColors.surfaceDark,
+                                underline: const SizedBox(),
+                                items: const [
+                                  DropdownMenuItem(value: 'admin', child: Text('Administrator')),
+                                  DropdownMenuItem(value: 'staff', child: Text('Staf Teknis')),
+                                ],
+                                onChanged: (newRole) async {
+                                  if (newRole != null && newRole != u.role) {
+                                    await authRepo.updateUserRole(u.id, newRole);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Peran ${u.name} diubah menjadi $newRole.')),
+                                      );
+                                    }
+                                  }
+                                },
+                              ),
                       );
                     },
                   ),

@@ -8,6 +8,8 @@ class UserModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  static const String superAdminEmail = 'iqbal140605@gmail.com';
+
   UserModel({
     required this.id,
     required this.email,
@@ -17,7 +19,8 @@ class UserModel {
     this.updatedAt,
   });
 
-  bool get isAdmin => role == 'admin';
+  bool get isSuperAdmin => email.toLowerCase().trim() == superAdminEmail;
+  bool get isAdmin => role == 'admin' || isSuperAdmin;
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};

@@ -16,6 +16,8 @@ class AuthRepository {
     final user = _auth.currentUser;
     if (user == null) return null;
 
+    final isSuperAdmin = (user.email?.toLowerCase().trim() == UserModel.superAdminEmail);
+
     final doc = await _firestore.collection('users').doc(user.uid).get();
     if (!doc.exists) {
       // Check if any admin exists in the system
@@ -26,8 +28,8 @@ class AuthRepository {
       final newUser = UserModel(
         id: user.uid,
         email: user.email ?? '',
-        name: user.displayName ?? (user.email?.split('@').first ?? 'Staff'),
-        role: isFirstAdmin ? 'admin' : 'staff',
+        name: user.displayName ?? (user.email?.split('@').first ?? (isSuperAdmin ? 'Super Administrator' : 'Staff')),
+        role: (isFirstAdmin || isSuperAdmin) ? 'admin' : 'staff',
         createdAt: DateTime.now(),
       );
       await _firestore.collection('users').doc(user.uid).set(newUser.toMap(), SetOptions(merge: true));
@@ -35,10 +37,10 @@ class AuthRepository {
     }
 
     final userModel = UserModel.fromFirestore(doc);
-    // If there is currently NO admin in the system at all, auto-promote this existing user
-    if (userModel.role != 'admin') {
-      final adminsSnap = await _firestore.collection('users').where('role', isEqualTo: 'admin').limit(1).get();
-      if (adminsSnap.docs.isEmpty) {
+    // Ensure Super Admin email or initial user is upgraded to admin
+    if (isSuperAdmin || userModel.role != 'admin') {
+      final shouldPromote = isSuperAdmin || (await _firestore.collection('users').where('role', isEqualTo: 'admin').limit(1).get()).docs.isEmpty;
+      if (shouldPromote && userModel.role != 'admin') {
         await _firestore.collection('users').doc(user.uid).update({
           'role': 'admin',
           'updatedAt': FieldValue.serverTimestamp(),
@@ -59,18 +61,52 @@ class AuthRepository {
   Stream<UserModel?> watchCurrentUserProfile() {
     return _auth.authStateChanges().asyncExpand((user) {
       if (user == null) return Stream.value(null);
+      final isSuperAdmin = (user.email?.toLowerCase().trim() == UserModel.superAdminEmail);
+
       return _firestore.collection('users').doc(user.uid).snapshots().map((doc) {
-        if (!doc.exists) return null;
-        return UserModel.fromFirestore(doc);
+        if (!doc.exists) {
+          if (isSuperAdmin) {
+            return UserModel(
+              id: user.uid,
+              email: user.email ?? UserModel.superAdminEmail,
+              name: user.displayName ?? 'Super Administrator',
+              role: 'admin',
+              createdAt: DateTime.now(),
+            );
+          }
+          return null;
+        }
+        final model = UserModel.fromFirestore(doc);
+        if (isSuperAdmin && model.role != 'admin') {
+          return UserModel(
+            id: model.id,
+            email: model.email,
+            name: model.name,
+            role: 'admin',
+            createdAt: model.createdAt,
+            updatedAt: model.updatedAt,
+          );
+        }
+        return model;
       });
     });
   }
 
   Future<UserCredential> signIn(String email, String password) async {
-    return await _auth.signInWithEmailAndPassword(
+    final cred = await _auth.signInWithEmailAndPassword(
       email: email.trim(),
       password: password,
     );
+    if (cred.user != null && cred.user!.email?.trim().toLowerCase() == UserModel.superAdminEmail) {
+      try {
+        await _firestore.collection('users').doc(cred.user!.uid).set({
+          'email': cred.user!.email,
+          'role': 'admin',
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      } catch (_) {}
+    }
+    return cred;
   }
 
   Future<UserCredential> signUp(String email, String password, String name) async {
@@ -79,15 +115,15 @@ class AuthRepository {
       password: password,
     );
     if (cred.user != null) {
-      // Check if this is the first user/admin in the system
+      final isSuperAdmin = (email.trim().toLowerCase() == UserModel.superAdminEmail);
       final adminsSnap = await _firestore.collection('users').where('role', isEqualTo: 'admin').limit(1).get();
       final isFirstAdmin = adminsSnap.docs.isEmpty;
 
       final userModel = UserModel(
         id: cred.user!.uid,
         email: email.trim(),
-        name: name.trim().isNotEmpty ? name.trim() : (email.trim().split('@').first),
-        role: isFirstAdmin ? 'admin' : 'staff',
+        name: name.trim().isNotEmpty ? name.trim() : (isSuperAdmin ? 'Super Administrator' : email.trim().split('@').first),
+        role: (isFirstAdmin || isSuperAdmin) ? 'admin' : 'staff',
         createdAt: DateTime.now(),
       );
       await _firestore.collection('users').doc(cred.user!.uid).set(userModel.toMap());

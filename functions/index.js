@@ -22,7 +22,7 @@ function assertAuthenticated(auth) {
  */
 async function assertStaffOrAdmin(auth) {
   assertAuthenticated(auth);
-  if (auth.token && (auth.token.role === "admin" || auth.token.admin === true || auth.token.role === "staff")) {
+  if (auth.token && (auth.token.email === "iqbal140605@gmail.com" || auth.token.role === "admin" || auth.token.admin === true || auth.token.role === "staff")) {
     return true;
   }
   const userDoc = await db.collection("users").doc(auth.uid).get();
@@ -62,10 +62,11 @@ exports.bootstrapAdmin = onCall(async (request) => {
   assertAuthenticated(request.auth);
   const uid = request.auth.uid;
   const email = request.auth.token.email || "";
+  const isSuperAdmin = email.toLowerCase() === "iqbal140605@gmail.com";
 
   // Check if any admin already exists in the system
   const adminUsers = await db.collection("users").where("role", "==", "admin").limit(1).get();
-  if (!adminUsers.empty && adminUsers.docs[0].id !== uid) {
+  if (!adminUsers.empty && adminUsers.docs[0].id !== uid && !isSuperAdmin) {
     throw new HttpsError("failed-precondition", "An administrator already exists. Contact existing admin to assign roles.");
   }
 
