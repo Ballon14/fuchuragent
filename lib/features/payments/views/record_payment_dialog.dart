@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/payment_model.dart';
+import '../../invoices/models/invoice_model.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
 
@@ -122,32 +123,75 @@ class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (widget.preselectedInvoiceId == null)
-                  StreamBuilder(
+                if (widget.preselectedInvoiceId == null) ...[
+                  StreamBuilder<List<InvoiceModel>>(
                     stream: invoicesAsync,
                     builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          child: LinearProgressIndicator(color: AppColors.cyan, minHeight: 2),
+                        );
+                      }
+
                       final list = snapshot.data ?? [];
+                      if (list.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.info_outline, size: 18, color: AppColors.warning),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Tidak ada tagihan yang belum lunas.',
+                                  style: TextStyle(fontSize: 12, color: Colors.white70),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final effectiveValue = list.any((inv) => inv.id == _selectedInvoiceId) ? _selectedInvoiceId : null;
+
                       return DropdownButtonFormField<String>(
-                        initialValue: _selectedInvoiceId,
+                        key: ValueKey(effectiveValue),
+                        initialValue: effectiveValue,
+                        isExpanded: true,
                         decoration: const InputDecoration(labelText: 'Pilih Tagihan Terbuka *'),
                         items: list.map((inv) {
-                          return DropdownMenuItem(
+                          return DropdownMenuItem<String>(
                             value: inv.id,
-                            child: Text('${inv.invoiceNumber} (Sisa: ${AppConstants.formatRupiah(inv.remainingBalance)})'),
+                            child: Text(
+                              '${inv.invoiceNumber} (Sisa: ${AppConstants.formatRupiah(inv.remainingBalance)})',
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                           );
                         }).toList(),
                         onChanged: (val) {
                           setState(() {
                             _selectedInvoiceId = val;
-                            final match = list.firstWhere((i) => i.id == val);
-                            _amountCtrl.text = match.remainingBalance.toString();
+                            if (val != null) {
+                              final matches = list.where((i) => i.id == val);
+                              if (matches.isNotEmpty) {
+                                _amountCtrl.text = matches.first.remainingBalance.toString();
+                              }
+                            }
                           });
                         },
                         validator: (v) => v == null ? 'Pilih tagihan' : null,
                       );
                     },
                   ),
-                const SizedBox(height: 14),
+                  const SizedBox(height: 14),
+                ],
 
                 TextFormField(
                   controller: _amountCtrl,

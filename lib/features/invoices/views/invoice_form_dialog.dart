@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/invoice_model.dart';
+import '../../customers/models/customer_model.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
 
@@ -121,23 +122,76 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (widget.preselectedCustomerId == null)
-                  StreamBuilder(
+                if (widget.preselectedCustomerId == null) ...[
+                  StreamBuilder<List<CustomerModel>>(
                     stream: customersAsync,
                     builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          child: LinearProgressIndicator(color: AppColors.cyan, minHeight: 2),
+                        );
+                      }
+
+                      if (snapshot.hasError) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            'Gagal memuat pelanggan: ${snapshot.error}',
+                            style: const TextStyle(color: AppColors.danger, fontSize: 12),
+                          ),
+                        );
+                      }
+
                       final list = snapshot.data ?? [];
+                      if (list.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.info_outline, size: 18, color: AppColors.warning),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Belum ada data pelanggan untuk ditagih.',
+                                  style: TextStyle(fontSize: 12, color: Colors.white70),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final effectiveValue = list.any((c) => c.id == _selectedCustomerId) ? _selectedCustomerId : null;
+
                       return DropdownButtonFormField<String>(
-                        initialValue: _selectedCustomerId,
+                        key: ValueKey(effectiveValue),
+                        initialValue: effectiveValue,
+                        isExpanded: true,
                         decoration: const InputDecoration(labelText: 'Pilih Pelanggan *'),
                         items: list.map((c) {
-                          return DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.phone})'));
+                          final phoneInfo = c.phone.isNotEmpty ? ' (${c.phone})' : '';
+                          return DropdownMenuItem<String>(
+                            value: c.id,
+                            child: Text(
+                              '${c.name}$phoneInfo',
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          );
                         }).toList(),
                         onChanged: (val) => setState(() => _selectedCustomerId = val),
                         validator: (v) => v == null ? 'Pilih pelanggan' : null,
                       );
                     },
                   ),
-                const SizedBox(height: 14),
+                  const SizedBox(height: 14),
+                ],
 
                 TextFormField(
                   controller: _itemDescCtrl,

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/service_model.dart';
 import '../../packages/models/package_model.dart';
+import '../../customers/models/customer_model.dart';
+import '../../customers/views/customer_form_dialog.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
 
 class ServiceFormDialog extends ConsumerStatefulWidget {
@@ -145,23 +148,86 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Customer selector
-                if (widget.preselectedCustomerId == null)
-                  StreamBuilder(
+                if (widget.preselectedCustomerId == null) ...[
+                  StreamBuilder<List<CustomerModel>>(
                     stream: customersAsync,
                     builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          child: LinearProgressIndicator(color: AppColors.cyan, minHeight: 2),
+                        );
+                      }
+
+                      if (snapshot.hasError) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            'Gagal memuat pelanggan: ${snapshot.error}',
+                            style: const TextStyle(color: AppColors.danger, fontSize: 12),
+                          ),
+                        );
+                      }
+
                       final list = snapshot.data ?? [];
+                      if (list.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline, size: 18, color: AppColors.warning),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text(
+                                  'Belum ada data pelanggan.',
+                                  style: TextStyle(fontSize: 12, color: Colors.white70),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () async {
+                                  final newCust = await CustomerFormDialog.show(context);
+                                  if (newCust != null) {
+                                    await ref.read(customerRepositoryProvider).addCustomer(newCust);
+                                    setState(() => _selectedCustomerId = newCust.id);
+                                  }
+                                },
+                                child: const Text('Tambah', style: TextStyle(color: AppColors.cyan, fontSize: 12)),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final effectiveValue = list.any((c) => c.id == _selectedCustomerId) ? _selectedCustomerId : null;
+
                       return DropdownButtonFormField<String>(
-                        initialValue: _selectedCustomerId,
+                        key: ValueKey(effectiveValue),
+                        initialValue: effectiveValue,
+                        isExpanded: true,
                         decoration: const InputDecoration(labelText: 'Pilih Pelanggan *'),
                         items: list.map((c) {
-                          return DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.phone})'));
+                          final phoneInfo = c.phone.isNotEmpty ? ' (${c.phone})' : '';
+                          return DropdownMenuItem<String>(
+                            value: c.id,
+                            child: Text(
+                              '${c.name}$phoneInfo',
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          );
                         }).toList(),
                         onChanged: (val) => setState(() => _selectedCustomerId = val),
-                        validator: (v) => v == null ? 'Pilih pelanggan' : null,
+                        validator: (v) => v == null ? 'Pilih pelanggan terlebih dahulu' : null,
                       );
                     },
                   ),
-                const SizedBox(height: 12),
+                  const SizedBox(height: 12),
+                ],
 
                 // Package quick select chips
                 const Text('Pilih Template Paket VPS:', style: TextStyle(fontSize: 12, color: Colors.white70)),
