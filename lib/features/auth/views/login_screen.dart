@@ -84,44 +84,80 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _showBootstrapDialog() async {
-    final nameCtrl = TextEditingController();
+    final emailCtrl = TextEditingController(text: _emailCtrl.text.trim());
+    final passCtrl = TextEditingController(text: _passCtrl.text);
+    final nameCtrl = TextEditingController(text: _nameCtrl.text.trim());
+
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Bootstrap Administrator Pertama'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Gunakan fitur ini untuk menetapkan akun yang sedang login sebagai Administrator utama sistem.',
-              style: TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Nama Lengkap Administrator'),
-            ),
-          ],
+        title: const Text('Bootstrap Administrator'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Konfigurasikan akun sebagai Administrator utama sistem. Masukkan email & password akun yang telah didaftarkan.',
+                style: TextStyle(fontSize: 13, color: Colors.white70),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: 'Email Akun'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: passCtrl,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Password Akun'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: 'Nama Lengkap (Opsional)'),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Batal')),
           ElevatedButton(
             onPressed: () async {
+              final email = emailCtrl.text.trim();
+              final pass = passCtrl.text;
+              final name = nameCtrl.text.trim();
+
+              if (email.isEmpty || pass.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Email dan password wajib diisi.')),
+                );
+                return;
+              }
+
               Navigator.of(ctx).pop();
+              setState(() => _isLoading = true);
               try {
-                await ref.read(authRepositoryProvider).bootstrapAdmin(nameCtrl.text);
+                await ref.read(authRepositoryProvider).bootstrapAdmin(
+                  name: name,
+                  email: email,
+                  password: pass,
+                );
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Hak akses administrator berhasil dikonfigurasi!')),
                   );
+                  context.go('/');
                 }
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Gagal bootstrap: $e')),
+                    SnackBar(content: Text('Gagal bootstrap: ${e.toString().replaceAll('Exception: ', '')}')),
                   );
                 }
+              } finally {
+                if (mounted) setState(() => _isLoading = false);
               }
             },
             child: const Text('Jadikan Admin'),

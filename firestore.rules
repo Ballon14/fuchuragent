@@ -41,7 +41,7 @@ service cloud.firestore {
       // Only admin can write or create users, or user can update non-role profile fields
       allow create: if isAuthenticated() && (
         isAdmin() ||
-        (request.auth.uid == userId && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'staff'))
+        request.auth.uid == userId
       );
       allow update: if isAuthenticated() && (
         isAdmin() ||

@@ -18,18 +18,42 @@ class AuthRepository {
 
     final doc = await _firestore.collection('users').doc(user.uid).get();
     if (!doc.exists) {
-      // Auto-create initial staff profile if user exists in auth but not yet in firestore
+      // Check if any admin exists in the system
+      final adminsSnap = await _firestore.collection('users').where('role', isEqualTo: 'admin').limit(1).get();
+      final isFirstAdmin = adminsSnap.docs.isEmpty;
+
+      // Auto-create initial profile
       final newUser = UserModel(
         id: user.uid,
         email: user.email ?? '',
         name: user.displayName ?? (user.email?.split('@').first ?? 'Staff'),
-        role: 'staff',
+        role: isFirstAdmin ? 'admin' : 'staff',
         createdAt: DateTime.now(),
       );
       await _firestore.collection('users').doc(user.uid).set(newUser.toMap(), SetOptions(merge: true));
       return newUser;
     }
-    return UserModel.fromFirestore(doc);
+
+    final userModel = UserModel.fromFirestore(doc);
+    // If there is currently NO admin in the system at all, auto-promote this existing user
+    if (userModel.role != 'admin') {
+      final adminsSnap = await _firestore.collection('users').where('role', isEqualTo: 'admin').limit(1).get();
+      if (adminsSnap.docs.isEmpty) {
+        await _firestore.collection('users').doc(user.uid).update({
+          'role': 'admin',
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        return UserModel(
+          id: userModel.id,
+          email: userModel.email,
+          name: userModel.name,
+          role: 'admin',
+          createdAt: userModel.createdAt,
+          updatedAt: DateTime.now(),
+        );
+      }
+    }
+    return userModel;
   }
 
   Stream<UserModel?> watchCurrentUserProfile() {
@@ -55,11 +79,15 @@ class AuthRepository {
       password: password,
     );
     if (cred.user != null) {
+      // Check if this is the first user/admin in the system
+      final adminsSnap = await _firestore.collection('users').where('role', isEqualTo: 'admin').limit(1).get();
+      final isFirstAdmin = adminsSnap.docs.isEmpty;
+
       final userModel = UserModel(
         id: cred.user!.uid,
         email: email.trim(),
-        name: name.trim(),
-        role: 'staff',
+        name: name.trim().isNotEmpty ? name.trim() : (email.trim().split('@').first),
+        role: isFirstAdmin ? 'admin' : 'staff',
         createdAt: DateTime.now(),
       );
       await _firestore.collection('users').doc(cred.user!.uid).set(userModel.toMap());
@@ -75,14 +103,30 @@ class AuthRepository {
     await _auth.sendPasswordResetEmail(email: email.trim());
   }
 
-  Future<bool> bootstrapAdmin(String name) async {
-    final user = _auth.currentUser;
-    if (user == null) throw Exception('Pengguna harus login terlebih dahulu.');
+  Future<bool> bootstrapAdmin({String? name, String? email, String? password}) async {
+    User? user = _auth.currentUser;
+
+    // If user is not yet logged in, attempt login with supplied credentials
+    if (user == null && email != null && email.trim().isNotEmpty && password != null && password.isNotEmpty) {
+      try {
+        final cred = await _auth.signInWithEmailAndPassword(
+          email: email.trim(),
+          password: password,
+        );
+        user = cred.user;
+      } catch (e) {
+        throw Exception('Gagal masuk: Periksa kembali email dan password Anda ($e).');
+      }
+    }
+
+    if (user == null) {
+      throw Exception('Pengguna harus login terlebih dahulu.');
+    }
 
     try {
       // Try Cloud Function callable first
       final callable = _functions.httpsCallable('bootstrapAdmin');
-      final result = await callable.call({'name': name});
+      final result = await callable.call({'name': name ?? ''});
       return result.data['success'] == true;
     } catch (_) {
       // Direct Firestore fallback for bootstrapping initial admin if Cloud Functions are not yet deployed
@@ -93,7 +137,7 @@ class AuthRepository {
 
       await _firestore.collection('users').doc(user.uid).set({
         'email': user.email ?? '',
-        'name': name.isNotEmpty ? name : (user.email?.split('@').first ?? 'Administrator'),
+        'name': (name != null && name.trim().isNotEmpty) ? name.trim() : (user.email?.split('@').first ?? 'Administrator'),
         'role': 'admin',
         'updatedAt': FieldValue.serverTimestamp(),
         'createdAt': FieldValue.serverTimestamp(),
