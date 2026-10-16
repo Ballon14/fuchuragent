@@ -9,17 +9,21 @@ class ServiceRepository {
   CollectionReference get _servicesRef => _firestore.collection('vps_services');
 
   Stream<List<VpsServiceModel>> watchServices({String? statusFilter}) {
-    Query query = _servicesRef;
-    if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
-      if (statusFilter == 'active') {
-        // Handle "actice" typo normalization in queries as well
-        query = query.where('status', whereIn: ['active', 'actice']);
-      } else {
-        query = query.where('status', isEqualTo: statusFilter);
+    return _servicesRef.snapshots().map((snap) {
+      var list = snap.docs.map((d) => VpsServiceModel.fromFirestore(d)).toList();
+      if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
+        if (statusFilter == 'active') {
+          list = list.where((s) => s.status.toLowerCase() == 'active' || s.status.toLowerCase() == 'actice').toList();
+        } else {
+          list = list.where((s) => s.status.toLowerCase() == statusFilter.toLowerCase()).toList();
+        }
       }
-    }
-    return query.orderBy('endDate', descending: false).snapshots().map((snap) {
-      return snap.docs.map((d) => VpsServiceModel.fromFirestore(d)).toList();
+      list.sort((a, b) {
+        final aDate = a.endDate ?? DateTime(2099);
+        final bDate = b.endDate ?? DateTime(2099);
+        return aDate.compareTo(bDate);
+      });
+      return list;
     });
   }
 
@@ -28,18 +32,22 @@ class ServiceRepository {
     String? statusFilter,
     int limit = 100,
   }) async {
-    Query query = _servicesRef;
+    final snap = await _servicesRef.limit(200).get();
+    var list = snap.docs.map((d) => VpsServiceModel.fromFirestore(d)).toList();
 
     if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
       if (statusFilter == 'active') {
-        query = query.where('status', whereIn: ['active', 'actice']);
+        list = list.where((s) => s.status.toLowerCase() == 'active' || s.status.toLowerCase() == 'actice').toList();
       } else {
-        query = query.where('status', isEqualTo: statusFilter);
+        list = list.where((s) => s.status.toLowerCase() == statusFilter.toLowerCase()).toList();
       }
     }
 
-    final snap = await query.limit(limit).get();
-    var list = snap.docs.map((d) => VpsServiceModel.fromFirestore(d)).toList();
+    list.sort((a, b) {
+      final aDate = a.endDate ?? DateTime(2099);
+      final bDate = b.endDate ?? DateTime(2099);
+      return aDate.compareTo(bDate);
+    });
 
     if (searchQuery != null && searchQuery.trim().isNotEmpty) {
       final q = searchQuery.toLowerCase().trim();

@@ -12,12 +12,17 @@ class CustomerRepository {
   CollectionReference get _customersRef => _firestore.collection('customers');
 
   Stream<List<CustomerModel>> watchCustomers({String? statusFilter}) {
-    Query query = _customersRef;
-    if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
-      query = query.where('status', isEqualTo: statusFilter);
-    }
-    return query.orderBy('createdAt', descending: true).snapshots().map((snap) {
-      return snap.docs.map((d) => CustomerModel.fromFirestore(d)).toList();
+    return _customersRef.snapshots().map((snap) {
+      var list = snap.docs.map((d) => CustomerModel.fromFirestore(d)).toList();
+      if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
+        list = list.where((c) => c.status.toLowerCase() == statusFilter.toLowerCase()).toList();
+      }
+      list.sort((a, b) {
+        final aDate = a.createdAt ?? DateTime(2000);
+        final bDate = b.createdAt ?? DateTime(2000);
+        return bDate.compareTo(aDate);
+      });
+      return list;
     });
   }
 
@@ -26,14 +31,18 @@ class CustomerRepository {
     String? statusFilter,
     int limit = 50,
   }) async {
-    Query query = _customersRef;
+    final snap = await _customersRef.limit(200).get();
+    var list = snap.docs.map((d) => CustomerModel.fromFirestore(d)).toList();
 
     if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
-      query = query.where('status', isEqualTo: statusFilter);
+      list = list.where((c) => c.status.toLowerCase() == statusFilter.toLowerCase()).toList();
     }
 
-    final snap = await query.orderBy('createdAt', descending: true).limit(limit).get();
-    var list = snap.docs.map((d) => CustomerModel.fromFirestore(d)).toList();
+    list.sort((a, b) {
+      final aDate = a.createdAt ?? DateTime(2000);
+      final bDate = b.createdAt ?? DateTime(2000);
+      return bDate.compareTo(aDate);
+    });
 
     if (searchQuery != null && searchQuery.trim().isNotEmpty) {
       final q = searchQuery.toLowerCase().trim();
@@ -45,7 +54,7 @@ class CustomerRepository {
       }).toList();
     }
 
-    return list;
+    return list.take(limit).toList();
   }
 
   Future<CustomerModel?> getCustomerById(String id) async {
@@ -143,26 +152,47 @@ class CustomerRepository {
     return _firestore
         .collection('vps_services')
         .where('customerId', isEqualTo: customerId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((s) => s.docs.map((d) => VpsServiceModel.fromFirestore(d)).toList());
+        .map((s) {
+          final list = s.docs.map((d) => VpsServiceModel.fromFirestore(d)).toList();
+          list.sort((a, b) {
+            final aDate = a.createdAt ?? DateTime(2000);
+            final bDate = b.createdAt ?? DateTime(2000);
+            return bDate.compareTo(aDate);
+          });
+          return list;
+        });
   }
 
   Stream<List<InvoiceModel>> watchCustomerInvoices(String customerId) {
     return _firestore
         .collection('invoices')
         .where('customerId', isEqualTo: customerId)
-        .orderBy('dueDate', descending: true)
         .snapshots()
-        .map((s) => s.docs.map((d) => InvoiceModel.fromFirestore(d)).toList());
+        .map((s) {
+          final list = s.docs.map((d) => InvoiceModel.fromFirestore(d)).toList();
+          list.sort((a, b) {
+            final aDate = a.dueDate ?? DateTime(2000);
+            final bDate = b.dueDate ?? DateTime(2000);
+            return bDate.compareTo(aDate);
+          });
+          return list;
+        });
   }
 
   Stream<List<PaymentModel>> watchCustomerPayments(String customerId) {
     return _firestore
         .collection('payments')
         .where('customerId', isEqualTo: customerId)
-        .orderBy('paymentDate', descending: true)
         .snapshots()
-        .map((s) => s.docs.map((d) => PaymentModel.fromFirestore(d)).toList());
+        .map((s) {
+          final list = s.docs.map((d) => PaymentModel.fromFirestore(d)).toList();
+          list.sort((a, b) {
+            final aDate = a.paymentDate ?? DateTime(2000);
+            final bDate = b.paymentDate ?? DateTime(2000);
+            return bDate.compareTo(aDate);
+          });
+          return list;
+        });
   }
 }

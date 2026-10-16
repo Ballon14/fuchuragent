@@ -12,12 +12,17 @@ class InvoiceRepository {
   CollectionReference get _invoicesRef => _firestore.collection('invoices');
 
   Stream<List<InvoiceModel>> watchInvoices({String? statusFilter}) {
-    Query query = _invoicesRef;
-    if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
-      query = query.where('status', isEqualTo: statusFilter);
-    }
-    return query.orderBy('dueDate', descending: true).snapshots().map((snap) {
-      return snap.docs.map((d) => InvoiceModel.fromFirestore(d)).toList();
+    return _invoicesRef.snapshots().map((snap) {
+      var list = snap.docs.map((d) => InvoiceModel.fromFirestore(d)).toList();
+      if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
+        list = list.where((inv) => inv.status.toLowerCase() == statusFilter.toLowerCase()).toList();
+      }
+      list.sort((a, b) {
+        final aDate = a.dueDate ?? DateTime(2000);
+        final bDate = b.dueDate ?? DateTime(2000);
+        return bDate.compareTo(aDate);
+      });
+      return list;
     });
   }
 
@@ -26,13 +31,18 @@ class InvoiceRepository {
     String? statusFilter,
     int limit = 50,
   }) async {
-    Query query = _invoicesRef;
+    final snap = await _invoicesRef.limit(200).get();
+    var list = snap.docs.map((d) => InvoiceModel.fromFirestore(d)).toList();
+
     if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
-      query = query.where('status', isEqualTo: statusFilter);
+      list = list.where((inv) => inv.status.toLowerCase() == statusFilter.toLowerCase()).toList();
     }
 
-    final snap = await query.orderBy('dueDate', descending: true).limit(limit).get();
-    var list = snap.docs.map((d) => InvoiceModel.fromFirestore(d)).toList();
+    list.sort((a, b) {
+      final aDate = a.dueDate ?? DateTime(2000);
+      final bDate = b.dueDate ?? DateTime(2000);
+      return bDate.compareTo(aDate);
+    });
 
     if (searchQuery != null && searchQuery.trim().isNotEmpty) {
       final q = searchQuery.toLowerCase().trim();
@@ -42,7 +52,7 @@ class InvoiceRepository {
       }).toList();
     }
 
-    return list;
+    return list.take(limit).toList();
   }
 
   Future<InvoiceModel?> getInvoiceById(String id) async {

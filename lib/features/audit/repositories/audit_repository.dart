@@ -7,21 +7,31 @@ class AuditRepository {
   CollectionReference get _logsRef => _firestore.collection('activity_logs');
 
   Stream<List<ActivityLogModel>> watchLogs({String? categoryFilter}) {
-    Query query = _logsRef;
-    if (categoryFilter != null && categoryFilter.isNotEmpty && categoryFilter != 'all') {
-      query = query.where('category', isEqualTo: categoryFilter);
-    }
-    return query.orderBy('timestamp', descending: true).limit(100).snapshots().map((snap) {
-      return snap.docs.map((d) => ActivityLogModel.fromFirestore(d)).toList();
+    return _logsRef.snapshots().map((snap) {
+      var list = snap.docs.map((d) => ActivityLogModel.fromFirestore(d)).toList();
+      if (categoryFilter != null && categoryFilter.isNotEmpty && categoryFilter != 'all') {
+        list = list.where((l) => l.category.toLowerCase() == categoryFilter.toLowerCase()).toList();
+      }
+      list.sort((a, b) {
+        final aDate = a.timestamp ?? DateTime(2000);
+        final bDate = b.timestamp ?? DateTime(2000);
+        return bDate.compareTo(aDate);
+      });
+      return list.take(100).toList();
     });
   }
 
   Future<List<ActivityLogModel>> getLogs({String? categoryFilter, int limit = 100}) async {
-    Query query = _logsRef;
+    final snap = await _logsRef.limit(200).get();
+    var list = snap.docs.map((d) => ActivityLogModel.fromFirestore(d)).toList();
     if (categoryFilter != null && categoryFilter.isNotEmpty && categoryFilter != 'all') {
-      query = query.where('category', isEqualTo: categoryFilter);
+      list = list.where((l) => l.category.toLowerCase() == categoryFilter.toLowerCase()).toList();
     }
-    final snap = await query.orderBy('timestamp', descending: true).limit(limit).get();
-    return snap.docs.map((d) => ActivityLogModel.fromFirestore(d)).toList();
+    list.sort((a, b) {
+      final aDate = a.timestamp ?? DateTime(2000);
+      final bDate = b.timestamp ?? DateTime(2000);
+      return bDate.compareTo(aDate);
+    });
+    return list.take(limit).toList();
   }
 }
