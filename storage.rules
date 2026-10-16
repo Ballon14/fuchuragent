@@ -1,33 +1,9 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isStaffOrAdmin() {
-      return isAuthenticated();
-    }
-
-    // Default deny
+    // Seluruh penyimpanan berkas/gambar dinonaktifkan untuk menjaga kuota 100% Free Tier (0 Byte Storage)
     match /{allPaths=**} {
       allow read, write: if false;
-    }
-
-    // Payment receipts (bukti transfer/pembayaran)
-    match /receipts/{invoiceId}/{fileName} {
-      allow read: if isStaffOrAdmin();
-      allow write: if isStaffOrAdmin() &&
-        request.resource.size < 5 * 1024 * 1024 && // Max 5MB
-        (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
-    }
-
-    // Customer documents
-    match /customers/{customerId}/{fileName} {
-      allow read: if isStaffOrAdmin();
-      allow write: if isStaffOrAdmin() &&
-        request.resource.size < 10 * 1024 * 1024;
     }
   }
 }
