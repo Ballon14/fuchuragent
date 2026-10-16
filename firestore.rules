@@ -7,151 +7,70 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'iqbal140605@gmail.com'
+      );
     }
 
     function isAdmin() {
       return isAuthenticated() && (
-        request.auth.token.email == 'iqbal140605@gmail.com' ||
+        isSuperAdmin() ||
         request.auth.token.role == 'admin' ||
         request.auth.token.admin == true ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         getUserData().role == 'admin')
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
       );
     }
 
-    function isStaffOrAdmin() {
-      return isAuthenticated() && (
-        isAdmin() ||
-        request.auth.token.role == 'staff' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         getUserData().role == 'staff')
-      );
-    }
-
-    // Default: Deny everything
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Users Collection
+    // 1. Koleksi Pengguna (Users)
     match /users/{userId} {
-      // Users can read own profile; Admin can read all
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      // Only admin can write or create users, or user can update non-role profile fields
-      allow create: if isAuthenticated() && (
-        isAdmin() ||
-        request.auth.uid == userId
-      );
-      allow update: if isAuthenticated() && (
-        isAdmin() ||
-        (request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'email', 'createdAt']))
-      );
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
 
-    // Customers Collection
+    // 2. Koleksi Pelanggan (Customers)
     match /customers/{customerId} {
-      allow read: if isStaffOrAdmin();
-      allow create: if isStaffOrAdmin() &&
-        request.resource.data.name is string &&
-        request.resource.data.name.size() > 0 &&
-        request.resource.data.phone is string &&
-        request.resource.data.createdAt is timestamp;
-      allow update: if isStaffOrAdmin() &&
-        request.resource.data.name is string &&
-        request.resource.data.phone is string &&
-        request.resource.data.updatedAt is timestamp;
-      // Soft-delete / archive preferred; Hard delete only by Admin
-      allow delete: if isAdmin();
+      allow read, write: if isAuthenticated();
     }
 
-    // VPS Packages Catalog
+    // 3. Koleksi Paket VPS (vps_packages)
     match /vps_packages/{packageId} {
-      allow read: if isStaffOrAdmin();
+      allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
 
-    // VPS Services Collection
+    // 4. Koleksi Layanan VPS (vps_services)
     match /vps_services/{serviceId} {
-      allow read: if isStaffOrAdmin();
-      allow create: if isStaffOrAdmin() &&
-        request.resource.data.customerId is string &&
-        request.resource.data.price is int &&
-        request.resource.data.price >= 0;
-      allow update: if isStaffOrAdmin() &&
-        request.resource.data.price is int;
-      allow delete: if isAdmin();
+      allow read, write: if isAuthenticated();
     }
 
-    // Invoices Collection
+    // 5. Koleksi Tagihan (Invoices)
     match /invoices/{invoiceId} {
-      allow read: if isStaffOrAdmin();
-      allow create: if isStaffOrAdmin() &&
-        request.resource.data.customerId is string &&
-        request.resource.data.total is int &&
-        request.resource.data.total >= 0 &&
-        request.resource.data.invoiceNumber is string;
-      allow update: if isStaffOrAdmin() &&
-        request.resource.data.total is int &&
-        request.resource.data.total >= 0;
-      allow delete: if isAdmin();
+      allow read, write: if isAuthenticated();
     }
 
-    // Payments Collection
+    // 6. Koleksi Pembayaran (Payments)
     match /payments/{paymentId} {
-      allow read: if isStaffOrAdmin();
-      // Payments can be created with valid positive integer amount and invoice reference
-      allow create: if isStaffOrAdmin() &&
-        request.resource.data.amount is int &&
-        request.resource.data.amount > 0 &&
-        request.resource.data.invoiceId is string &&
-        request.resource.data.paymentDate is timestamp;
-      // Direct update and delete disallowed to prevent financial tampering (requires refund / reverse audit)
-      allow update: if isAdmin();
-      allow delete: if false;
+      allow read, create: if isAuthenticated();
+      allow update, delete: if isAdmin();
     }
 
-    // Service Renewals Collection
+    // 7. Koleksi Perpanjangan Layanan (service_renewals)
     match /service_renewals/{renewalId} {
-      allow read: if isStaffOrAdmin();
-      allow create: if isStaffOrAdmin() &&
-        request.resource.data.serviceId is string &&
-        request.resource.data.customerId is string;
-      allow update: if isAdmin();
-      allow delete: if false;
+      allow read, write: if isAuthenticated();
     }
 
-    // Notifications Collection
-    match /notifications/{notificationId} {
-      allow read: if isAuthenticated();
-      allow create: if isStaffOrAdmin();
-      allow update: if isAuthenticated() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead', 'readAt']);
-      allow delete: if isAdmin();
-    }
-
-    // Activity Logs Collection (Audit Trail)
+    // 8. Koleksi Log Aktivitas (activity_logs)
     match /activity_logs/{logId} {
-      allow read: if isAdmin();
-      // Append-only audit logs
-      allow create: if isAuthenticated() &&
-        request.resource.data.actorId == request.auth.uid &&
-        request.resource.data.timestamp is timestamp;
-      allow update, delete: if false; // Immutable audit log
+      allow read, create: if isAuthenticated();
+      allow update, delete: if isAdmin();
     }
 
-    // Import Jobs Collection
-    match /import_jobs/{jobId} {
-      allow read, create, update: if isStaffOrAdmin();
-      allow delete: if isAdmin();
-    }
-
-    // App Settings
-    match /app_settings/{settingId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+    // 9. Koleksi Laporan & Dokumen Lainnya
+    match /{document=**} {
+      allow read, write: if isAuthenticated();
     }
   }
 }
