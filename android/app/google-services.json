@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1050371549630",
+    "firebase_url": "https://fuchuragent-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "fuchuragent",
+    "storage_bucket": "fuchuragent.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1050371549630:android:21db4210dd0acc7d05f1ef",
+        "android_client_info": {
+          "package_name": "com.example.fuchuragent"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1050371549630-sposl9b816at8fs4bg31hcu2e51bj5ab.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMMpsptRrWsM4EGrZ0H3LJJC8yFtrhIRc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1050371549630-sposl9b816at8fs4bg31hcu2e51bj5ab.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

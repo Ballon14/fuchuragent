@@ -1,0 +1,202 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/payment_model.dart';
+import '../../../core/constants/app_constants.dart';
+import '../../../core/providers/app_providers.dart';
+
+class RecordPaymentDialog extends ConsumerStatefulWidget {
+  final String? preselectedInvoiceId;
+  final int? suggestedAmount;
+
+  const RecordPaymentDialog({
+    super.key,
+    this.preselectedInvoiceId,
+    this.suggestedAmount,
+  });
+
+  static Future<PaymentModel?> show(
+    BuildContext context, {
+    String? preselectedInvoiceId,
+    int? suggestedAmount,
+  }) {
+    return showDialog<PaymentModel>(
+      context: context,
+      builder: (ctx) => RecordPaymentDialog(
+        preselectedInvoiceId: preselectedInvoiceId,
+        suggestedAmount: suggestedAmount,
+      ),
+    );
+  }
+
+  @override
+  ConsumerState<RecordPaymentDialog> createState() => _RecordPaymentDialogState();
+}
+
+class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
+  final _formKey = GlobalKey<FormState>();
+  String? _selectedInvoiceId;
+  late TextEditingController _amountCtrl;
+  final _refCtrl = TextEditingController();
+  final _notesCtrl = TextEditingController();
+  String _paymentMethod = 'Transfer Bank BCA';
+  bool _isLoading = false;
+
+  final List<String> _methods = [
+    'Transfer Bank BCA',
+    'Transfer Bank Mandiri',
+    'Transfer Bank BNI',
+    'Transfer Bank BRI',
+    'QRIS / GoPay / OVO',
+    'Tunai (Cash)',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedInvoiceId = widget.preselectedInvoiceId;
+    _amountCtrl = TextEditingController(
+      text: widget.suggestedAmount != null ? widget.suggestedAmount.toString() : '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _amountCtrl.dispose();
+    _refCtrl.dispose();
+    _notesCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedInvoiceId == null || _selectedInvoiceId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih tagihan yang akan dibayar')),
+      );
+      return;
+    }
+
+    final amount = int.tryParse(_amountCtrl.text) ?? 0;
+    if (amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nominal pembayaran harus lebih dari 0')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final payment = await ref.read(paymentRepositoryProvider).recordPayment(
+            invoiceId: _selectedInvoiceId!,
+            amount: amount,
+            paymentMethod: _paymentMethod,
+            referenceNumber: _refCtrl.text.trim(),
+            notes: _notesCtrl.text.trim(),
+          );
+      if (mounted) {
+        Navigator.of(context).pop(payment);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mencatat pembayaran: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final invoicesAsync = ref.watch(invoiceRepositoryProvider).watchInvoices(statusFilter: 'unpaid');
+
+    return AlertDialog(
+      title: const Text('Catat Pembayaran Tagihan'),
+      content: SizedBox(
+        width: 480,
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.preselectedInvoiceId == null)
+                  StreamBuilder(
+                    stream: invoicesAsync,
+                    builder: (context, snapshot) {
+                      final list = snapshot.data ?? [];
+                      return DropdownButtonFormField<String>(
+                        initialValue: _selectedInvoiceId,
+                        decoration: const InputDecoration(labelText: 'Pilih Tagihan Terbuka *'),
+                        items: list.map((inv) {
+                          return DropdownMenuItem(
+                            value: inv.id,
+                            child: Text('${inv.invoiceNumber} (Sisa: ${AppConstants.formatRupiah(inv.remainingBalance)})'),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            _selectedInvoiceId = val;
+                            final match = list.firstWhere((i) => i.id == val);
+                            _amountCtrl.text = match.remainingBalance.toString();
+                          });
+                        },
+                        validator: (v) => v == null ? 'Pilih tagihan' : null,
+                      );
+                    },
+                  ),
+                const SizedBox(height: 14),
+
+                TextFormField(
+                  controller: _amountCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Nominal Pembayaran (IDR) *',
+                    prefixText: 'Rp ',
+                  ),
+                  validator: (v) => (v == null || int.tryParse(v) == null) ? 'Nominal harus angka' : null,
+                ),
+                const SizedBox(height: 14),
+
+                DropdownButtonFormField<String>(
+                  initialValue: _paymentMethod,
+                  decoration: const InputDecoration(labelText: 'Metode Pembayaran *'),
+                  items: _methods.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                  onChanged: (v) {
+                    if (v != null) setState(() => _paymentMethod = v);
+                  },
+                ),
+                const SizedBox(height: 14),
+
+                TextFormField(
+                  controller: _refCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Nomor Referensi Transaksi / Kode Mutasi',
+                    hintText: 'TRX-10293847',
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                TextFormField(
+                  controller: _notesCtrl,
+                  decoration: const InputDecoration(labelText: 'Catatan Pembayaran'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _submit,
+          child: _isLoading
+              ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+              : const Text('Simpan Pembayaran'),
+        ),
+      ],
+    );
+  }
+}

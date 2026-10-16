@@ -1,0 +1,20 @@
+No,ID Customer,Nomor HP,Paket,Domain,Optional,Nominal,Payment Status,Mulai,Akhir,Worker ,Payment Worker,Status
+1,Cus-001,0851-9822-6204,Snipe-it Basic,https://arkavue.buildsys.site,Publish,"Rp77,000.00",Lunas,7/4/2026,8/4/2026,Iqbal,TRUE,Deactive
+2,Cus-002,0882-2865-6067,Snipe-it Basic,https://snipeit.buildsys.site,Publish,"Rp77,000.00",Lunas,7/4/2026,8/4/2026,Iqbal,TRUE,Deactive
+3,Cus-003,0831-5352-9547,Snipe-it Basic,https://perbaik.buildsys.site,Publish,"Rp77,000.00",Lunas,7/4/2026,8/4/2026,Iqbal,TRUE,Deactive
+4,Cus-004,0822-6199-4142,Snipe-it Basic,https://uno-msdti.buildsys.site,Publish,"Rp77,000.00",Lunas,7/1/2026,8/1/2026,Iqbal,TRUE,Deactive
+5,Cus-005,0897-8267-350,Snipe-it Basic,https://astragrafika.buildsys.site,Publish,"Rp77,000.00",Lunas,7/5/2026,8/5/2026,Iqbal,TRUE,Deactive
+6,Cus-006,0895-3282-03718,Snipe-it Basic,https://rajal-tjokronegoro.buildsys.site,Publish,"Rp77,000.00",Lunas,7/2/2026,8/2/2026,Iqbal,TRUE,Deactive
+7,Cus-007,0823-2688-8001,Basic 3 Bulan,https://puskesmaspituruh.my.id,Publish,"Rp135,000.00",Lunas,7/3/2026,10/3/2026,Iqbal,TRUE,Actice
+8,Cus-008,0897-8189-405,Basic 3 Bulan,https://smpn1purworejo.sch.id,Publish,"Rp135,000.00",Lunas,7/18/2026,10/18/2026,Iqbal,TRUE,Actice
+9,Cus-009,0895-2577-7656,Basic 1 Bulan,https://smkn6lab.site,Publish,"Rp76,000.00",Lunas,7/22/2026,8/22/2026,Iqbal,TRUE,Deactive
+10,Cus-010,0895-2577-7657,Basic 1 Bulan,https://smkn6lab.site,Publish,"Rp46,000.00",Lunas,8/22/2026,9/22/2026,,FALSE,Deactive
+11,Cus-011,,,,,,,,,,FALSE,
+12,Cus-012,,,,,,,,,,FALSE,
+13,Cus-013,,,,,,,,,,FALSE,
+14,Cus-014,,,,,,,,,,FALSE,
+15,Cus-015,,,,,,,,,,FALSE,
+16,Cus-016,,,,,,,,,,FALSE,
+17,Cus-017,,,,,,,,,,FALSE,
+18,Cus-018,,,,,,,,,,FALSE,
+19,Cus-019,,,,,,,,,,FALSE,
