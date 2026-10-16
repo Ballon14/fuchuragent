@@ -37,7 +37,10 @@ class PackageListScreen extends ConsumerWidget {
             return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
           }
 
-          final packages = snapshot.data ?? VpsPackageModel.defaultCatalog;
+          final packages = (snapshot.data != null && snapshot.data!.isNotEmpty)
+              ? List<VpsPackageModel>.from(snapshot.data!)
+              : List<VpsPackageModel>.from(VpsPackageModel.defaultCatalog);
+          packages.sort((a, b) => a.basePrice.compareTo(b.basePrice));
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),

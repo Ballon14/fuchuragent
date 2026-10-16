@@ -10,20 +10,28 @@ class PackageRepository {
 
   Stream<List<VpsPackageModel>> watchPackages() {
     return _pkgRef.snapshots().map((snap) {
+      List<VpsPackageModel> list;
       if (snap.docs.isEmpty) {
-        return VpsPackageModel.defaultCatalog;
+        list = List<VpsPackageModel>.from(VpsPackageModel.defaultCatalog);
+      } else {
+        list = snap.docs.map((d) => VpsPackageModel.fromFirestore(d)).toList();
       }
-      return snap.docs.map((d) => VpsPackageModel.fromFirestore(d)).toList();
+      list.sort((a, b) => a.basePrice.compareTo(b.basePrice));
+      return list;
     });
   }
 
   Future<List<VpsPackageModel>> getPackages() async {
     final snap = await _pkgRef.get();
+    List<VpsPackageModel> list;
     if (snap.docs.isEmpty) {
       await seedDefaultPackages();
-      return VpsPackageModel.defaultCatalog;
+      list = List<VpsPackageModel>.from(VpsPackageModel.defaultCatalog);
+    } else {
+      list = snap.docs.map((d) => VpsPackageModel.fromFirestore(d)).toList();
     }
-    return snap.docs.map((d) => VpsPackageModel.fromFirestore(d)).toList();
+    list.sort((a, b) => a.basePrice.compareTo(b.basePrice));
+    return list;
   }
 
   Future<void> seedDefaultPackages() async {

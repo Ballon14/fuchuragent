@@ -85,8 +85,18 @@ class VpsPackageModel {
     };
   }
 
-  // Predefined catalog reference packages
+  // Predefined catalog reference packages (sorted from cheapest to most expensive)
   static List<VpsPackageModel> get defaultCatalog => [
+    VpsPackageModel(
+      id: 'pkg-snipeit-basic',
+      name: 'Snipe-it Basic',
+      code: 'snipe-it-basic',
+      vcpu: 1,
+      ramGb: 1,
+      storageGb: 20,
+      basePrice: 77000,
+      description: 'Preconfigured Snipe-IT Asset Management',
+    ),
     VpsPackageModel(
       id: 'pkg-basic',
       name: 'Basic',
@@ -126,16 +136,6 @@ class VpsPackageModel {
       storageGb: 120,
       basePrice: 500000,
       description: '4 vCPU, RAM 8 GB, storage 120 GB HDD',
-    ),
-    VpsPackageModel(
-      id: 'pkg-snipeit-basic',
-      name: 'Snipe-it Basic',
-      code: 'snipe-it-basic',
-      vcpu: 1,
-      ramGb: 1,
-      storageGb: 20,
-      basePrice: 77000,
-      description: 'Preconfigured Snipe-IT Asset Management',
     ),
   ];
 }

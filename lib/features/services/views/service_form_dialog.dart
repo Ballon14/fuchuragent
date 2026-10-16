@@ -128,7 +128,8 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
   @override
   Widget build(BuildContext context) {
     final customersAsync = ref.watch(customerRepositoryProvider).watchCustomers();
-    final packages = VpsPackageModel.defaultCatalog;
+    final packages = List<VpsPackageModel>.from(VpsPackageModel.defaultCatalog)
+      ..sort((a, b) => a.basePrice.compareTo(b.basePrice));
     final isEdit = widget.service != null;
     final isMobile = MediaQuery.of(context).size.width < 600;
 
