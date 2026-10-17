@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/constants/app_constants.dart';
 
 class VpsServiceModel {
   final String id;
@@ -70,15 +71,15 @@ class VpsServiceModel {
       storageGb: (data['storageGb'] as num?)?.toInt() ?? 20,
       price: (data['price'] as num?)?.toInt() ?? 0,
       billingCycleMonths: (data['billingCycleMonths'] as num?)?.toInt() ?? 1,
-      startDate: (data['startDate'] as Timestamp?)?.toDate(),
-      endDate: (data['endDate'] as Timestamp?)?.toDate(),
+      startDate: AppConstants.parseDateTime(data['startDate']),
+      endDate: AppConstants.parseDateTime(data['endDate']),
       status: (data['status'] as String? ?? 'active').toLowerCase(),
       deploymentType: data['deploymentType'] as String? ?? 'Publish',
       worker: data['worker'] as String?,
       workerPaid: data['workerPaid'] as bool? ?? false,
       notes: data['notes'] as String? ?? '',
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      createdAt: AppConstants.parseDateTime(data['createdAt']),
+      updatedAt: AppConstants.parseDateTime(data['updatedAt']),
     );
   }
 

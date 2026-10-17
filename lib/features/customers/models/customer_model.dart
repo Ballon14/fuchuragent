@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/constants/app_constants.dart';
 
 class CustomerModel {
   final String id;
@@ -36,8 +37,8 @@ class CustomerModel {
       email: data['email'] as String?,
       status: data['status'] as String? ?? 'active',
       notes: data['notes'] as String? ?? '',
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      createdAt: AppConstants.parseDateTime(data['createdAt']),
+      updatedAt: AppConstants.parseDateTime(data['updatedAt']),
     );
   }
 

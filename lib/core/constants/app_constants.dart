@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -11,12 +12,16 @@ class AppConstants {
 
   // Currency Formatter: Rp 135.000
   static String formatRupiah(int amount) {
-    final formatter = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp',
-      decimalDigits: 0,
-    );
-    return formatter.format(amount);
+    try {
+      final formatter = NumberFormat.currency(
+        locale: 'id_ID',
+        symbol: 'Rp',
+        decimalDigits: 0,
+      );
+      return formatter.format(amount);
+    } catch (_) {
+      return 'Rp ${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
+    }
   }
 
   // Parse Currency String: "Rp135,000.00" -> 135000
@@ -31,10 +36,24 @@ class AppConstants {
     return int.tryParse(cleaned) ?? 0;
   }
 
+  // Defensive Date Parser handling Timestamp, DateTime, epoch integer, and ISO string
+  static DateTime? parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is Timestamp) return value.toDate();
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    if (value is String) return DateTime.tryParse(value.trim());
+    return null;
+  }
+
   // Date Formatter: 18 Juli 2026
   static String formatDate(DateTime? date) {
     if (date == null) return '-';
-    return DateFormat('d MMMM yyyy', 'id_ID').format(date);
+    try {
+      return DateFormat('d MMMM yyyy', 'id_ID').format(date);
+    } catch (_) {
+      return DateFormat('dd/MM/yyyy').format(date);
+    }
   }
 
   // Short Date Formatter: 18/07/2026
@@ -46,7 +65,11 @@ class AppConstants {
   // Date & Time Formatter
   static String formatDateTime(DateTime? dateTime) {
     if (dateTime == null) return '-';
-    return DateFormat('d MMM yyyy, HH:mm', 'id_ID').format(dateTime);
+    try {
+      return DateFormat('d MMM yyyy, HH:mm', 'id_ID').format(dateTime);
+    } catch (_) {
+      return DateFormat('dd/MM/yyyy, HH:mm').format(dateTime);
+    }
   }
 
   // Parse US / Spreadsheet format: M/D/YYYY (e.g. 7/18/2026 or 7/4/2026)

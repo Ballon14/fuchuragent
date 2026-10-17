@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
 import '../models/customer_model.dart';
+import '../../services/models/service_model.dart';
+import '../../invoices/models/invoice_model.dart';
+import '../../payments/models/payment_model.dart';
 import 'customer_form_dialog.dart';
 import '../../services/views/service_form_dialog.dart';
 import '../../invoices/views/invoice_form_dialog.dart';
@@ -273,11 +276,26 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
   }
 
   Widget _buildServicesTab(CustomerModel customer) {
-    return StreamBuilder(
+    return StreamBuilder<List<VpsServiceModel>>(
       stream: ref.watch(customerRepositoryProvider).watchCustomerServices(customer.id),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 36),
+                  const SizedBox(height: 8),
+                  Text('Gagal memuat layanan: ${snapshot.error}', style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          );
         }
         final services = snapshot.data ?? [];
 
@@ -337,11 +355,26 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
   }
 
   Widget _buildInvoicesTab(CustomerModel customer) {
-    return StreamBuilder(
+    return StreamBuilder<List<InvoiceModel>>(
       stream: ref.watch(customerRepositoryProvider).watchCustomerInvoices(customer.id),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 36),
+                  const SizedBox(height: 8),
+                  Text('Gagal memuat tagihan: ${snapshot.error}', style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          );
         }
         final invoices = snapshot.data ?? [];
 
@@ -408,31 +441,59 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
   }
 
   Widget _buildPaymentsTab(CustomerModel customer) {
-    return StreamBuilder(
+    return StreamBuilder<List<PaymentModel>>(
       stream: ref.watch(customerRepositoryProvider).watchCustomerPayments(customer.id),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
         }
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 36),
+                  const SizedBox(height: 8),
+                  Text('Gagal memuat pembayaran: ${snapshot.error}', style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          );
+        }
         final payments = snapshot.data ?? [];
 
-        return payments.isEmpty
-            ? const Center(child: Text('Belum ada riwayat pembayaran.', style: TextStyle(color: Colors.white38)))
-            : ListView.separated(
-                itemCount: payments.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (context, idx) {
-                  final p = payments[idx];
-                  return Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.payment_rounded, color: AppColors.success),
-                      title: Text(AppConstants.formatRupiah(p.amount), style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('${p.paymentMethod} • ${AppConstants.formatDateTime(p.paymentDate)}'),
-                      trailing: StatusBadge(status: p.isReversed ? 'dibatalkan' : 'lunas'),
+        return Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Total ${payments.length} Pembayaran', style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: payments.isEmpty
+                  ? const Center(child: Text('Belum ada riwayat pembayaran.', style: TextStyle(color: Colors.white38)))
+                  : ListView.separated(
+                      itemCount: payments.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, idx) {
+                        final p = payments[idx];
+                        return Card(
+                          child: ListTile(
+                            leading: const Icon(Icons.payment_rounded, color: AppColors.success),
+                            title: Text(AppConstants.formatRupiah(p.amount), style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text('${p.paymentMethod} • ${AppConstants.formatDateTime(p.paymentDate)}'),
+                            trailing: StatusBadge(status: p.isReversed ? 'dibatalkan' : 'lunas'),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              );
+            ),
+          ],
+        );
       },
     );
   }

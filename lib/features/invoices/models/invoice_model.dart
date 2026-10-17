@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/constants/app_constants.dart';
 
 class InvoiceItem {
   final String description;
@@ -95,12 +96,12 @@ class InvoiceModel {
       total: (data['total'] as num?)?.toInt() ?? 0,
       paidAmount: (data['paidAmount'] as num?)?.toInt() ?? 0,
       status: data['status'] as String? ?? 'unpaid',
-      issuedAt: (data['issuedAt'] as Timestamp?)?.toDate(),
-      dueDate: (data['dueDate'] as Timestamp?)?.toDate(),
+      issuedAt: AppConstants.parseDateTime(data['issuedAt']),
+      dueDate: AppConstants.parseDateTime(data['dueDate']),
       notes: data['notes'] as String? ?? '',
       createdBy: data['createdBy'] as String?,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      createdAt: AppConstants.parseDateTime(data['createdAt']),
+      updatedAt: AppConstants.parseDateTime(data['updatedAt']),
     );
   }
 

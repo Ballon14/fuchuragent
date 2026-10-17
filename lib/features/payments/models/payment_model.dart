@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/constants/app_constants.dart';
 
 class PaymentModel {
   final String id;
@@ -47,7 +48,7 @@ class PaymentModel {
       customerId: data['customerId'] as String? ?? '',
       serviceId: data['serviceId'] as String?,
       amount: (data['amount'] as num?)?.toInt() ?? 0,
-      paymentDate: (data['paymentDate'] as Timestamp?)?.toDate(),
+      paymentDate: AppConstants.parseDateTime(data['paymentDate']),
       paymentMethod: data['paymentMethod'] as String? ?? 'Transfer Bank',
       referenceNumber: data['referenceNumber'] as String? ?? '',
       receiptUrl: data['receiptUrl'] as String?,
@@ -55,10 +56,10 @@ class PaymentModel {
       notes: data['notes'] as String? ?? '',
       isReversed: data['isReversed'] as bool? ?? false,
       reverseReason: data['reverseReason'] as String?,
-      reversedAt: (data['reversedAt'] as Timestamp?)?.toDate(),
+      reversedAt: AppConstants.parseDateTime(data['reversedAt']),
       reversedBy: data['reversedBy'] as String?,
       idempotencyKey: data['idempotencyKey'] as String?,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+      createdAt: AppConstants.parseDateTime(data['createdAt']),
     );
   }
 
