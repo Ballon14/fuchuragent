@@ -18,6 +18,8 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
   @override
   Widget build(BuildContext context) {
     final auditRepo = ref.watch(auditRepositoryProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Audit Trail & Log Aktivitas Sistem')),
@@ -33,14 +35,21 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 const Text('Kategori Log:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                ...['all', 'FINANCE', 'SERVICES', 'CUSTOMERS', 'SECURITY', 'IMPORT'].map((cat) {
+                ...['all', 'FINANCE', 'SERVICES', 'CUSTOMERS', 'SECURITY'].map((cat) {
                   final selected = _categoryFilter == cat;
                   return ChoiceChip(
                     label: Text(
                       cat == 'all' ? 'Semua Kategori' : cat,
-                      style: TextStyle(fontSize: 11, color: selected ? Colors.black : Colors.white),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: selected
+                            ? (isDark ? Colors.black : Colors.white)
+                            : (isDark ? Colors.white70 : const Color(0xFF475569)),
+                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                      ),
                     ),
                     selected: selected,
+                    selectedColor: primaryColor,
                     onSelected: (s) {
                       if (s) setState(() => _categoryFilter = cat);
                     },
@@ -55,13 +64,16 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                 stream: auditRepo.watchLogs(categoryFilter: _categoryFilter),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
+                    return Center(child: CircularProgressIndicator(color: primaryColor));
                   }
 
                   final logs = snapshot.data ?? [];
                   if (logs.isEmpty) {
-                    return const Center(
-                      child: Text('Belum ada catatan aktivitas pada kategori ini.', style: TextStyle(color: Colors.white38)),
+                    return Center(
+                      child: Text(
+                        'Belum ada catatan aktivitas pada kategori ini.',
+                        style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                      ),
                     );
                   }
 
@@ -73,21 +85,24 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                       itemBuilder: (context, idx) {
                         final log = logs[idx];
                         return ListTile(
-                          leading: const Icon(Icons.history_edu_rounded, color: AppColors.cyan, size: 20),
+                          leading: Icon(Icons.history_edu_rounded, color: primaryColor, size: 20),
                           title: Text(log.details, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                           subtitle: Text(
                             'Pelaksana: ${log.actorName} (${log.actorId.substring(0, log.actorId.length > 8 ? 8 : log.actorId.length)}) • ${AppConstants.formatDateTime(log.timestamp)}',
-                            style: const TextStyle(fontSize: 11, color: Colors.white54),
+                            style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : const Color(0xFF64748B)),
                           ),
                           trailing: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppColors.surfaceLightDark,
+                              color: isDark ? AppColors.surfaceLightDark : const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                              ),
                             ),
                             child: Text(
                               log.category,
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.cyan),
+                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: primaryColor),
                             ),
                           ),
                         );

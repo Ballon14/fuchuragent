@@ -29,16 +29,26 @@ class DashboardScreen extends ConsumerWidget {
         ],
       ),
       body: statsAsync.when(
-        loading: () => const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(color: AppColors.cyan),
-              SizedBox(height: 16),
-              Text('Memuat data aktual Firestore...', style: TextStyle(color: Colors.white60)),
-            ],
-          ),
-        ),
+        loading: () {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  color: isDark ? AppColors.cyan : const Color(0xFF0284C7),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Memuat data aktual Firestore...',
+                  style: TextStyle(
+                    color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
         error: (err, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -127,13 +137,13 @@ class DashboardScreen extends ConsumerWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(flex: 5, child: _buildServicesOverviewCard(stats)),
+                        Expanded(flex: 5, child: _buildServicesOverviewCard(context, stats)),
                         const SizedBox(width: 24),
                         Expanded(flex: 5, child: _buildFollowUpCard(context, stats)),
                       ],
                     )
                   else ...[
-                    _buildServicesOverviewCard(stats),
+                    _buildServicesOverviewCard(context, stats),
                     const SizedBox(height: 24),
                     _buildFollowUpCard(context, stats),
                   ],
@@ -170,19 +180,37 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildQuickActionBanner(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.surfaceDark,
-            AppColors.cyan.withValues(alpha: 0.1),
-          ],
+          colors: isDark
+              ? [
+                  AppColors.surfaceDark,
+                  AppColors.cyan.withValues(alpha: 0.1),
+                ]
+              : [
+                  Colors.white,
+                  const Color(0xFFF0F9FF), // Sky 50
+                ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cyan.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: isDark ? AppColors.cyan.withValues(alpha: 0.2) : const Color(0xFFBAE6FD),
+        ),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: const Color(0xFF0284C7).withValues(alpha: 0.05),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Wrap(
         spacing: 12,
@@ -200,7 +228,7 @@ class DashboardScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.cyan.withValues(alpha: 0.25),
+                      color: (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: 0.2),
                       blurRadius: 10,
                     ),
                   ],
@@ -211,17 +239,20 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 14),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Selamat Datang di Fuchur Agent',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 3),
+                  const SizedBox(height: 3),
                   Text(
                     'Sistem VPS & Billing FuchurHost Solutions',
-                    style: TextStyle(fontSize: 11, color: Colors.white60),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                    ),
                   ),
                 ],
               ),
@@ -232,9 +263,9 @@ class DashboardScreen extends ConsumerWidget {
             runSpacing: 8,
             children: [
               ElevatedButton.icon(
-                icon: const Icon(Icons.cloud_download_rounded, size: 16),
-                label: const Text('Impor Spreadsheet'),
-                onPressed: () => context.go('/imports'),
+                icon: const Icon(Icons.add_card_rounded, size: 16),
+                label: const Text('Catat Pembayaran'),
+                onPressed: () => context.go('/payments'),
               ),
               OutlinedButton.icon(
                 icon: const Icon(Icons.person_add_rounded, size: 16),
@@ -253,7 +284,7 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildServicesOverviewCard(dynamic stats) {
+  Widget _buildServicesOverviewCard(BuildContext context, dynamic stats) {
     return AppCard(
       title: 'Status Layanan VPS',
       child: Column(
@@ -294,9 +325,9 @@ class DashboardScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildLegend('Aktif', AppColors.cyan, '${stats.activeServices}'),
-              _buildLegend('Tempo', AppColors.warning, '${stats.expiringServicesCount}'),
-              _buildLegend('Expired', AppColors.danger, '${stats.expiredServicesCount}'),
+              _buildLegend(context, 'Aktif', AppColors.cyan, '${stats.activeServices}'),
+              _buildLegend(context, 'Tempo', AppColors.warning, '${stats.expiringServicesCount}'),
+              _buildLegend(context, 'Expired', AppColors.danger, '${stats.expiredServicesCount}'),
             ],
           ),
         ],
@@ -304,28 +335,41 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildLegend(String label, Color color, String count) {
+  Widget _buildLegend(BuildContext context, String label, Color color, String count) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 6),
-        Text('$label ($count)', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+        Text(
+          '$label ($count)',
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.white70 : const Color(0xFF475569),
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildFollowUpCard(BuildContext context, dynamic stats) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryLinkColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return AppCard(
       title: 'Layanan Perlu Ditindaklanjuti',
       trailing: TextButton(
         onPressed: () => context.go('/renewals'),
-        child: const Text('Lihat Semua', style: TextStyle(color: AppColors.cyan, fontSize: 12)),
+        child: Text('Lihat Semua', style: TextStyle(color: primaryLinkColor, fontSize: 12)),
       ),
       child: stats.followUpServices.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Tidak ada layanan yang memerlukan tindak lanjut segera.', style: TextStyle(color: Colors.white38)),
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Tidak ada layanan yang memerlukan tindak lanjut segera.',
+                  style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                ),
               ),
             )
           : ListView.separated(
@@ -338,7 +382,7 @@ class DashboardScreen extends ConsumerWidget {
                 return ListTile(
                   dense: true,
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.dns_rounded, color: AppColors.cyan, size: 20),
+                  leading: Icon(Icons.dns_rounded, color: primaryLinkColor, size: 20),
                   title: Text(svc.domain, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   subtitle: Text('Jatuh Tempo: ${AppConstants.formatShortDate(svc.endDate)}', style: const TextStyle(fontSize: 11)),
                   trailing: StatusBadge(status: svc.status),
@@ -350,17 +394,23 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildRecentPaymentsCard(BuildContext context, dynamic stats) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryLinkColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return AppCard(
       title: 'Pembayaran Terbaru',
       trailing: TextButton(
         onPressed: () => context.go('/payments'),
-        child: const Text('Kelola Pembayaran', style: TextStyle(color: AppColors.cyan, fontSize: 12)),
+        child: Text('Kelola Pembayaran', style: TextStyle(color: primaryLinkColor, fontSize: 12)),
       ),
       child: stats.recentPayments.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Belum ada transaksi pembayaran tercatat.', style: TextStyle(color: Colors.white38)),
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Belum ada transaksi pembayaran tercatat.',
+                  style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                ),
               ),
             )
           : ListView.separated(
@@ -384,17 +434,23 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildRecentCustomersCard(BuildContext context, dynamic stats) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryLinkColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return AppCard(
       title: 'Pelanggan Terbaru',
       trailing: TextButton(
         onPressed: () => context.go('/customers'),
-        child: const Text('Daftar Pelanggan', style: TextStyle(color: AppColors.cyan, fontSize: 12)),
+        child: Text('Daftar Pelanggan', style: TextStyle(color: primaryLinkColor, fontSize: 12)),
       ),
       child: stats.recentCustomers.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Belum ada data pelanggan.', style: TextStyle(color: Colors.white38)),
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Belum ada data pelanggan.',
+                  style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                ),
               ),
             )
           : ListView.separated(
@@ -409,8 +465,11 @@ class DashboardScreen extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
                     radius: 14,
-                    backgroundColor: AppColors.cyan.withValues(alpha: 0.2),
-                    child: Text(c.name.isNotEmpty ? c.name[0].toUpperCase() : 'C', style: const TextStyle(fontSize: 11, color: AppColors.cyan)),
+                    backgroundColor: primaryLinkColor.withValues(alpha: 0.15),
+                    child: Text(
+                      c.name.isNotEmpty ? c.name[0].toUpperCase() : 'C',
+                      style: TextStyle(fontSize: 11, color: primaryLinkColor, fontWeight: FontWeight.bold),
+                    ),
                   ),
                   title: Text(c.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   subtitle: Text(c.phone, style: const TextStyle(fontSize: 11)),
@@ -423,17 +482,25 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildRecentActivitiesCard(BuildContext context, dynamic stats) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryLinkColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+    final mutedIconColor = isDark ? Colors.white38 : const Color(0xFF94A3B8);
+    final mutedTextColor = isDark ? Colors.white38 : const Color(0xFF64748B);
+
     return AppCard(
       title: 'Aktivitas Administrator Terakhir',
       trailing: TextButton(
         onPressed: () => context.go('/audit'),
-        child: const Text('Seluruh Log', style: TextStyle(color: AppColors.cyan, fontSize: 12)),
+        child: Text('Seluruh Log', style: TextStyle(color: primaryLinkColor, fontSize: 12)),
       ),
       child: stats.recentActivities.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Belum ada log audit aktivitas.', style: TextStyle(color: Colors.white38)),
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Belum ada log audit aktivitas.',
+                  style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                ),
               ),
             )
           : ListView.separated(
@@ -446,10 +513,10 @@ class DashboardScreen extends ConsumerWidget {
                 return ListTile(
                   dense: true,
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.history_rounded, size: 18, color: Colors.white38),
+                  leading: Icon(Icons.history_rounded, size: 18, color: mutedIconColor),
                   title: Text(log.details, style: const TextStyle(fontSize: 12)),
-                  subtitle: Text('${log.actorName} • ${AppConstants.formatDateTime(log.timestamp)}', style: const TextStyle(fontSize: 11, color: Colors.white38)),
-                  trailing: Text(log.category, style: const TextStyle(fontSize: 10, color: AppColors.cyan, fontWeight: FontWeight.bold)),
+                  subtitle: Text('${log.actorName} • ${AppConstants.formatDateTime(log.timestamp)}', style: TextStyle(fontSize: 11, color: mutedTextColor)),
+                  trailing: Text(log.category, style: TextStyle(fontSize: 10, color: primaryLinkColor, fontWeight: FontWeight.bold)),
                 );
               },
             ),

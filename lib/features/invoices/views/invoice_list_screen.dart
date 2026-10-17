@@ -190,16 +190,19 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
   }
 
   Widget _buildFilterChip(String value, String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
     final isSelected = _statusFilter == value;
+
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
         if (selected) setState(() => _statusFilter = value);
       },
-      selectedColor: AppColors.cyan.withValues(alpha: 0.2),
+      selectedColor: primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.cyan : Colors.white70,
+        color: isSelected ? primaryColor : (isDark ? Colors.white70 : const Color(0xFF475569)),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         fontSize: 12,
       ),
@@ -207,15 +210,20 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.receipt_long_rounded, size: 64, color: Colors.white24),
+          Icon(Icons.receipt_long_rounded, size: 64, color: isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
           const SizedBox(height: 16),
           const Text('Belum ada tagihan yang ditemukan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Terbitkan tagihan baru untuk layanan VPS pelanggan FuchurHost.', style: TextStyle(color: Colors.white54)),
+          Text(
+            'Terbitkan tagihan baru untuk layanan VPS pelanggan FuchurHost.',
+            style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF64748B)),
+          ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
             icon: const Icon(Icons.add, size: 18),
@@ -228,6 +236,9 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
   }
 
   Widget _buildDesktopTable(List<InvoiceModel> list) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return AppCard(
       padding: EdgeInsets.zero,
       child: SingleChildScrollView(
@@ -262,7 +273,7 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
                       AppConstants.formatRupiah(inv.remainingBalance),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: inv.remainingBalance > 0 ? AppColors.warning : Colors.white60,
+                        color: inv.remainingBalance > 0 ? AppColors.warning : (isDark ? Colors.white60 : const Color(0xFF64748B)),
                       ),
                     ),
                   ),
@@ -270,7 +281,7 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
                   DataCell(StatusBadge(status: inv.isOverdue ? 'overdue' : inv.status)),
                   DataCell(
                     IconButton(
-                      icon: const Icon(Icons.chevron_right_rounded, color: AppColors.cyan),
+                      icon: Icon(Icons.chevron_right_rounded, color: primaryColor),
                       onPressed: () => context.go('/invoices/${inv.id}'),
                     ),
                   ),
@@ -284,6 +295,8 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
   }
 
   Widget _buildMobileList(List<InvoiceModel> list) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListView.separated(
       itemCount: list.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
@@ -345,11 +358,11 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today_rounded, size: 12, color: Colors.white54),
+                          Icon(Icons.calendar_today_rounded, size: 12, color: isDark ? Colors.white54 : const Color(0xFF64748B)),
                           const SizedBox(width: 4),
                           Text(
                             'Jatuh Tempo: ${AppConstants.formatShortDate(inv.dueDate)}',
-                            style: const TextStyle(fontSize: 11, color: Colors.white60),
+                            style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
                           ),
                         ],
                       ),

@@ -113,6 +113,7 @@ class PaymentListScreen extends ConsumerWidget {
           }
 
           final payments = snapshot.data ?? [];
+          final isDark = Theme.of(context).brightness == Brightness.dark;
 
           return Padding(
             padding: EdgeInsets.all(isDesktop ? 24 : 14),
@@ -124,7 +125,11 @@ class PaymentListScreen extends ConsumerWidget {
                   children: [
                     Text(
                       'Total ${payments.length} Transaksi Tercatat',
-                      style: const TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.white70 : const Color(0xFF475569),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -143,15 +148,20 @@ class PaymentListScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context, WidgetRef ref, VoidCallback onRecord) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.payments_rounded, size: 64, color: Colors.white24),
+          Icon(Icons.payments_rounded, size: 64, color: isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
           const SizedBox(height: 16),
           const Text('Belum ada transaksi pembayaran yang tercatat', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Catat pelunasan atau cicilan dari pelanggan FuchurHost Solutions.', style: TextStyle(color: Colors.white54)),
+          Text(
+            'Catat pelunasan atau cicilan dari pelanggan FuchurHost Solutions.',
+            style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF64748B)),
+          ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
             icon: const Icon(Icons.add, size: 18),
@@ -164,6 +174,8 @@ class PaymentListScreen extends ConsumerWidget {
   }
 
   Widget _buildDesktopTable(BuildContext context, WidgetRef ref, List<PaymentModel> list) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AppCard(
       padding: EdgeInsets.zero,
       child: SingleChildScrollView(
@@ -188,7 +200,7 @@ class PaymentListScreen extends ConsumerWidget {
                       AppConstants.formatRupiah(p.amount),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: p.isReversed ? Colors.white38 : AppColors.success,
+                        color: p.isReversed ? (isDark ? Colors.white38 : const Color(0xFF94A3B8)) : (isDark ? AppColors.success : const Color(0xFF047857)),
                       ),
                     ),
                   ),
@@ -198,7 +210,10 @@ class PaymentListScreen extends ConsumerWidget {
                   DataCell(StatusBadge(status: p.isReversed ? 'dibatalkan' : 'lunas')),
                   DataCell(
                     p.isReversed
-                        ? const Text('Dibatalkan', style: TextStyle(fontSize: 12, color: Colors.white38))
+                        ? Text(
+                            'Dibatalkan',
+                            style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                          )
                         : TextButton(
                             onPressed: () => _handleReversePayment(context, ref, p),
                             child: const Text('Koreksi / Batalkan', style: TextStyle(color: AppColors.danger, fontSize: 12)),
@@ -214,6 +229,8 @@ class PaymentListScreen extends ConsumerWidget {
   }
 
   Widget _buildMobileList(BuildContext context, WidgetRef ref, List<PaymentModel> list) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListView.separated(
       itemCount: list.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
@@ -228,12 +245,12 @@ class PaymentListScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: (p.isReversed ? Colors.white24 : AppColors.success).withValues(alpha: 0.15),
+                    color: (p.isReversed ? (isDark ? Colors.white24 : const Color(0xFFE2E8F0)) : (isDark ? AppColors.success : const Color(0xFF10B981))).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     Icons.payments_rounded,
-                    color: p.isReversed ? Colors.white38 : AppColors.success,
+                    color: p.isReversed ? (isDark ? Colors.white38 : const Color(0xFF94A3B8)) : (isDark ? AppColors.success : const Color(0xFF047857)),
                     size: 22,
                   ),
                 ),
@@ -250,7 +267,7 @@ class PaymentListScreen extends ConsumerWidget {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
-                              color: p.isReversed ? Colors.white38 : null,
+                              color: p.isReversed ? (isDark ? Colors.white38 : const Color(0xFF94A3B8)) : null,
                               decoration: p.isReversed ? TextDecoration.lineThrough : null,
                             ),
                           ),
@@ -260,11 +277,11 @@ class PaymentListScreen extends ConsumerWidget {
                       const SizedBox(height: 4),
                       Text(
                         '${p.paymentMethod} • Ref: ${p.referenceNumber.isNotEmpty ? p.referenceNumber : '-'}',
-                        style: const TextStyle(fontSize: 12, color: Colors.white70),
+                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : const Color(0xFF475569)),
                       ),
                       Text(
                         AppConstants.formatDateTime(p.paymentDate),
-                        style: const TextStyle(fontSize: 11, color: Colors.white38),
+                        style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : const Color(0xFF64748B)),
                       ),
                     ],
                   ),

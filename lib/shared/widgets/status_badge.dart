@@ -17,33 +17,34 @@ class StatusBadge extends StatelessWidget {
     Color fg;
     String display = label ?? status;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final s = status.toLowerCase();
 
     if (s == 'active' || s == 'actice' || s == 'paid' || s == 'lunas') {
-      bg = AppColors.success.withValues(alpha: 0.15);
-      fg = AppColors.success;
+      bg = (isDark ? AppColors.success : const Color(0xFF10B981)).withValues(alpha: isDark ? 0.15 : 0.12);
+      fg = isDark ? AppColors.success : const Color(0xFF047857);
       if (s == 'actice') display = 'Aktif';
       if (s == 'active') display = 'Aktif';
       if (s == 'paid' || s == 'lunas') display = 'Lunas';
     } else if (s == 'pending' || s == 'partial' || s == 'draft') {
-      bg = AppColors.warning.withValues(alpha: 0.15);
-      fg = AppColors.warning;
+      bg = (isDark ? AppColors.warning : const Color(0xFFF59E0B)).withValues(alpha: isDark ? 0.15 : 0.12);
+      fg = isDark ? AppColors.warning : const Color(0xFFB45309);
       if (s == 'partial') display = 'Sebagian';
       if (s == 'pending') display = 'Tertunda';
     } else if (s == 'expired' || s == 'deactive' || s == 'inactive' || s == 'overdue' || s == 'terlambat') {
-      bg = AppColors.danger.withValues(alpha: 0.15);
-      fg = AppColors.danger;
+      bg = (isDark ? AppColors.danger : const Color(0xFFEF4444)).withValues(alpha: isDark ? 0.15 : 0.12);
+      fg = isDark ? AppColors.danger : const Color(0xFFB91C1C);
       if (s == 'deactive') display = 'Nonaktif';
       if (s == 'expired') display = 'Kedaluwarsa';
       if (s == 'overdue') display = 'Terlambat';
     } else if (s == 'cancelled' || s == 'dibatalkan' || s == 'archived') {
-      bg = Colors.grey.withValues(alpha: 0.2);
-      fg = Colors.grey.shade400;
+      bg = (isDark ? Colors.grey : const Color(0xFF94A3B8)).withValues(alpha: isDark ? 0.2 : 0.15);
+      fg = isDark ? Colors.grey.shade400 : const Color(0xFF475569);
       if (s == 'cancelled') display = 'Dibatalkan';
       if (s == 'archived') display = 'Diarsipkan';
     } else {
-      bg = AppColors.cyan.withValues(alpha: 0.15);
-      fg = AppColors.cyan;
+      bg = (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: isDark ? 0.15 : 0.12);
+      fg = isDark ? AppColors.cyan : const Color(0xFF0369A1);
     }
 
     return Container(

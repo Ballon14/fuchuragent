@@ -135,6 +135,8 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
       ..sort((a, b) => a.basePrice.compareTo(b.basePrice));
     final isEdit = widget.service != null;
     final isMobile = MediaQuery.of(context).size.width < 600;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
 
     return AlertDialog(
       title: Text(isEdit ? 'Edit Layanan VPS' : 'Tambah Layanan VPS Baru'),
@@ -153,9 +155,9 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                     stream: customersAsync,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10),
-                          child: LinearProgressIndicator(color: AppColors.cyan, minHeight: 2),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: LinearProgressIndicator(color: primaryColor, minHeight: 2),
                         );
                       }
 
@@ -182,10 +184,13 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                             children: [
                               const Icon(Icons.info_outline, size: 18, color: AppColors.warning),
                               const SizedBox(width: 8),
-                              const Expanded(
+                              Expanded(
                                 child: Text(
                                   'Belum ada data pelanggan.',
-                                  style: TextStyle(fontSize: 12, color: Colors.white70),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark ? Colors.white70 : const Color(0xFF475569),
+                                  ),
                                 ),
                               ),
                               TextButton(
@@ -196,7 +201,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                                     setState(() => _selectedCustomerId = newCust.id);
                                   }
                                 },
-                                child: const Text('Tambah', style: TextStyle(color: AppColors.cyan, fontSize: 12)),
+                                child: Text('Tambah', style: TextStyle(color: primaryColor, fontSize: 12)),
                               ),
                             ],
                           ),
@@ -230,15 +235,30 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                 ],
 
                 // Package quick select chips
-                const Text('Pilih Template Paket VPS:', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                Text(
+                  'Pilih Template Paket VPS:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white70 : const Color(0xFF475569),
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
                   children: packages.map((pkg) {
                     final selected = _selectedPackageName == pkg.name;
                     return ChoiceChip(
-                      label: Text(pkg.name, style: TextStyle(fontSize: 11, color: selected ? Colors.black : Colors.white)),
+                      label: Text(
+                        pkg.name,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: selected
+                              ? (isDark ? Colors.black : Colors.white)
+                              : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                        ),
+                      ),
                       selected: selected,
+                      selectedColor: primaryColor,
                       onSelected: (_) => _onPackageSelected(pkg),
                     );
                   }).toList(),

@@ -111,6 +111,8 @@ class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
   @override
   Widget build(BuildContext context) {
     final invoicesAsync = ref.watch(invoiceRepositoryProvider).watchInvoices(statusFilter: 'unpaid');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
 
     return AlertDialog(
       title: const Text('Catat Pembayaran Tagihan'),
@@ -128,9 +130,9 @@ class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
                     stream: invoicesAsync,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10),
-                          child: LinearProgressIndicator(color: AppColors.cyan, minHeight: 2),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: LinearProgressIndicator(color: primaryColor, minHeight: 2),
                         );
                       }
 
@@ -143,14 +145,17 @@ class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.info_outline, size: 18, color: AppColors.warning),
-                              SizedBox(width: 8),
+                              const Icon(Icons.info_outline, size: 18, color: AppColors.warning),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Tidak ada tagihan yang belum lunas.',
-                                  style: TextStyle(fontSize: 12, color: Colors.white70),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark ? Colors.white70 : const Color(0xFF475569),
+                                  ),
                                 ),
                               ),
                             ],
@@ -237,7 +242,14 @@ class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           child: _isLoading
-              ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+              ? SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: isDark ? Colors.black : Colors.white,
+                  ),
+                )
               : const Text('Simpan Pembayaran'),
         ),
       ],

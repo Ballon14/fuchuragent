@@ -110,6 +110,8 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
   @override
   Widget build(BuildContext context) {
     final customersAsync = ref.watch(customerRepositoryProvider).watchCustomers();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
 
     return AlertDialog(
       title: const Text('Buat Tagihan Baru'),
@@ -127,9 +129,9 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
                     stream: customersAsync,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10),
-                          child: LinearProgressIndicator(color: AppColors.cyan, minHeight: 2),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: LinearProgressIndicator(color: primaryColor, minHeight: 2),
                         );
                       }
 
@@ -152,14 +154,17 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.info_outline, size: 18, color: AppColors.warning),
-                              SizedBox(width: 8),
+                              const Icon(Icons.info_outline, size: 18, color: AppColors.warning),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Belum ada data pelanggan untuk ditagih.',
-                                  style: TextStyle(fontSize: 12, color: Colors.white70),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark ? Colors.white70 : const Color(0xFF475569),
+                                  ),
                                 ),
                               ),
                             ],

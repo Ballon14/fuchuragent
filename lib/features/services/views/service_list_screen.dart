@@ -43,6 +43,8 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
   Widget build(BuildContext context) {
     final serviceRepo = ref.watch(serviceRepositoryProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 900;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
 
     return Scaffold(
       appBar: AppBar(
@@ -67,8 +69,8 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
           ? null
           : FloatingActionButton.extended(
               onPressed: _openCreateDialog,
-              backgroundColor: AppColors.cyan,
-              foregroundColor: Colors.black,
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
               icon: const Icon(Icons.add_task_rounded),
               label: const Text('Tambah VPS', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
@@ -76,7 +78,7 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
         stream: serviceRepo.watchServices(statusFilter: _statusFilter),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
+            return Center(child: CircularProgressIndicator(color: primaryColor));
           }
 
           if (snapshot.hasError) {
@@ -111,7 +113,7 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                       ),
                       DropdownButton<String>(
                         value: _statusFilter,
-                        dropdownColor: AppColors.surfaceDark,
+                        dropdownColor: isDark ? AppColors.surfaceDark : Colors.white,
                         items: const [
                           DropdownMenuItem(value: 'all', child: Text('Semua Status')),
                           DropdownMenuItem(value: 'active', child: Text('Hanya Aktif')),
@@ -125,7 +127,10 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                       ),
                       Text(
                         'Menampilkan ${services.length} Layanan VPS',
-                        style: const TextStyle(color: Colors.white54, fontSize: 13),
+                        style: TextStyle(
+                          color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -186,16 +191,19 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
   }
 
   Widget _buildFilterChip(String value, String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
     final isSelected = _statusFilter == value;
+
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
         if (selected) setState(() => _statusFilter = value);
       },
-      selectedColor: AppColors.cyan.withValues(alpha: 0.2),
+      selectedColor: primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.cyan : Colors.white70,
+        color: isSelected ? primaryColor : (isDark ? Colors.white70 : const Color(0xFF475569)),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         fontSize: 12,
       ),
@@ -203,15 +211,20 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.dns_rounded, size: 64, color: Colors.white24),
+          Icon(Icons.dns_rounded, size: 64, color: isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
           const SizedBox(height: 16),
           const Text('Belum ada layanan VPS yang ditemukan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Daftarkan VPS baru untuk pelanggan FuchurHost Solutions.', style: TextStyle(color: Colors.white54)),
+          Text(
+            'Daftarkan VPS baru untuk pelanggan FuchurHost Solutions.',
+            style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF64748B)),
+          ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
             icon: const Icon(Icons.add, size: 18),
@@ -224,6 +237,9 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
   }
 
   Widget _buildDesktopTable(List<VpsServiceModel> list) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return AppCard(
       padding: EdgeInsets.zero,
       child: SingleChildScrollView(
@@ -256,7 +272,10 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                         if (s.isExpired)
                           const Text('Kedaluwarsa', style: TextStyle(fontSize: 10, color: AppColors.danger))
                         else
-                          Text('${s.daysUntilExpiry} hari tersisa', style: const TextStyle(fontSize: 10, color: Colors.white54)),
+                          Text(
+                            '${s.daysUntilExpiry} hari tersisa',
+                            style: TextStyle(fontSize: 10, color: isDark ? Colors.white54 : const Color(0xFF64748B)),
+                          ),
                       ],
                     ),
                   ),
@@ -264,7 +283,7 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                   DataCell(StatusBadge(status: s.status)),
                   DataCell(
                     IconButton(
-                      icon: const Icon(Icons.chevron_right_rounded, color: AppColors.cyan),
+                      icon: Icon(Icons.chevron_right_rounded, color: primaryColor),
                       onPressed: () => context.go('/services/${s.id}'),
                     ),
                   ),
@@ -278,6 +297,9 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
   }
 
   Widget _buildMobileList(List<VpsServiceModel> list) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return ListView.separated(
       itemCount: list.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
@@ -298,10 +320,10 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.cyan.withValues(alpha: 0.15),
+                          color: primaryColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.dns_rounded, color: AppColors.cyan, size: 20),
+                        child: Icon(Icons.dns_rounded, color: primaryColor, size: 20),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -317,7 +339,7 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                             const SizedBox(height: 2),
                             Text(
                               '${s.packageName} • ${AppConstants.formatRupiah(s.price)}/bln',
-                              style: const TextStyle(fontSize: 12, color: Colors.white70),
+                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : const Color(0xFF475569)),
                             ),
                           ],
                         ),
@@ -343,7 +365,7 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                             'Exp: ${AppConstants.formatShortDate(s.endDate)} (${s.daysUntilExpiry} hari)',
                             style: TextStyle(
                               fontSize: 11,
-                              color: s.isExpired ? AppColors.danger : Colors.white60,
+                              color: s.isExpired ? AppColors.danger : (isDark ? Colors.white60 : const Color(0xFF64748B)),
                               fontWeight: s.isExpired ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
@@ -352,12 +374,19 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceLightDark,
+                          color: isDark ? AppColors.surfaceLightDark : const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                          ),
                         ),
                         child: Text(
                           '${s.vcpu}vCPU / ${s.ramGb}GB RAM',
-                          style: const TextStyle(fontSize: 10, color: Colors.white70),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isDark ? Colors.white70 : const Color(0xFF334155),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],

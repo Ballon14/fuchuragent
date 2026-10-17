@@ -23,15 +23,15 @@ class SettingsScreen extends ConsumerWidget {
               title: 'Identitas Aplikasi & Bisnis',
               child: Column(
                 children: [
-                  _buildSettingRow('Nama Aplikasi', AppConstants.appName),
+                  _buildSettingRow(context, 'Nama Aplikasi', AppConstants.appName),
                   const Divider(height: 16),
-                  _buildSettingRow('Entitas Bisnis', AppConstants.companyName),
+                  _buildSettingRow(context, 'Entitas Bisnis', AppConstants.companyName),
                   const Divider(height: 16),
-                  _buildSettingRow('Mata Uang Operasional', '${AppConstants.currencyCode} (Rupiah)'),
+                  _buildSettingRow(context, 'Mata Uang Operasional', '${AppConstants.currencyCode} (Rupiah)'),
                   const Divider(height: 16),
-                  _buildSettingRow('Zona Waktu Sistem', '${AppConstants.timezone} (WIB)'),
+                  _buildSettingRow(context, 'Zona Waktu Sistem', '${AppConstants.timezone} (WIB)'),
                   const Divider(height: 16),
-                  _buildSettingRow('Versi Aplikasi', '1.0.0+1 (Production Ready)'),
+                  _buildSettingRow(context, 'Versi Aplikasi', '1.0.0+1 (Production Ready)'),
                 ],
               ),
             ),
@@ -43,15 +43,15 @@ class SettingsScreen extends ConsumerWidget {
               title: 'Infrastruktur Backend & Firebase',
               child: Column(
                 children: [
-                  _buildSettingRow('Firebase Project ID', 'fuchuragent'),
+                  _buildSettingRow(context, 'Firebase Project ID', 'fuchuragent'),
                   const Divider(height: 16),
-                  _buildSettingRow('Database Operasional', 'Cloud Firestore (Real-Time NoSQL)'),
+                  _buildSettingRow(context, 'Database Operasional', 'Cloud Firestore (Real-Time NoSQL)'),
                   const Divider(height: 16),
-                  _buildSettingRow('Layanan Autentikasi', 'Firebase Authentication'),
+                  _buildSettingRow(context, 'Layanan Autentikasi', 'Firebase Authentication'),
                   const Divider(height: 16),
-                  _buildSettingRow('Realtime Database', 'Tersambung (Asia Southeast 1)'),
+                  _buildSettingRow(context, 'Realtime Database', 'Tersambung (Asia Southeast 1)'),
                   const Divider(height: 16),
-                  _buildSettingRow('Penyimpanan Media', 'Nonaktif (Free Tier — 0 Byte Storage)'),
+                  _buildSettingRow(context, 'Penyimpanan Media', 'Nonaktif (Free Tier — 0 Byte Storage)'),
                 ],
               ),
             ),
@@ -80,9 +80,12 @@ class SettingsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Inisialisasi ulang paket katalog referensi bawaan (Basic, Standard, Semi Pro, Pro, Snipe-it):',
-                    style: TextStyle(fontSize: 13, color: Colors.white70),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : const Color(0xFF475569),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
@@ -106,11 +109,18 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSettingRow(String label, String value) {
+  Widget _buildSettingRow(BuildContext context, String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, color: Colors.white70)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.white70 : const Color(0xFF475569),
+          ),
+        ),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
       ],
     );

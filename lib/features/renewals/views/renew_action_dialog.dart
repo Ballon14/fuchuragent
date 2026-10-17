@@ -81,6 +81,9 @@ class _RenewActionDialogState extends ConsumerState<RenewActionDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return AlertDialog(
       title: const Text('Perpanjang Layanan VPS'),
       content: SizedBox(
@@ -92,37 +95,64 @@ class _RenewActionDialogState extends ConsumerState<RenewActionDialog> {
             children: [
               Text('Domain: ${widget.service.domain}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 4),
-              Text('Paket: ${widget.service.packageName}', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+              Text(
+                'Paket: ${widget.service.packageName}',
+                style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B), fontSize: 13),
+              ),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceLightDark,
+                  color: isDark ? AppColors.surfaceLightDark : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: isDark ? AppColors.borderDark : const Color(0xFFE2E8F0)),
                 ),
                 child: Column(
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Jatuh Tempo Saat Ini:', style: TextStyle(fontSize: 12, color: Colors.white60)),
-                        Text(AppConstants.formatDate(widget.service.endDate), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        Text(
+                          'Jatuh Tempo Saat Ini:',
+                          style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
+                        ),
+                        Text(
+                          AppConstants.formatDate(widget.service.endDate),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                        ),
                       ],
                     ),
                     const Divider(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Jatuh Tempo Baru:', style: TextStyle(fontSize: 12, color: AppColors.cyan)),
-                        Text(AppConstants.formatDate(_calculatedNewEndDate), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.cyan)),
+                        Text('Jatuh Tempo Baru:', style: TextStyle(fontSize: 12, color: primaryColor)),
+                        Text(
+                          AppConstants.formatDate(_calculatedNewEndDate),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: primaryColor),
+                        ),
                       ],
                     ),
                     const Divider(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Estimasi Biaya:', style: TextStyle(fontSize: 12, color: Colors.white60)),
-                        Text(AppConstants.formatRupiah(_calculatedPrice), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.success)),
+                        Text(
+                          'Estimasi Biaya:',
+                          style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
+                        ),
+                        Text(
+                          AppConstants.formatRupiah(_calculatedPrice),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: isDark ? AppColors.success : const Color(0xFF059669),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -136,8 +166,17 @@ class _RenewActionDialogState extends ConsumerState<RenewActionDialog> {
                 children: [1, 3, 6, 12].map((m) {
                   final selected = _durationMonths == m;
                   return ChoiceChip(
-                    label: Text('$m Bulan', style: TextStyle(fontSize: 12, color: selected ? Colors.black : Colors.white)),
+                    label: Text(
+                      '$m Bulan',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: selected
+                            ? (isDark ? Colors.black : Colors.white)
+                            : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                      ),
+                    ),
                     selected: selected,
+                    selectedColor: primaryColor,
                     onSelected: (s) {
                       if (s) setState(() => _durationMonths = m);
                     },
@@ -158,7 +197,14 @@ class _RenewActionDialogState extends ConsumerState<RenewActionDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           child: _isLoading
-              ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+              ? SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: isDark ? Colors.black : Colors.white,
+                  ),
+                )
               : const Text('Konfirmasi Perpanjangan'),
         ),
       ],

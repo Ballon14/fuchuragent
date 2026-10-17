@@ -33,8 +33,11 @@ class PackageListScreen extends ConsumerWidget {
       body: StreamBuilder<List<VpsPackageModel>>(
         stream: packageRepo.watchPackages(),
         builder: (context, snapshot) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
+            return Center(child: CircularProgressIndicator(color: primaryColor));
           }
 
           final packages = (snapshot.data != null && snapshot.data!.isNotEmpty)
@@ -47,9 +50,12 @@ class PackageListScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Konfigurasi Spesifikasi & Skema Diskon Durasi',
-                  style: TextStyle(fontSize: 14, color: Colors.white70),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white70 : const Color(0xFF475569),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 LayoutBuilder(
@@ -72,7 +78,7 @@ class PackageListScreen extends ConsumerWidget {
                         return AppCard(
                           title: pkg.name,
                           trailing: IconButton(
-                            icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.cyan),
+                            icon: Icon(Icons.edit_outlined, size: 18, color: primaryColor),
                             onPressed: () async {
                               final updated = await PackageFormDialog.show(context, package: pkg);
                               if (updated != null) {
@@ -85,35 +91,48 @@ class PackageListScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 '${AppConstants.formatRupiah(pkg.basePrice)} / bln',
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.cyan),
+                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryColor),
                               ),
                               const SizedBox(height: 12),
                               if (pkg.description.isNotEmpty) ...[
-                                Text(pkg.description, style: const TextStyle(fontSize: 12, color: Colors.white60)),
+                                Text(
+                                  pkg.description,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                  ),
+                                ),
                                 const SizedBox(height: 12),
                               ],
                               const Divider(),
-                              _buildSpecItem(Icons.memory_rounded, '${pkg.vcpu} vCPU Core'),
+                              _buildSpecItem(context, Icons.memory_rounded, '${pkg.vcpu} vCPU Core'),
                               const SizedBox(height: 8),
-                              _buildSpecItem(Icons.storage_rounded, '${pkg.ramGb} GB RAM'),
+                              _buildSpecItem(context, Icons.storage_rounded, '${pkg.ramGb} GB RAM'),
                               const SizedBox(height: 8),
-                              _buildSpecItem(Icons.disc_full_rounded, '${pkg.storageGb} GB HDD Storage'),
+                              _buildSpecItem(context, Icons.disc_full_rounded, '${pkg.storageGb} GB HDD Storage'),
                               const Divider(),
-                              const Text('Diskon Berlangganan:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white54)),
+                              Text(
+                                'Diskon Berlangganan:',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                                ),
+                              ),
                               const SizedBox(height: 6),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  _buildDiscountChip('1 Bln (8%)', AppConstants.formatRupiah(pkg.calculatePrice(1))),
-                                  _buildDiscountChip('3 Bln (10%)', AppConstants.formatRupiah(pkg.calculatePrice(3))),
+                                  _buildDiscountChip(context, '1 Bln (8%)', AppConstants.formatRupiah(pkg.calculatePrice(1))),
+                                  _buildDiscountChip(context, '3 Bln (10%)', AppConstants.formatRupiah(pkg.calculatePrice(3))),
                                 ],
                               ),
                               const SizedBox(height: 4),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  _buildDiscountChip('6 Bln (12%)', AppConstants.formatRupiah(pkg.calculatePrice(6))),
-                                  _buildDiscountChip('12 Bln (15%)', AppConstants.formatRupiah(pkg.calculatePrice(12))),
+                                  _buildDiscountChip(context, '6 Bln (12%)', AppConstants.formatRupiah(pkg.calculatePrice(6))),
+                                  _buildDiscountChip(context, '12 Bln (15%)', AppConstants.formatRupiah(pkg.calculatePrice(12))),
                                 ],
                               ),
                             ],
@@ -131,27 +150,38 @@ class PackageListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSpecItem(IconData icon, String label) {
+  Widget _buildSpecItem(BuildContext context, IconData icon, String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.white70),
+        Icon(icon, size: 16, color: isDark ? Colors.white70 : const Color(0xFF64748B)),
         const SizedBox(width: 8),
         Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
       ],
     );
   }
 
-  Widget _buildDiscountChip(String duration, String price) {
+  Widget _buildDiscountChip(BuildContext context, String duration, String price) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLightDark,
+        color: isDark ? AppColors.surfaceLightDark : const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(duration, style: const TextStyle(fontSize: 10, color: Colors.white54)),
+          Text(
+            duration,
+            style: TextStyle(
+              fontSize: 10,
+              color: isDark ? Colors.white54 : const Color(0xFF64748B),
+            ),
+          ),
           Text(price, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
         ],
       ),

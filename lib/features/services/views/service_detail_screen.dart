@@ -43,6 +43,9 @@ class ServiceDetailScreen extends ConsumerWidget {
           );
         }
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
         return Scaffold(
           appBar: AppBar(
             title: Text(svc.domain),
@@ -74,33 +77,36 @@ class ServiceDetailScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.cyan.withValues(alpha: 0.15),
+                          color: primaryColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(Icons.dns_rounded, color: AppColors.cyan, size: 36),
+                        child: Icon(Icons.dns_rounded, color: primaryColor, size: 36),
                       ),
                       const SizedBox(width: 20),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    svc.domain,
-                                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                                  ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  svc.domain,
+                                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                                 ),
-                                StatusBadge(status: svc.status),
-                              ],
+                              ),
+                              StatusBadge(status: svc.status),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${svc.packageName} • ${svc.deploymentType}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B),
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '${svc.packageName} • ${svc.deploymentType}',
-                              style: const TextStyle(fontSize: 13, color: Colors.white70),
-                            ),
-                            const SizedBox(height: 16),
+                          ),
+                          const SizedBox(height: 16),
                             Wrap(
                               spacing: 12,
                               runSpacing: 8,
@@ -160,13 +166,13 @@ class ServiceDetailScreen extends ConsumerWidget {
                         title: 'Spesifikasi Instance',
                         child: Column(
                           children: [
-                            _buildInfoRow('Processor', '${svc.vcpu} vCPU Core'),
+                            _buildInfoRow(context, 'Processor', '${svc.vcpu} vCPU Core'),
                             const Divider(height: 16),
-                            _buildInfoRow('Memory RAM', '${svc.ramGb} GB RAM'),
+                            _buildInfoRow(context, 'Memory RAM', '${svc.ramGb} GB RAM'),
                             const Divider(height: 16),
-                            _buildInfoRow('Storage Disk', '${svc.storageGb} GB HDD/NVMe'),
+                            _buildInfoRow(context, 'Storage Disk', '${svc.storageGb} GB HDD/NVMe'),
                             const Divider(height: 16),
-                            _buildInfoRow('Tipe Deployment', svc.deploymentType),
+                            _buildInfoRow(context, 'Tipe Deployment', svc.deploymentType),
                           ],
                         ),
                       ),
@@ -177,13 +183,14 @@ class ServiceDetailScreen extends ConsumerWidget {
                         title: 'Masa Aktif & Biaya',
                         child: Column(
                           children: [
-                            _buildInfoRow('Harga Sewa', '${AppConstants.formatRupiah(svc.price)} / bln'),
+                            _buildInfoRow(context, 'Harga Sewa', '${AppConstants.formatRupiah(svc.price)} / bln'),
                             const Divider(height: 16),
-                            _buildInfoRow('Mulai Aktif', AppConstants.formatDate(svc.startDate)),
+                            _buildInfoRow(context, 'Mulai Aktif', AppConstants.formatDate(svc.startDate)),
                             const Divider(height: 16),
-                            _buildInfoRow('Jatuh Tempo', AppConstants.formatDate(svc.endDate)),
+                            _buildInfoRow(context, 'Jatuh Tempo', AppConstants.formatDate(svc.endDate)),
                             const Divider(height: 16),
-                            _buildInfoRow('Sisa Waktu', svc.isExpired ? 'Telah Berakhir' : '${svc.daysUntilExpiry} Hari'),
+                            _buildInfoRow(context, 'Sisa Waktu', svc.isExpired ? 'Telah Berakhir' : '${svc.daysUntilExpiry} Hari',
+                                color: svc.isExpired ? const Color(0xFFEF4444) : null),
                           ],
                         ),
                       ),
@@ -198,12 +205,17 @@ class ServiceDetailScreen extends ConsumerWidget {
                   title: 'Informasi Penanggung Jawab & Catatan',
                   child: Column(
                     children: [
-                      _buildInfoRow('Worker Staf', svc.worker ?? 'Belum ditentukan'),
+                      _buildInfoRow(context, 'Worker Staf', svc.worker ?? 'Belum ditentukan'),
                       const Divider(height: 16),
-                      _buildInfoRow('Status Honor Worker', svc.workerPaid ? 'LUNAS' : 'BELUM DIBAYAR'),
+                      _buildInfoRow(
+                        context,
+                        'Status Honor Worker',
+                        svc.workerPaid ? 'LUNAS' : 'BELUM DIBAYAR',
+                        color: svc.workerPaid ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                      ),
                       if (svc.notes.isNotEmpty) ...[
                         const Divider(height: 16),
-                        _buildInfoRow('Catatan Teknis', svc.notes),
+                        _buildInfoRow(context, 'Catatan Teknis', svc.notes),
                       ],
                     ],
                   ),
@@ -216,12 +228,26 @@ class ServiceDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(BuildContext context, String label, String value, {Color? color}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 13)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        Text(
+          label,
+          style: TextStyle(
+            color: isDark ? Colors.white60 : const Color(0xFF64748B),
+            fontSize: 13,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+            color: color ?? (isDark ? Colors.white : const Color(0xFF0F172A)),
+          ),
+        ),
       ],
     );
   }

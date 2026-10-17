@@ -49,6 +49,7 @@ class AppShell extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final isAdmin = userProfile?.isAdmin ?? false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final visibleNavItems = navItems.where((item) => !item.adminOnly || isAdmin).toList();
 
@@ -61,7 +62,7 @@ class AppShell extends ConsumerWidget {
               width: 260,
               decoration: BoxDecoration(
                 color: Theme.of(context).cardTheme.color,
-                border: const Border(right: BorderSide(color: AppColors.borderDark)),
+                border: Border(right: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight)),
               ),
               child: Column(
                 children: [
@@ -77,7 +78,7 @@ class AppShell extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.cyan.withValues(alpha: 0.25),
+                                color: (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: 0.25),
                                 blurRadius: 10,
                               ),
                             ],
@@ -88,16 +89,23 @@ class AppShell extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Column(
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               AppConstants.appName,
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
                             ),
                             Text(
                               AppConstants.companyName,
-                              style: TextStyle(fontSize: 11, color: Colors.white54),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                              ),
                             ),
                           ],
                         ),
@@ -114,27 +122,35 @@ class AppShell extends ConsumerWidget {
                         final isSelected = currentRoute == item.route ||
                             (item.route != '/' && currentRoute.startsWith(item.route));
 
+                        final primaryAccent = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 4),
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.cyan.withValues(alpha: 0.15) : Colors.transparent,
+                            color: isSelected
+                                ? primaryAccent.withValues(alpha: isDark ? 0.15 : 0.08)
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
                             border: isSelected
-                                ? Border.all(color: AppColors.cyan.withValues(alpha: 0.3))
+                                ? Border.all(color: primaryAccent.withValues(alpha: 0.3))
                                 : null,
                           ),
                           child: ListTile(
                             dense: true,
                             leading: Icon(
                               item.icon,
-                              color: isSelected ? AppColors.cyan : Colors.white60,
+                              color: isSelected
+                                  ? primaryAccent
+                                  : (isDark ? Colors.white60 : const Color(0xFF64748B)),
                               size: 20,
                             ),
                             title: Text(
                               item.title,
                               style: TextStyle(
-                                color: isSelected ? Colors.white : Colors.white70,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                color: isSelected
+                                    ? (isDark ? Colors.white : primaryAccent)
+                                    : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                                 fontSize: 13,
                               ),
                             ),
@@ -155,12 +171,15 @@ class AppShell extends ConsumerWidget {
                           children: [
                             CircleAvatar(
                               radius: 18,
-                              backgroundColor: AppColors.cyan.withValues(alpha: 0.2),
+                              backgroundColor: (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: 0.15),
                               child: Text(
                                 (userProfile?.name.isNotEmpty ?? false)
                                     ? userProfile!.name[0].toUpperCase()
                                     : 'A',
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.cyan),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? AppColors.cyan : const Color(0xFF0284C7),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -170,7 +189,11 @@ class AppShell extends ConsumerWidget {
                                 children: [
                                   Text(
                                     userProfile?.name ?? 'Admin',
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                    ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -179,7 +202,9 @@ class AppShell extends ConsumerWidget {
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
-                                      color: isAdmin ? AppColors.cyan : Colors.white54,
+                                      color: isAdmin
+                                          ? (isDark ? AppColors.cyan : const Color(0xFF0284C7))
+                                          : (isDark ? Colors.white54 : const Color(0xFF64748B)),
                                     ),
                                   ),
                                 ],
@@ -190,14 +215,21 @@ class AppShell extends ConsumerWidget {
                               icon: Icon(
                                 themeMode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
                                 size: 18,
+                                color: isDark ? Colors.white70 : const Color(0xFF64748B),
                               ),
+                              tooltip: 'Ganti Tema',
                               onPressed: () {
                                 ref.read(themeModeProvider.notifier).toggle();
                               },
                             ),
                             // Logout button
                             IconButton(
-                              icon: const Icon(Icons.logout_rounded, size: 18, color: Colors.white54),
+                              icon: Icon(
+                                Icons.logout_rounded,
+                                size: 18,
+                                color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                              ),
+                              tooltip: 'Keluar',
                               onPressed: () async {
                                 await ref.read(authRepositoryProvider).signOut();
                                 if (context.mounted) context.go('/login');
@@ -402,17 +434,23 @@ class AppShell extends ConsumerWidget {
     dynamic userProfile,
     bool isAdmin,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surfaceDark,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             boxShadow: [
-              BoxShadow(color: Colors.black54, blurRadius: 20, spreadRadius: 4),
+              BoxShadow(
+                color: isDark ? Colors.black54 : Colors.black12,
+                blurRadius: 20,
+                spreadRadius: 4,
+              ),
             ],
           ),
           child: SafeArea(
@@ -428,7 +466,7 @@ class AppShell extends ConsumerWidget {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.white24,
+                        color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -440,22 +478,27 @@ class AppShell extends ConsumerWidget {
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          AppColors.surfaceLightDark,
-                          AppColors.cyan.withValues(alpha: 0.08),
-                        ],
+                        colors: isDark
+                            ? [AppColors.surfaceLightDark, AppColors.cyan.withValues(alpha: 0.08)]
+                            : [const Color(0xFFF1F5F9), const Color(0xFFE0F2FE).withValues(alpha: 0.5)],
                       ),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.cyan.withValues(alpha: 0.2)),
+                      border: Border.all(
+                        color: isDark ? AppColors.cyan.withValues(alpha: 0.2) : const Color(0xFFBAE6FD),
+                      ),
                     ),
                     child: Row(
                       children: [
                         CircleAvatar(
                           radius: 22,
-                          backgroundColor: AppColors.cyan.withValues(alpha: 0.2),
+                          backgroundColor: (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: 0.15),
                           child: Text(
                             (userProfile?.name.isNotEmpty ?? false) ? userProfile!.name[0].toUpperCase() : 'A',
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.cyan, fontSize: 16),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? AppColors.cyan : const Color(0xFF0284C7),
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -465,13 +508,20 @@ class AppShell extends ConsumerWidget {
                             children: [
                               Text(
                                 userProfile?.name ?? 'Admin FuchurHost',
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
                                 userProfile?.email ?? 'admin@fuchurhost.com',
-                                style: const TextStyle(fontSize: 11, color: Colors.white60),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -481,7 +531,9 @@ class AppShell extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: isAdmin ? AppColors.cyan.withValues(alpha: 0.2) : Colors.white12,
+                            color: isAdmin
+                                ? (isDark ? AppColors.cyan.withValues(alpha: 0.2) : const Color(0xFFE0F2FE))
+                                : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -489,7 +541,9 @@ class AppShell extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              color: isAdmin ? AppColors.cyan : Colors.white70,
+                              color: isAdmin
+                                  ? (isDark ? AppColors.cyan : const Color(0xFF0284C7))
+                                  : (isDark ? Colors.white70 : const Color(0xFF475569)),
                             ),
                           ),
                         ),
@@ -498,9 +552,14 @@ class AppShell extends ConsumerWidget {
                   ),
 
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     'OPERASIONAL & KEUANGAN',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white54, letterSpacing: 0.8),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                      letterSpacing: 0.8,
+                    ),
                   ),
                   const SizedBox(height: 10),
 
@@ -519,6 +578,7 @@ class AppShell extends ConsumerWidget {
                         color: AppColors.success,
                         title: 'Pembayaran',
                         route: '/payments',
+                        isDark: isDark,
                       ),
                       _buildMenuGridItem(
                         ctx,
@@ -526,20 +586,15 @@ class AppShell extends ConsumerWidget {
                         color: AppColors.warning,
                         title: 'Perpanjangan',
                         route: '/renewals',
+                        isDark: isDark,
                       ),
                       _buildMenuGridItem(
                         ctx,
                         icon: Icons.inventory_2_rounded,
-                        color: AppColors.electricBlue,
+                        color: isDark ? AppColors.electricBlue : const Color(0xFF0284C7),
                         title: 'Paket VPS',
                         route: '/packages',
-                      ),
-                      _buildMenuGridItem(
-                        ctx,
-                        icon: Icons.cloud_download_rounded,
-                        color: AppColors.cyan,
-                        title: 'Impor Sheets',
-                        route: '/imports',
+                        isDark: isDark,
                       ),
                       _buildMenuGridItem(
                         ctx,
@@ -547,6 +602,7 @@ class AppShell extends ConsumerWidget {
                         color: const Color(0xFFA855F7),
                         title: 'Laporan',
                         route: '/reports',
+                        isDark: isDark,
                       ),
                       _buildMenuGridItem(
                         ctx,
@@ -554,14 +610,28 @@ class AppShell extends ConsumerWidget {
                         color: AppColors.warning,
                         title: 'Notifikasi',
                         route: '/notifications',
+                        isDark: isDark,
+                      ),
+                      _buildMenuGridItem(
+                        ctx,
+                        icon: Icons.settings_rounded,
+                        color: isDark ? AppColors.cyan : const Color(0xFF0284C7),
+                        title: 'Pengaturan',
+                        route: '/settings',
+                        isDark: isDark,
                       ),
                     ],
                   ),
 
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'SISTEM & PENGATURAN',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white54, letterSpacing: 0.8),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                      letterSpacing: 0.8,
+                    ),
                   ),
                   const SizedBox(height: 10),
 
@@ -573,6 +643,7 @@ class AppShell extends ConsumerWidget {
                       title: 'Pengguna & Hak Akses',
                       subtitle: 'Kelola akun administrator dan staf FuchurHost',
                       route: '/users',
+                      isDark: isDark,
                     ),
                     _buildListMenuItem(
                       ctx,
@@ -580,6 +651,7 @@ class AppShell extends ConsumerWidget {
                       title: 'Audit Log',
                       subtitle: 'Catatan aktivitas keamanan dan transaksi finansial',
                       route: '/audit',
+                      isDark: isDark,
                     ),
                   ],
                   _buildListMenuItem(
@@ -588,10 +660,11 @@ class AppShell extends ConsumerWidget {
                     title: 'Pengaturan Sistem',
                     subtitle: 'Preferensi zona waktu, mata uang, dan backup',
                     route: '/settings',
+                    isDark: isDark,
                   ),
 
                   const SizedBox(height: 14),
-                  const Divider(),
+                  Divider(color: isDark ? AppColors.borderDark : AppColors.borderLight),
 
                   // Logout action
                   ListTile(
@@ -605,7 +678,10 @@ class AppShell extends ConsumerWidget {
                       child: const Icon(Icons.logout_rounded, color: AppColors.danger, size: 20),
                     ),
                     title: const Text('Keluar dari Akun', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold, fontSize: 13)),
-                    subtitle: const Text('Akhiri sesi operasional Fuchur Agent pada perangkat ini', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                    subtitle: Text(
+                      'Akhiri sesi operasional Fuchur Agent pada perangkat ini',
+                      style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                    ),
                     onTap: () async {
                       Navigator.of(ctx).pop();
                       await ref.read(authRepositoryProvider).signOut();
@@ -628,6 +704,7 @@ class AppShell extends ConsumerWidget {
     required Color color,
     required String title,
     required String route,
+    required bool isDark,
   }) {
     return InkWell(
       onTap: () {
@@ -637,9 +714,9 @@ class AppShell extends ConsumerWidget {
       borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surfaceLightDark,
+          color: isDark ? AppColors.surfaceLightDark : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.borderLight),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -655,7 +732,11 @@ class AppShell extends ConsumerWidget {
             const SizedBox(height: 8),
             Text(
               title,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+              ),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -672,20 +753,38 @@ class AppShell extends ConsumerWidget {
     required String title,
     required String subtitle,
     required String route,
+    required bool isDark,
   }) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppColors.surfaceLightDark,
+          color: isDark ? AppColors.surfaceLightDark : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, color: AppColors.cyan, size: 20),
+        child: Icon(icon, color: isDark ? AppColors.cyan : const Color(0xFF0284C7), size: 20),
       ),
-      title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.white54)),
-      trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.white38),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : const Color(0xFF0F172A),
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 11,
+          color: isDark ? Colors.white54 : const Color(0xFF64748B),
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        size: 18,
+        color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+      ),
       onTap: () {
         Navigator.of(context).pop();
         context.go(route);

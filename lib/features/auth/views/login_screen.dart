@@ -169,18 +169,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: Card(
-              color: AppColors.surfaceDark,
+              color: isDark ? AppColors.surfaceDark : Colors.white,
+              elevation: isDark ? 0 : 2,
+              shadowColor: Colors.black12,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: const BorderSide(color: AppColors.borderDark),
+                side: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -200,7 +205,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.cyan.withValues(alpha: 0.3),
+                                color: primaryColor.withValues(alpha: isDark ? 0.3 : 0.2),
                                 blurRadius: 20,
                                 spreadRadius: 2,
                               ),
@@ -224,10 +229,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'VPS Management & Billing Operations',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 13, color: Colors.white54),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                        ),
                       ),
                       const SizedBox(height: 32),
 
@@ -337,7 +345,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         children: [
                           Text(
                             _isSignUp ? 'Sudah memiliki akun?' : 'Belum memiliki akun?',
-                            style: const TextStyle(fontSize: 13, color: Colors.white60),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                            ),
                           ),
                           TextButton(
                             onPressed: () => setState(() {
@@ -346,7 +357,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             }),
                             child: Text(
                               _isSignUp ? 'Masuk' : 'Daftar',
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.cyan),
+                              style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
                             ),
                           ),
                         ],
@@ -359,10 +370,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       // Admin Bootstrap Option
                       Center(
                         child: TextButton.icon(
-                          icon: const Icon(Icons.admin_panel_settings_outlined, size: 16, color: Colors.white38),
-                          label: const Text(
+                          icon: Icon(Icons.admin_panel_settings_outlined, size: 16, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                          label: Text(
                             'Alur Bootstrap Administrator',
-                            style: TextStyle(fontSize: 11, color: Colors.white38),
+                            style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
                           ),
                           onPressed: _showBootstrapDialog,
                         ),

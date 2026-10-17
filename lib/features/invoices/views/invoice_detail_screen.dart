@@ -121,8 +121,20 @@ class InvoiceDetailScreen extends ConsumerWidget {
                               spacing: 20,
                               runSpacing: 8,
                               children: [
-                                Text('Tanggal Terbit: ${AppConstants.formatDate(inv.issuedAt)}', style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                                Text('Jatuh Tempo: ${AppConstants.formatDate(inv.dueDate)}', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                                Text(
+                                  'Tanggal Terbit: ${AppConstants.formatDate(inv.issuedAt)}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B),
+                                  ),
+                                ),
+                                Text(
+                                  'Jatuh Tempo: ${AppConstants.formatDate(inv.dueDate)}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B),
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 16),
@@ -164,7 +176,13 @@ class InvoiceDetailScreen extends ConsumerWidget {
                         },
                         children: [
                           TableRow(
-                            decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.borderDark))),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.borderDark : AppColors.borderLight,
+                                ),
+                              ),
+                            ),
                             children: const [
                               Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('Deskripsi Item', style: TextStyle(fontWeight: FontWeight.bold))),
                               Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('Harga Satuan', style: TextStyle(fontWeight: FontWeight.bold))),
@@ -185,15 +203,16 @@ class InvoiceDetailScreen extends ConsumerWidget {
                         ],
                       ),
                       const Divider(height: 24),
-                      _buildSummaryRow('Subtotal', AppConstants.formatRupiah(inv.subtotal)),
+                      _buildSummaryRow(context, 'Subtotal', AppConstants.formatRupiah(inv.subtotal)),
                       if (inv.discount > 0)
-                        _buildSummaryRow('Diskon / Potongan', '- ${AppConstants.formatRupiah(inv.discount)}', isNegative: true),
+                        _buildSummaryRow(context, 'Diskon / Potongan', '- ${AppConstants.formatRupiah(inv.discount)}', isNegative: true),
                       const SizedBox(height: 8),
-                      _buildSummaryRow('Total Tagihan', AppConstants.formatRupiah(inv.total), isBold: true),
+                      _buildSummaryRow(context, 'Total Tagihan', AppConstants.formatRupiah(inv.total), isBold: true),
                       const SizedBox(height: 8),
-                      _buildSummaryRow('Telah Dibayar', AppConstants.formatRupiah(inv.paidAmount), color: AppColors.success),
+                      _buildSummaryRow(context, 'Telah Dibayar', AppConstants.formatRupiah(inv.paidAmount), color: AppColors.success),
                       const SizedBox(height: 8),
                       _buildSummaryRow(
+                        context,
                         'Sisa Saldo Belum Dibayar',
                         AppConstants.formatRupiah(inv.remainingBalance),
                         isBold: true,
@@ -211,14 +230,22 @@ class InvoiceDetailScreen extends ConsumerWidget {
                   child: StreamBuilder(
                     stream: invoiceRepo.watchInvoicePayments(inv.id),
                     builder: (context, snapshot) {
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
+                        return Center(child: CircularProgressIndicator(color: primaryColor));
                       }
                       final payments = snapshot.data ?? [];
                       if (payments.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(child: Text('Belum ada transaksi pembayaran untuk tagihan ini.', style: TextStyle(color: Colors.white38))),
+                        return Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Center(
+                            child: Text(
+                              'Belum ada transaksi pembayaran untuk tagihan ini.',
+                              style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                            ),
+                          ),
                         );
                       }
                       return ListView.separated(
@@ -247,19 +274,30 @@ class InvoiceDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isBold = false, bool isNegative = false, Color? color}) {
+  Widget _buildSummaryRow(BuildContext context, String label, String value, {bool isBold = false, bool isNegative = false, Color? color}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultTextColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final labelTextColor = isDark ? Colors.white70 : const Color(0xFF475569);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: isBold ? 14 : 13, fontWeight: isBold ? FontWeight.bold : FontWeight.normal, color: Colors.white70)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isBold ? 14 : 13,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              color: labelTextColor,
+            ),
+          ),
           Text(
             value,
             style: TextStyle(
               fontSize: isBold ? 15 : 13,
               fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-              color: color ?? (isNegative ? AppColors.danger : Colors.white),
+              color: color ?? (isNegative ? (isDark ? AppColors.danger : const Color(0xFFB91C1C)) : defaultTextColor),
             ),
           ),
         ],

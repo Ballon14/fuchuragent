@@ -183,16 +183,19 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
   }
 
   Widget _buildFilterChip(String value, String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
     final isSelected = _statusFilter == value;
+
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
         if (selected) setState(() => _statusFilter = value);
       },
-      selectedColor: AppColors.cyan.withValues(alpha: 0.2),
+      selectedColor: primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.cyan : Colors.white70,
+        color: isSelected ? primaryColor : (isDark ? Colors.white70 : const Color(0xFF475569)),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         fontSize: 12,
       ),
@@ -200,15 +203,20 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.person_search_rounded, size: 64, color: Colors.white24),
+          Icon(Icons.person_search_rounded, size: 64, color: isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
           const SizedBox(height: 16),
           const Text('Tidak ada pelanggan yang ditemukan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Tambahkan pelanggan baru untuk mulai mengelola layanan VPS.', style: TextStyle(color: Colors.white54)),
+          Text(
+            'Tambahkan pelanggan baru untuk mulai mengelola layanan VPS.',
+            style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF64748B)),
+          ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
             icon: const Icon(Icons.add, size: 18),
@@ -221,6 +229,9 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
   }
 
   Widget _buildDesktopTable(List<CustomerModel> list) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return AppCard(
       padding: EdgeInsets.zero,
       child: SingleChildScrollView(
@@ -245,8 +256,11 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                       children: [
                         CircleAvatar(
                           radius: 14,
-                          backgroundColor: AppColors.cyan.withValues(alpha: 0.15),
-                          child: Text(c.name.isNotEmpty ? c.name[0].toUpperCase() : 'C', style: const TextStyle(fontSize: 11, color: AppColors.cyan)),
+                          backgroundColor: primaryColor.withValues(alpha: 0.15),
+                          child: Text(
+                            c.name.isNotEmpty ? c.name[0].toUpperCase() : 'C',
+                            style: TextStyle(fontSize: 11, color: primaryColor, fontWeight: FontWeight.bold),
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Text(c.name, style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -259,7 +273,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                   DataCell(Text(AppConstants.formatShortDate(c.createdAt))),
                   DataCell(
                     IconButton(
-                      icon: const Icon(Icons.chevron_right_rounded, color: AppColors.cyan),
+                      icon: Icon(Icons.chevron_right_rounded, color: primaryColor),
                       onPressed: () => context.go('/customers/${c.id}'),
                     ),
                   ),
@@ -273,6 +287,9 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
   }
 
   Widget _buildMobileList(List<CustomerModel> list) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return ListView.separated(
       itemCount: list.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
@@ -290,10 +307,10 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: AppColors.cyan.withValues(alpha: 0.15),
+                    backgroundColor: primaryColor.withValues(alpha: 0.15),
                     child: Text(
                       c.name.isNotEmpty ? c.name[0].toUpperCase() : 'C',
-                      style: const TextStyle(color: AppColors.cyan, fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -318,18 +335,27 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.phone_android_rounded, size: 13, color: Colors.white54),
+                            Icon(Icons.phone_android_rounded, size: 13, color: isDark ? Colors.white54 : const Color(0xFF64748B)),
                             const SizedBox(width: 4),
-                            Text(c.phone, style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                            Text(
+                              c.phone,
+                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : const Color(0xFF475569)),
+                            ),
                             if (c.sourceId.isNotEmpty) ...[
                               const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                                 decoration: BoxDecoration(
-                                  color: AppColors.surfaceLightDark,
+                                  color: isDark ? AppColors.surfaceLightDark : const Color(0xFFF1F5F9),
                                   borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                  ),
                                 ),
-                                child: Text(c.sourceId, style: const TextStyle(fontSize: 10, color: AppColors.cyan, fontWeight: FontWeight.bold)),
+                                child: Text(
+                                  c.sourceId,
+                                  style: TextStyle(fontSize: 10, color: primaryColor, fontWeight: FontWeight.bold),
+                                ),
                               ),
                             ],
                           ],
@@ -338,7 +364,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.white38),
+                  Icon(Icons.chevron_right_rounded, size: 20, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
                 ],
               ),
             ),

@@ -37,14 +37,17 @@ class _RenewalListScreenState extends ConsumerState<RenewalListScreen> with Sing
     final renewalRepo = ref.watch(renewalRepositoryProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 900;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Monitoring Perpanjangan VPS'),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.cyan,
-          labelColor: AppColors.cyan,
-          unselectedLabelColor: Colors.white60,
+          indicatorColor: primaryColor,
+          labelColor: primaryColor,
+          unselectedLabelColor: isDark ? Colors.white60 : const Color(0xFF64748B),
           tabs: const [
             Tab(text: 'Layanan Akan / Telah Berakhir', icon: Icon(Icons.timer_outlined, size: 18)),
             Tab(text: 'Riwayat Log Perpanjangan', icon: Icon(Icons.history_rounded, size: 18)),
@@ -72,10 +75,10 @@ class _RenewalListScreenState extends ConsumerState<RenewalListScreen> with Sing
                           child: ChoiceChip(
                             label: Text('$days Hari'),
                             selected: selected,
-                            selectedColor: AppColors.cyan.withValues(alpha: 0.2),
+                            selectedColor: primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
                             labelStyle: TextStyle(
                               fontSize: 12,
-                              color: selected ? AppColors.cyan : Colors.white70,
+                              color: selected ? primaryColor : (isDark ? Colors.white70 : const Color(0xFF475569)),
                               fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                             ),
                             onSelected: (s) {
@@ -87,10 +90,10 @@ class _RenewalListScreenState extends ConsumerState<RenewalListScreen> with Sing
                       ChoiceChip(
                         label: const Text('Kedaluwarsa'),
                         selected: _selectedFilterDays == -1,
-                        selectedColor: AppColors.danger.withValues(alpha: 0.3),
+                        selectedColor: AppColors.danger.withValues(alpha: isDark ? 0.3 : 0.15),
                         labelStyle: TextStyle(
                           fontSize: 12,
-                          color: _selectedFilterDays == -1 ? AppColors.danger : Colors.white70,
+                          color: _selectedFilterDays == -1 ? (isDark ? AppColors.danger : const Color(0xFFB91C1C)) : (isDark ? Colors.white70 : const Color(0xFF475569)),
                           fontWeight: _selectedFilterDays == -1 ? FontWeight.bold : FontWeight.normal,
                         ),
                         onSelected: (s) {
@@ -109,7 +112,7 @@ class _RenewalListScreenState extends ConsumerState<RenewalListScreen> with Sing
                         : serviceRepo.getExpiringServices(_selectedFilterDays),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
+                        return Center(child: CircularProgressIndicator(color: primaryColor));
                       }
 
                       final services = snapshot.data ?? [];
@@ -146,11 +149,16 @@ class _RenewalListScreenState extends ConsumerState<RenewalListScreen> with Sing
             stream: renewalRepo.watchRenewals(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
+                return Center(child: CircularProgressIndicator(color: primaryColor));
               }
               final renewals = snapshot.data ?? [];
               if (renewals.isEmpty) {
-                return const Center(child: Text('Belum ada riwayat perpanjangan.', style: TextStyle(color: Colors.white38)));
+                return Center(
+                  child: Text(
+                    'Belum ada riwayat perpanjangan.',
+                    style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                  ),
+                );
               }
 
               return ListView.separated(
@@ -161,12 +169,15 @@ class _RenewalListScreenState extends ConsumerState<RenewalListScreen> with Sing
                   final r = renewals[idx];
                   return Card(
                     child: ListTile(
-                      leading: const Icon(Icons.autorenew_rounded, color: AppColors.cyan),
+                      leading: Icon(Icons.autorenew_rounded, color: primaryColor),
                       title: Text('Perpanjangan +${r.durationMonths} Bulan', style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text(
                         'Jatuh Tempo Baru: ${AppConstants.formatDate(r.newEndDate)} • Dicatat: ${AppConstants.formatDateTime(r.createdAt)}',
                       ),
-                      trailing: Text(r.notes.isNotEmpty ? r.notes : 'Selesai', style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                      trailing: Text(
+                        r.notes.isNotEmpty ? r.notes : 'Selesai',
+                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : const Color(0xFF64748B)),
+                      ),
                     ),
                   );
                 },

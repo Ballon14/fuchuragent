@@ -43,6 +43,13 @@ class ConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultPrimary = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+    final effectiveColor = (confirmColor == AppColors.cyan) ? defaultPrimary : confirmColor;
+    final effectiveFg = isDestructive
+        ? Colors.white
+        : (isDark ? Colors.black : Colors.white);
+
     return AlertDialog(
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
       content: Text(message, style: const TextStyle(fontSize: 14)),
@@ -53,8 +60,8 @@ class ConfirmationDialog extends StatelessWidget {
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: confirmColor,
-            foregroundColor: isDestructive ? Colors.white : Colors.black,
+            backgroundColor: effectiveColor,
+            foregroundColor: effectiveFg,
           ),
           onPressed: () => Navigator.of(context).pop(true),
           child: Text(confirmText),

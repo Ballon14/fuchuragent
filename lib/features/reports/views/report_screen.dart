@@ -23,9 +23,16 @@ class ReportScreen extends ConsumerWidget {
         ],
       ),
       body: statsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.cyan)),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: Theme.of(context).brightness == Brightness.dark ? AppColors.cyan : const Color(0xFF0284C7),
+          ),
+        ),
         error: (err, _) => Center(child: Text('Gagal memuat laporan: $err')),
         data: (stats) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final primaryAccent = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -36,9 +43,12 @@ class ReportScreen extends ConsumerWidget {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Zona Waktu: Asia/Jakarta • Mata Uang: IDR (Rupiah)',
-                  style: TextStyle(fontSize: 12, color: Colors.white54),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                  ),
                 ),
                 const SizedBox(height: 20),
 
@@ -48,27 +58,31 @@ class ReportScreen extends ConsumerWidget {
                   child: Column(
                     children: [
                       _buildReportRow(
+                        context,
                         'Total Pendapatan Diterima (Kas Masuk Aktual)',
                         AppConstants.formatRupiah(stats.totalRevenue),
-                        color: AppColors.success,
+                        color: isDark ? AppColors.success : const Color(0xFF047857),
                         isBold: true,
                       ),
                       const Divider(height: 16),
                       _buildReportRow(
+                        context,
                         'Total Piutang / Tagihan Belum Dibayar',
                         AppConstants.formatRupiah(stats.unpaidAmount),
-                        color: AppColors.warning,
+                        color: isDark ? AppColors.warning : const Color(0xFFB45309),
                       ),
                       const Divider(height: 16),
                       _buildReportRow(
+                        context,
                         'Jumlah Tagihan Terbuka',
                         '${stats.unpaidInvoicesCount} Tagihan',
                       ),
                       const Divider(height: 16),
                       _buildReportRow(
+                        context,
                         'Jumlah Tagihan Melewati Jatuh Tempo (Overdue)',
                         '${stats.overdueInvoicesCount} Tagihan',
-                        color: stats.overdueInvoicesCount > 0 ? AppColors.danger : Colors.white70,
+                        color: stats.overdueInvoicesCount > 0 ? (isDark ? AppColors.danger : const Color(0xFFB91C1C)) : (isDark ? Colors.white70 : const Color(0xFF475569)),
                       ),
                     ],
                   ),
@@ -82,38 +96,44 @@ class ReportScreen extends ConsumerWidget {
                   child: Column(
                     children: [
                       _buildReportRow(
+                        context,
                         'Total Pelanggan Terdaftar',
                         '${stats.totalCustomers} Pelanggan',
                         isBold: true,
                       ),
                       const Divider(height: 16),
                       _buildReportRow(
+                        context,
                         'Pelanggan Aktif',
                         '${stats.activeCustomers} Pelanggan',
-                        color: AppColors.cyan,
+                        color: primaryAccent,
                       ),
                       const Divider(height: 16),
                       _buildReportRow(
+                        context,
                         'Total Instance Layanan VPS',
                         '${stats.totalServices} Layanan',
                       ),
                       const Divider(height: 16),
                       _buildReportRow(
+                        context,
                         'Layanan VPS Aktif',
                         '${stats.activeServices} Instance',
-                        color: AppColors.cyan,
+                        color: primaryAccent,
                       ),
                       const Divider(height: 16),
                       _buildReportRow(
+                        context,
                         'Layanan Mendekati Jatuh Tempo (≤ 7 Hari)',
                         '${stats.expiringServicesCount} Instance',
-                        color: AppColors.warning,
+                        color: isDark ? AppColors.warning : const Color(0xFFB45309),
                       ),
                       const Divider(height: 16),
                       _buildReportRow(
+                        context,
                         'Layanan Telah Kedaluwarsa',
                         '${stats.expiredServicesCount} Instance',
-                        color: AppColors.danger,
+                        color: isDark ? AppColors.danger : const Color(0xFFB91C1C),
                       ),
                     ],
                   ),
@@ -127,9 +147,12 @@ class ReportScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Unduh data rekapitulasi untuk keperluan pembukuan atau audit:',
-                        style: TextStyle(fontSize: 13, color: Colors.white70),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.white70 : const Color(0xFF475569),
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Wrap(
@@ -167,12 +190,30 @@ class ReportScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildReportRow(String label, String value, {bool isBold = false, Color? color}) {
+  Widget _buildReportRow(BuildContext context, String label, String value, {bool isBold = false, Color? color}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultTextColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final labelTextColor = isDark ? Colors.white70 : const Color(0xFF475569);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
-        Text(value, style: TextStyle(fontSize: isBold ? 15 : 13, fontWeight: FontWeight.bold, color: color ?? Colors.white)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            color: labelTextColor,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: isBold ? 15 : 13,
+            fontWeight: FontWeight.bold,
+            color: color ?? defaultTextColor,
+          ),
+        ),
       ],
     );
   }

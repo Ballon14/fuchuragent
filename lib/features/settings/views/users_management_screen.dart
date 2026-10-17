@@ -32,10 +32,12 @@ class UsersManagementScreen extends ConsumerWidget {
                   'Daftar Administrator dan Staf Pengelola Sistem',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 6),
-                const Text(
+                Text(
                   'Hanya Administrator yang memiliki wewenang untuk mengubah peran atau mengakses log audit.',
-                  style: TextStyle(fontSize: 12, color: Colors.white54),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : const Color(0xFF64748B),
+                  ),
                 ),
                 const SizedBox(height: 20),
 
@@ -48,12 +50,15 @@ class UsersManagementScreen extends ConsumerWidget {
                     separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (context, idx) {
                       final u = users[idx];
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: u.isAdmin ? AppColors.cyan.withValues(alpha: 0.2) : Colors.white10,
+                          backgroundColor: u.isAdmin ? primaryColor.withValues(alpha: 0.15) : (isDark ? Colors.white10 : const Color(0xFFF1F5F9)),
                           child: Text(
                             u.name.isNotEmpty ? u.name[0].toUpperCase() : 'U',
-                            style: TextStyle(color: u.isAdmin ? AppColors.cyan : Colors.white70),
+                            style: TextStyle(color: u.isAdmin ? primaryColor : (isDark ? Colors.white70 : const Color(0xFF475569))),
                           ),
                         ),
                         title: Text(u.name, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -62,19 +67,19 @@ class UsersManagementScreen extends ConsumerWidget {
                             ? Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                 decoration: BoxDecoration(
-                                  color: AppColors.cyan.withValues(alpha: 0.15),
+                                  color: primaryColor.withValues(alpha: isDark ? 0.15 : 0.1),
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: AppColors.cyan.withValues(alpha: 0.4)),
+                                  border: Border.all(color: primaryColor.withValues(alpha: 0.4)),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.verified_user_rounded, size: 14, color: AppColors.cyan),
-                                    SizedBox(width: 4),
+                                    Icon(Icons.verified_user_rounded, size: 14, color: primaryColor),
+                                    const SizedBox(width: 4),
                                     Text(
                                       'Super Admin',
                                       style: TextStyle(
-                                        color: AppColors.cyan,
+                                        color: primaryColor,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 11,
                                       ),
@@ -84,7 +89,7 @@ class UsersManagementScreen extends ConsumerWidget {
                               )
                             : DropdownButton<String>(
                                 value: u.role,
-                                dropdownColor: AppColors.surfaceDark,
+                                dropdownColor: isDark ? AppColors.surfaceDark : Colors.white,
                                 underline: const SizedBox(),
                                 items: const [
                                   DropdownMenuItem(value: 'admin', child: Text('Administrator')),

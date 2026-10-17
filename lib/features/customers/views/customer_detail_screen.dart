@@ -126,161 +126,177 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
           );
         }
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+        final mutedIconColor = isDark ? Colors.white60 : const Color(0xFF64748B);
+
         return Scaffold(
-          appBar: AppBar(
-            title: Text(customer.name),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.edit_rounded),
-                tooltip: 'Edit Pelanggan',
-                onPressed: () => _handleEdit(customer),
-              ),
-              IconButton(
-                icon: const Icon(Icons.archive_outlined),
-                tooltip: 'Arsipkan',
-                onPressed: () => _handleArchive(customer),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
-                tooltip: 'Hapus',
-                onPressed: () => _handleDelete(customer),
-              ),
-              const SizedBox(width: 8),
-            ],
-          ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Profile Overview Card
-                AppCard(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CircleAvatar(
-                        radius: 32,
-                        backgroundColor: AppColors.cyan.withValues(alpha: 0.2),
-                        child: Text(
-                          customer.name.isNotEmpty ? customer.name[0].toUpperCase() : 'C',
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.cyan),
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  customer.name,
-                                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(width: 12),
-                                StatusBadge(status: customer.status),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 20,
-                              runSpacing: 8,
-                              children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.phone_rounded, size: 16, color: Colors.white60),
-                                    const SizedBox(width: 6),
-                                    Text(customer.phone, style: const TextStyle(fontSize: 13)),
-                                  ],
-                                ),
-                                if (customer.sourceId.isNotEmpty)
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.badge_rounded, size: 16, color: Colors.white60),
-                                      const SizedBox(width: 6),
-                                      Text('ID Sumber: ${customer.sourceId}', style: const TextStyle(fontSize: 13)),
-                                    ],
-                                  ),
-                                if (customer.email != null && customer.email!.isNotEmpty)
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.email_rounded, size: 16, color: Colors.white60),
-                                      const SizedBox(width: 6),
-                                      Text(customer.email!, style: const TextStyle(fontSize: 13)),
-                                    ],
-                                  ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.calendar_today_rounded, size: 16, color: Colors.white60),
-                                    const SizedBox(width: 6),
-                                    Text('Terdaftar: ${AppConstants.formatShortDate(customer.createdAt)}', style: const TextStyle(fontSize: 13)),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            if (customer.notes.isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceLightDark,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text('Catatan: ${customer.notes}', style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+            appBar: AppBar(
+              title: Text(customer.name),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Edit Pelanggan',
+                  onPressed: () => _handleEdit(customer),
                 ),
-
-                const SizedBox(height: 24),
-
-                // Tabs: VPS Services, Invoices, Payments
-                TabBar(
-                  controller: _tabController,
-                  indicatorColor: AppColors.cyan,
-                  labelColor: AppColors.cyan,
-                  unselectedLabelColor: Colors.white60,
-                  tabs: const [
-                    Tab(text: 'Layanan VPS', icon: Icon(Icons.dns_rounded, size: 18)),
-                    Tab(text: 'Riwayat Tagihan', icon: Icon(Icons.receipt_long_rounded, size: 18)),
-                    Tab(text: 'Riwayat Pembayaran', icon: Icon(Icons.payments_rounded, size: 18)),
-                  ],
+                IconButton(
+                  icon: const Icon(Icons.archive_outlined),
+                  tooltip: 'Arsipkan',
+                  onPressed: () => _handleArchive(customer),
                 ),
-                const SizedBox(height: 16),
-
-                SizedBox(
-                  height: 500,
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildServicesTab(customer),
-                      _buildInvoicesTab(customer),
-                      _buildPaymentsTab(customer),
-                    ],
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+                  tooltip: 'Hapus',
+                  onPressed: () => _handleDelete(customer),
                 ),
+                const SizedBox(width: 8),
               ],
             ),
-          ),
-        );
-      },
-    );
-  }
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Profile Overview Card
+                  AppCard(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: 32,
+                          backgroundColor: primaryColor.withValues(alpha: 0.15),
+                          child: Text(
+                            customer.name.isNotEmpty ? customer.name[0].toUpperCase() : 'C',
+                            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primaryColor),
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    customer.name,
+                                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  StatusBadge(status: customer.status),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 20,
+                                runSpacing: 8,
+                                children: [
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.phone_rounded, size: 16, color: mutedIconColor),
+                                      const SizedBox(width: 6),
+                                      Text(customer.phone, style: const TextStyle(fontSize: 13)),
+                                    ],
+                                  ),
+                                  if (customer.sourceId.isNotEmpty)
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.badge_rounded, size: 16, color: mutedIconColor),
+                                        const SizedBox(width: 6),
+                                        Text('ID Sumber: ${customer.sourceId}', style: const TextStyle(fontSize: 13)),
+                                      ],
+                                    ),
+                                  if (customer.email != null && customer.email!.isNotEmpty)
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.email_rounded, size: 16, color: mutedIconColor),
+                                        const SizedBox(width: 6),
+                                        Text(customer.email!, style: const TextStyle(fontSize: 13)),
+                                      ],
+                                    ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.calendar_today_rounded, size: 16, color: mutedIconColor),
+                                      const SizedBox(width: 6),
+                                      Text('Terdaftar: ${AppConstants.formatShortDate(customer.createdAt)}', style: const TextStyle(fontSize: 13)),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              if (customer.notes.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? AppColors.surfaceLightDark : const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Catatan: ${customer.notes}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isDark ? Colors.white70 : const Color(0xFF334155),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Tabs: VPS Services, Invoices, Payments
+                  TabBar(
+                    controller: _tabController,
+                    indicatorColor: primaryColor,
+                    labelColor: primaryColor,
+                    unselectedLabelColor: isDark ? Colors.white60 : const Color(0xFF64748B),
+                    tabs: const [
+                      Tab(text: 'Layanan VPS', icon: Icon(Icons.dns_rounded, size: 18)),
+                      Tab(text: 'Riwayat Tagihan', icon: Icon(Icons.receipt_long_rounded, size: 18)),
+                      Tab(text: 'Riwayat Pembayaran', icon: Icon(Icons.payments_rounded, size: 18)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  SizedBox(
+                    height: 500,
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildServicesTab(customer),
+                        _buildInvoicesTab(customer),
+                        _buildPaymentsTab(customer),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
 
   Widget _buildServicesTab(CustomerModel customer) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return StreamBuilder<List<VpsServiceModel>>(
       stream: ref.watch(customerRepositoryProvider).watchCustomerServices(customer.id),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
+          return Center(child: CircularProgressIndicator(color: primaryColor));
         }
         if (snapshot.hasError) {
           return Center(
@@ -291,7 +307,11 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
                 children: [
                   const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 36),
                   const SizedBox(height: 8),
-                  Text('Gagal memuat layanan: ${snapshot.error}', style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
+                  Text(
+                    'Gagal memuat layanan: ${snapshot.error}',
+                    style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B), fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
@@ -321,7 +341,12 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
             const SizedBox(height: 12),
             Expanded(
               child: services.isEmpty
-                  ? const Center(child: Text('Pelanggan ini belum memiliki layanan VPS.', style: TextStyle(color: Colors.white38)))
+                  ? Center(
+                      child: Text(
+                        'Pelanggan ini belum memiliki layanan VPS.',
+                        style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                      ),
+                    )
                   : ListView.separated(
                       itemCount: services.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
@@ -329,7 +354,7 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
                         final s = services[idx];
                         return Card(
                           child: ListTile(
-                            leading: const Icon(Icons.dns_rounded, color: AppColors.cyan),
+                            leading: Icon(Icons.dns_rounded, color: primaryColor),
                             title: Text(s.domain, style: const TextStyle(fontWeight: FontWeight.bold)),
                             subtitle: Text('${s.packageName} • Rp${s.price}/bln • Exp: ${AppConstants.formatShortDate(s.endDate)}'),
                             trailing: Row(
@@ -355,11 +380,14 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
   }
 
   Widget _buildInvoicesTab(CustomerModel customer) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return StreamBuilder<List<InvoiceModel>>(
       stream: ref.watch(customerRepositoryProvider).watchCustomerInvoices(customer.id),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
+          return Center(child: CircularProgressIndicator(color: primaryColor));
         }
         if (snapshot.hasError) {
           return Center(
@@ -370,7 +398,11 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
                 children: [
                   const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 36),
                   const SizedBox(height: 8),
-                  Text('Gagal memuat tagihan: ${snapshot.error}', style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
+                  Text(
+                    'Gagal memuat tagihan: ${snapshot.error}',
+                    style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B), fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
@@ -407,7 +439,12 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
             const SizedBox(height: 12),
             Expanded(
               child: invoices.isEmpty
-                  ? const Center(child: Text('Belum ada riwayat tagihan.', style: TextStyle(color: Colors.white38)))
+                  ? Center(
+                      child: Text(
+                        'Belum ada riwayat tagihan.',
+                        style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                      ),
+                    )
                   : ListView.separated(
                       itemCount: invoices.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
@@ -441,11 +478,14 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
   }
 
   Widget _buildPaymentsTab(CustomerModel customer) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+
     return StreamBuilder<List<PaymentModel>>(
       stream: ref.watch(customerRepositoryProvider).watchCustomerPayments(customer.id),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
+          return Center(child: CircularProgressIndicator(color: primaryColor));
         }
         if (snapshot.hasError) {
           return Center(
@@ -456,7 +496,11 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
                 children: [
                   const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 36),
                   const SizedBox(height: 8),
-                  Text('Gagal memuat pembayaran: ${snapshot.error}', style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
+                  Text(
+                    'Gagal memuat pembayaran: ${snapshot.error}',
+                    style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B), fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
@@ -475,7 +519,12 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
             const SizedBox(height: 12),
             Expanded(
               child: payments.isEmpty
-                  ? const Center(child: Text('Belum ada riwayat pembayaran.', style: TextStyle(color: Colors.white38)))
+                  ? Center(
+                      child: Text(
+                        'Belum ada riwayat pembayaran.',
+                        style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                      ),
+                    )
                   : ListView.separated(
                       itemCount: payments.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
