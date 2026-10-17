@@ -13,7 +13,6 @@ import '../../features/invoices/views/invoice_list_screen.dart';
 import '../../features/invoices/views/invoice_detail_screen.dart';
 import '../../features/payments/views/payment_list_screen.dart';
 import '../../features/renewals/views/renewal_list_screen.dart';
-import '../../features/imports/views/import_screen.dart';
 import '../../features/reports/views/report_screen.dart';
 import '../../features/notifications/views/notification_list_screen.dart';
 import '../../features/settings/views/users_management_screen.dart';
@@ -105,7 +104,7 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/imports',
-          builder: (context, state) => const ImportScreen(),
+          redirect: (context, state) => '/customers',
         ),
         GoRoute(
           path: '/reports',

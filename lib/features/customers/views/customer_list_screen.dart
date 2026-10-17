@@ -208,23 +208,12 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
           const SizedBox(height: 16),
           const Text('Tidak ada pelanggan yang ditemukan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Tambahkan pelanggan baru atau impor data dari Google Sheets.', style: TextStyle(color: Colors.white54)),
+          const Text('Tambahkan pelanggan baru untuk mulai mengelola layanan VPS.', style: TextStyle(color: Colors.white54)),
           const SizedBox(height: 20),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Tambah Pelanggan'),
-                onPressed: _openCreateDialog,
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.cloud_download_rounded, size: 18),
-                label: const Text('Buka Menu Impor'),
-                onPressed: () => context.go('/imports'),
-              ),
-            ],
+          ElevatedButton.icon(
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Tambah Pelanggan'),
+            onPressed: _openCreateDialog,
           ),
         ],
       ),

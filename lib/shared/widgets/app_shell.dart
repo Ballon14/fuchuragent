@@ -36,7 +36,6 @@ class AppShell extends ConsumerWidget {
     NavItem(title: 'Tagihan', icon: Icons.receipt_long_rounded, route: '/invoices'),
     NavItem(title: 'Pembayaran', icon: Icons.payments_rounded, route: '/payments'),
     NavItem(title: 'Perpanjangan', icon: Icons.autorenew_rounded, route: '/renewals'),
-    NavItem(title: 'Impor Data', icon: Icons.cloud_download_rounded, route: '/imports'),
     NavItem(title: 'Laporan', icon: Icons.bar_chart_rounded, route: '/reports'),
     NavItem(title: 'Notifikasi', icon: Icons.notifications_rounded, route: '/notifications'),
     NavItem(title: 'Pengguna', icon: Icons.manage_accounts_rounded, route: '/users', adminOnly: true),
