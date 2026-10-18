@@ -4,6 +4,7 @@ import '../../services/models/service_model.dart';
 import '../models/renewal_model.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../shared/widgets/confirmation_dialog.dart';
 
 class RenewActionDialog extends ConsumerStatefulWidget {
   final VpsServiceModel service;
@@ -44,6 +45,20 @@ class _RenewActionDialogState extends ConsumerState<RenewActionDialog> {
   }
 
   Future<void> _submit() async {
+    final confirmed = await ConfirmationDialog.show(
+      context: context,
+      title: 'Konfirmasi Perpanjangan Layanan',
+      icon: Icons.autorenew_rounded,
+      message:
+          'Apakah Anda yakin ingin memperpanjang layanan "${widget.service.domain}" selama $_durationMonths bulan?',
+      detail:
+          'Estimasi biaya: ${AppConstants.formatRupiah(_calculatedPrice)} | Berakhir: ${AppConstants.formatDate(_calculatedNewEndDate)}',
+      confirmText: 'Ya, Perpanjang Sekarang',
+      cancelText: 'Batal',
+    );
+
+    if (!confirmed || !mounted) return;
+
     setState(() => _isLoading = true);
 
     try {

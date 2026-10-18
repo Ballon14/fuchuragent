@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
 import '../models/expense_model.dart';
+import '../../../shared/widgets/confirmation_dialog.dart';
 
 class ExpenseFormDialog extends ConsumerStatefulWidget {
   final ExpenseModel? expense;
@@ -124,6 +125,25 @@ class _ExpenseFormDialogState extends ConsumerState<ExpenseFormDialog> {
       );
       return;
     }
+
+    final expenseTitle = _titleCtrl.text.trim();
+    final isEdit = widget.expense != null;
+
+    final confirmed = isEdit
+        ? await ConfirmationDialog.showUpdateConfirmation(
+            context: context,
+            title: 'Konfirmasi Perubahan Pengeluaran',
+            itemName: expenseTitle,
+            detail: 'Nominal: ${AppConstants.formatRupiah(amount)} ($_paymentMethod)',
+          )
+        : await ConfirmationDialog.showCreateConfirmation(
+            context: context,
+            title: 'Konfirmasi Tambah Pengeluaran Baru',
+            itemName: expenseTitle,
+            detail: 'Nominal: ${AppConstants.formatRupiah(amount)} ($_paymentMethod)',
+          );
+
+    if (!confirmed || !mounted) return;
 
     setState(() => _isLoading = true);
 

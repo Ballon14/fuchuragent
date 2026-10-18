@@ -31,6 +31,7 @@ class FinancialDataBundle {
 class FinanceRepository {
   final FirebaseFirestore? _firestore;
 
+  // ignore: prefer_initializing_formals
   FinanceRepository({FirebaseFirestore? firestore}) : _firestore = firestore;
 
   FirebaseFirestore get _db => _firestore ?? FirebaseFirestore.instance;

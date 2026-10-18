@@ -70,6 +70,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _handleSaveProfile() async {
     if (!_profileFormKey.currentState!.validate()) return;
 
+    final confirmed = await ConfirmationDialog.showUpdateConfirmation(
+      context: context,
+      title: 'Perbarui Data Profil',
+      itemName: _nameCtrl.text.trim(),
+      detail: 'No. Telepon: ${_phoneCtrl.text.trim()}',
+    );
+    if (!confirmed || !mounted) return;
+
     setState(() => _isSavingProfile = true);
     try {
       await ref.read(authRepositoryProvider).updateProfile(
@@ -111,6 +119,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       );
       return;
     }
+
+    final confirmed = await ConfirmationDialog.show(
+      context: context,
+      title: 'Konfirmasi Ubah Kata Sandi',
+      message: 'Apakah Anda yakin ingin memperbarui kata sandi akun Anda sekarang?',
+      confirmText: 'Ya, Ubah Kata Sandi',
+      cancelText: 'Batal',
+      icon: Icons.lock_reset_rounded,
+    );
+    if (!confirmed || !mounted) return;
 
     setState(() => _isSavingPassword = true);
     try {

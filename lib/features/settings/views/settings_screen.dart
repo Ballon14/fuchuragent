@@ -14,6 +14,7 @@ import '../repositories/settings_repository.dart';
 import '../../notifications/services/local_notification_service.dart';
 import 'google_sheets_backup_dialog.dart';
 import '../services/google_sheets_backup_service.dart';
+import '../../../shared/widgets/confirmation_dialog.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -149,6 +150,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   Future<void> _saveSettings() async {
     if (_settings == null) return;
+
+    final confirmed = await ConfirmationDialog.show(
+      context: context,
+      title: 'Simpan Pengaturan Sistem',
+      message: 'Apakah Anda yakin ingin menyimpan seluruh konfigurasi sistem ke database?',
+      confirmText: 'Ya, Simpan Pengaturan',
+      cancelText: 'Batal',
+      icon: Icons.save_rounded,
+    );
+    if (!confirmed || !mounted) return;
+
     setState(() => _isSaving = true);
 
     try {
@@ -206,31 +218,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Future<void> _confirmResetDefaults() async {
-    final confirm = await showDialog<bool>(
+    final confirm = await ConfirmationDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.restore_rounded, color: AppColors.warning),
-            SizedBox(width: 8),
-            Text('Reset Pengaturan Bawaan?'),
-          ],
-        ),
-        content: const Text(
-          'Seluruh konfigurasi sistem (profil bisnis, rekening bank, template WhatsApp, dan aturan notifikasi) akan dikembalikan ke nilai default standar. Lanjutkan?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Ya, Reset Default'),
-          ),
-        ],
-      ),
+      title: 'Reset Pengaturan Bawaan',
+      message: 'Seluruh konfigurasi sistem (profil bisnis, rekening bank, template WhatsApp, dan aturan notifikasi) akan dikembalikan ke nilai default standar. Lanjutkan?',
+      confirmText: 'Ya, Reset Default',
+      cancelText: 'Batal',
+      isDestructive: true,
+      icon: Icons.restore_rounded,
     );
 
     if (confirm == true) {
@@ -1004,8 +999,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 child: const Text('Batal'),
               ),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (nameCtrl.text.trim().isEmpty) return;
+
+                  final isEdit = existing != null;
+                  final confirmed = isEdit
+                      ? await ConfirmationDialog.showUpdateConfirmation(
+                          context: ctx,
+                          title: 'Perbarui Metode Pembayaran',
+                          itemName: nameCtrl.text.trim(),
+                          detail: '${numCtrl.text.trim()} a.n ${holderCtrl.text.trim()}',
+                        )
+                      : await ConfirmationDialog.showCreateConfirmation(
+                          context: ctx,
+                          title: 'Tambah Metode Pembayaran',
+                          itemName: nameCtrl.text.trim(),
+                          detail: '${numCtrl.text.trim()} a.n ${holderCtrl.text.trim()}',
+                        );
+
+                  if (!confirmed || !ctx.mounted) return;
 
                   final currentMethods = List<PaymentMethodModel>.from(_settings!.paymentMethods);
                   final methodId = existing?.id ?? 'pm-${DateTime.now().millisecondsSinceEpoch}';
@@ -1068,7 +1080,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }
   }
 
-  void _deletePaymentMethod(String id) {
+  Future<void> _deletePaymentMethod(String id) async {
+    final target = _settings?.paymentMethods.firstWhere(
+      (m) => m.id == id,
+      orElse: () => const PaymentMethodModel(
+        id: '',
+        name: 'Metode Pembayaran',
+        accountNumber: '',
+        accountHolder: '',
+        type: 'bank',
+      ),
+    );
+
+    final confirmed = await ConfirmationDialog.showDeleteConfirmation(
+      context: context,
+      title: 'Hapus Metode Pembayaran',
+      itemName: target?.name.isNotEmpty == true ? target!.name : 'Metode Pembayaran',
+      detail: target != null && target.accountNumber.isNotEmpty
+          ? '${target.accountNumber} a.n ${target.accountHolder}'
+          : null,
+    );
+    if (!confirmed || !mounted) return;
+
     final currentMethods = List<PaymentMethodModel>.from(_settings!.paymentMethods);
     currentMethods.removeWhere((m) => m.id == id);
     setState(() {

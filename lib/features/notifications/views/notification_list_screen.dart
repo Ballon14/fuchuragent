@@ -5,6 +5,7 @@ import '../../../core/providers/app_providers.dart';
 import '../models/notification_model.dart';
 import '../repositories/notification_repository.dart';
 import '../services/local_notification_service.dart';
+import '../../../shared/widgets/confirmation_dialog.dart';
 
 class NotificationListScreen extends ConsumerStatefulWidget {
   const NotificationListScreen({super.key});
@@ -171,6 +172,14 @@ class _NotificationListScreenState extends ConsumerState<NotificationListScreen>
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (val) async {
               if (val == 'clear_read') {
+                final confirmed = await ConfirmationDialog.showDeleteConfirmation(
+                  context: context,
+                  title: 'Bersihkan Notifikasi',
+                  itemName: 'Semua Notifikasi Yang Telah Dibaca',
+                  detail: 'Pemberitahuan yang sudah dibaca akan dihapus secara permanen.',
+                );
+                if (!confirmed || !context.mounted) return;
+
                 await notifRepo.clearReadNotifications();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -538,6 +547,13 @@ class _NotificationListScreenState extends ConsumerState<NotificationListScreen>
                             const SizedBox(width: 8),
                             InkWell(
                               onTap: () async {
+                                final confirmed = await ConfirmationDialog.showDeleteConfirmation(
+                                  context: context,
+                                  title: 'Hapus Notifikasi',
+                                  itemName: n.title,
+                                  detail: n.message,
+                                );
+                                if (!confirmed) return;
                                 await notifRepo.deleteNotification(n.id);
                               },
                               borderRadius: BorderRadius.circular(4),

@@ -7,6 +7,7 @@ import 'expense_form_dialog.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/stat_card.dart';
 import '../../../shared/widgets/app_pagination_bar.dart';
+import '../../../shared/widgets/confirmation_dialog.dart';
 
 class ExpenseListScreen extends ConsumerStatefulWidget {
   const ExpenseListScreen({super.key});
@@ -49,25 +50,11 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
   }
 
   Future<void> _handleDelete(ExpenseModel expense) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await ConfirmationDialog.showDeleteConfirmation(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Catatan Pengeluaran'),
-        content: Text(
-          'Apakah Anda yakin ingin menghapus catatan pengeluaran "${expense.title}" sebesar ${AppConstants.formatRupiah(expense.amount)}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Hapus Pengeluaran', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      title: 'Hapus Catatan Pengeluaran',
+      itemName: expense.title,
+      detail: 'Nominal: ${AppConstants.formatRupiah(expense.amount)} | Kategori: ${expense.category}',
     );
 
     if (confirmed == true && mounted) {

@@ -8,6 +8,7 @@ import '../../customers/views/customer_search_dialog.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../shared/widgets/confirmation_dialog.dart';
 
 class ServiceFormDialog extends ConsumerStatefulWidget {
   final VpsServiceModel? service;
@@ -103,7 +104,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
     }
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCustomerId == null || _selectedCustomerId!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -119,6 +120,23 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
     final serviceName = _serviceNameCtrl.text.trim().isNotEmpty
         ? _serviceNameCtrl.text.trim()
         : 'VPS ${domain.replaceAll("https://", "").replaceAll("http://", "")}';
+
+    final isEdit = widget.service != null;
+    final confirmed = isEdit
+        ? await ConfirmationDialog.showUpdateConfirmation(
+            context: context,
+            title: 'Konfirmasi Perubahan Layanan VPS',
+            itemName: '$domain ($_selectedPackageName)',
+            detail: 'Biaya Sewa: ${AppConstants.formatRupiah(int.tryParse(_priceCtrl.text) ?? 0)}/bln',
+          )
+        : await ConfirmationDialog.showCreateConfirmation(
+            context: context,
+            title: 'Konfirmasi Tambah Layanan VPS Baru',
+            itemName: '$domain ($_selectedPackageName)',
+            detail: 'Biaya Sewa: ${AppConstants.formatRupiah(int.tryParse(_priceCtrl.text) ?? 0)}/bln',
+          );
+
+    if (!confirmed || !mounted) return;
 
     final result = VpsServiceModel(
       id: widget.service?.id ?? '',

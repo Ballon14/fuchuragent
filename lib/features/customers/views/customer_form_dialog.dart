@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
 import '../models/customer_model.dart';
+import '../../../shared/widgets/confirmation_dialog.dart';
 
 class CustomerFormDialog extends ConsumerStatefulWidget {
   final CustomerModel? customer;
@@ -75,8 +76,27 @@ class _CustomerFormDialogState extends ConsumerState<CustomerFormDialog> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final customerName = _nameCtrl.text.trim();
+    final isEdit = widget.customer != null;
+
+    final confirmed = isEdit
+        ? await ConfirmationDialog.showUpdateConfirmation(
+            context: context,
+            title: 'Konfirmasi Perubahan Pelanggan',
+            itemName: customerName,
+            detail: 'ID: ${_sourceIdCtrl.text.trim()} | Kontak: ${_phoneCtrl.text.trim()}',
+          )
+        : await ConfirmationDialog.showCreateConfirmation(
+            context: context,
+            title: 'Konfirmasi Tambah Pelanggan Baru',
+            itemName: customerName,
+            detail: 'ID: ${_sourceIdCtrl.text.trim()} | Kontak: ${_phoneCtrl.text.trim()}',
+          );
+
+    if (!confirmed || !mounted) return;
 
     // Clean phone number
     String rawPhone = _phoneCtrl.text.trim();
@@ -89,7 +109,7 @@ class _CustomerFormDialogState extends ConsumerState<CustomerFormDialog> {
     final result = CustomerModel(
       id: widget.customer?.id ?? '',
       sourceId: _sourceIdCtrl.text.trim(),
-      name: _nameCtrl.text.trim(),
+      name: customerName,
       phone: rawPhone,
       email: _emailCtrl.text.trim().isNotEmpty ? _emailCtrl.text.trim() : null,
       status: widget.customer?.status ?? 'inactive',

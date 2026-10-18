@@ -15,6 +15,7 @@ class GoogleSheetsBackupService {
 
   final FirebaseFirestore? _firestore;
 
+  // ignore: prefer_initializing_formals
   GoogleSheetsBackupService({FirebaseFirestore? firestore}) : _firestore = firestore;
 
   FirebaseFirestore get _db => _firestore ?? FirebaseFirestore.instance;

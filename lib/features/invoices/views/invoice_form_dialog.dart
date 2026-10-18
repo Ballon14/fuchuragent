@@ -7,6 +7,7 @@ import '../../services/models/service_model.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../shared/widgets/confirmation_dialog.dart';
 
 class InvoiceFormDialog extends ConsumerStatefulWidget {
   final String? preselectedCustomerId;
@@ -82,7 +83,7 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
     }
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCustomerId == null || _selectedCustomerId!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -106,6 +107,14 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
       quantity: quantity,
       total: subtotal,
     );
+
+    final confirmed = await ConfirmationDialog.showCreateConfirmation(
+      context: context,
+      title: 'Konfirmasi Terbitkan Tagihan',
+      itemName: _itemDescCtrl.text.trim(),
+      detail: 'Total Tagihan: ${AppConstants.formatRupiah(total)} | Jatuh Tempo: ${AppConstants.formatDate(_dueDate)}',
+    );
+    if (!confirmed || !mounted) return;
 
     final invoice = InvoiceModel(
       id: '',

@@ -53,12 +53,12 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
   }
 
   Future<void> _handleArchive(CustomerModel customer) async {
-    final confirmed = await ConfirmationDialog.show(
+    final confirmed = await ConfirmationDialog.showDeleteConfirmation(
       context: context,
       title: 'Arsipkan Pelanggan',
-      message: 'Apakah Anda yakin ingin mengarsipkan pelanggan "${customer.name}"?',
-      confirmText: 'Arsipkan',
-      isDestructive: true,
+      itemName: customer.name,
+      detail: 'ID: ${customer.sourceId.isNotEmpty ? customer.sourceId : customer.id}',
+      isArchive: true,
     );
     if (confirmed) {
       await ref.read(customerRepositoryProvider).archiveCustomer(customer.id);
@@ -72,12 +72,11 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
   }
 
   Future<void> _handleDelete(CustomerModel customer) async {
-    final confirmed = await ConfirmationDialog.show(
+    final confirmed = await ConfirmationDialog.showDeleteConfirmation(
       context: context,
       title: 'Hapus Pelanggan Permanen',
-      message: 'Penghapusan permanen hanya diizinkan jika pelanggan tidak memiliki riwayat layanan atau tagihan.',
-      confirmText: 'Hapus Permanen',
-      isDestructive: true,
+      itemName: customer.name,
+      detail: 'Penghapusan permanen hanya diizinkan jika pelanggan tidak memiliki riwayat layanan atau tagihan.',
     );
     if (confirmed) {
       try {

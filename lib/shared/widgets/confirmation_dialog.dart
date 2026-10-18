@@ -66,6 +66,69 @@ class ConfirmationDialog extends StatelessWidget {
     );
   }
 
+  /// Specialized dialog for confirming creation of new data
+  static Future<bool> showCreateConfirmation({
+    required BuildContext context,
+    required String title,
+    required String itemName,
+    String? detail,
+  }) {
+    return show(
+      context: context,
+      title: title,
+      icon: Icons.add_circle_outline_rounded,
+      message: 'Apakah Anda yakin ingin menyimpan dan menambahkan "$itemName" ke sistem?',
+      detail: detail,
+      confirmText: 'Ya, Tambahkan Data',
+      cancelText: 'Batal',
+      isDestructive: false,
+    );
+  }
+
+  /// Specialized dialog for confirming updates or edits to existing data
+  static Future<bool> showUpdateConfirmation({
+    required BuildContext context,
+    required String title,
+    required String itemName,
+    String? detail,
+  }) {
+    return show(
+      context: context,
+      title: title,
+      icon: Icons.edit_note_rounded,
+      message: 'Apakah Anda yakin ingin menyimpan perubahan pada "$itemName"?',
+      detail: detail ?? 'Perubahan akan langsung diperbarui ke database.',
+      confirmText: 'Ya, Simpan Perubahan',
+      cancelText: 'Batal',
+      isDestructive: false,
+    );
+  }
+
+  /// Specialized dialog for confirming data deletion or archiving
+  static Future<bool> showDeleteConfirmation({
+    required BuildContext context,
+    required String title,
+    required String itemName,
+    String? detail,
+    bool isArchive = false,
+  }) {
+    return show(
+      context: context,
+      title: title,
+      icon: isArchive ? Icons.archive_outlined : Icons.delete_outline_rounded,
+      message: isArchive
+          ? 'Apakah Anda yakin ingin mengarsipkan "$itemName"?'
+          : 'Apakah Anda yakin ingin menghapus "$itemName" secara permanen?',
+      detail: detail ??
+          (isArchive
+              ? 'Data yang diarsipkan tidak akan tampil di daftar aktif.'
+              : 'Tindakan ini permanen dan tidak dapat dibatalkan.'),
+      confirmText: isArchive ? 'Ya, Arsipkan' : 'Ya, Hapus Data',
+      cancelText: 'Batal',
+      isDestructive: true,
+    );
+  }
+
   /// Convenience method that shows the logout confirmation, signs out via AuthRepository,
   /// redirects to /login, and displays a feedback SnackBar.
   static Future<bool> confirmAndSignOut(BuildContext context, WidgetRef ref) async {

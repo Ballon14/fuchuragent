@@ -4,6 +4,7 @@ import '../models/payment_model.dart';
 import '../../invoices/models/invoice_model.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../shared/widgets/confirmation_dialog.dart';
 
 class RecordPaymentDialog extends ConsumerStatefulWidget {
   final String? preselectedInvoiceId;
@@ -84,6 +85,15 @@ class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
       );
       return;
     }
+
+    final confirmed = await ConfirmationDialog.showCreateConfirmation(
+      context: context,
+      title: 'Konfirmasi Catat Pembayaran',
+      itemName: 'Pembayaran Tagihan',
+      detail:
+          'Nominal: ${AppConstants.formatRupiah(amount)} ($_paymentMethod)${_refCtrl.text.trim().isNotEmpty ? " | Ref: ${_refCtrl.text.trim()}" : ""}',
+    );
+    if (!confirmed || !mounted) return;
 
     setState(() => _isLoading = true);
 
