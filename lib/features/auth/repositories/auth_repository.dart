@@ -234,4 +234,74 @@ class AuthRepository {
       });
     } catch (_) {}
   }
+
+  /// Memperbarui informasi data diri pengguna saat ini (nama, nomor telepon/WA)
+  Future<void> updateProfile({
+    required String name,
+    String? phone,
+  }) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      throw Exception('Pengguna belum login.');
+    }
+
+    final trimmedName = name.trim();
+    final trimmedPhone = phone?.trim() ?? '';
+
+    // 1. Update Firebase Auth display name
+    try {
+      await currentUser.updateDisplayName(trimmedName);
+    } catch (_) {}
+
+    // 2. Update Firestore users collection
+    await _firestore.collection('users').doc(currentUser.uid).set({
+      'name': trimmedName,
+      'phone': trimmedPhone,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    // 3. Catat ke Activity Log
+    try {
+      await _firestore.collection('activity_logs').add({
+        'actorId': currentUser.uid,
+        'actorName': trimmedName.isNotEmpty ? trimmedName : (currentUser.email ?? 'Pengguna'),
+        'action': 'UPDATE_PROFILE',
+        'category': 'SECURITY',
+        'details': 'Pengguna memperbarui informasi profil data diri (${currentUser.email}).',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {}
+  }
+
+  /// Mengubah kata sandi pengguna dengan verifikasi kata sandi lama
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) {
+      throw Exception('Pengguna belum login.');
+    }
+
+    // Re-authenticate
+    final cred = EmailAuthProvider.credential(
+      email: user.email!,
+      password: currentPassword,
+    );
+    await user.reauthenticateWithCredential(cred);
+
+    // Update password
+    await user.updatePassword(newPassword);
+
+    try {
+      await _firestore.collection('activity_logs').add({
+        'actorId': user.uid,
+        'actorName': user.displayName ?? user.email ?? 'Pengguna',
+        'action': 'CHANGE_PASSWORD',
+        'category': 'SECURITY',
+        'details': 'Pengguna berhasil mengubah kata sandi akun.',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {}
+  }
 }

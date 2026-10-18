@@ -42,6 +42,7 @@ class AppShell extends ConsumerStatefulWidget {
     NavItem(title: 'Pengguna', icon: Icons.manage_accounts_rounded, route: '/users', adminOnly: true),
     NavItem(title: 'Audit Log', icon: Icons.history_edu_rounded, route: '/audit', adminOnly: true),
     NavItem(title: 'Pengaturan', icon: Icons.settings_rounded, route: '/settings'),
+    NavItem(title: 'Profil Saya', icon: Icons.person_pin_rounded, route: '/profile'),
   ];
 
   @override
@@ -211,45 +212,58 @@ class _AppShellState extends ConsumerState<AppShell> {
                       children: [
                         Row(
                           children: [
-                            CircleAvatar(
-                              radius: 18,
-                              backgroundColor: (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: 0.15),
-                              child: Text(
-                                (userProfile?.name.isNotEmpty ?? false)
-                                    ? userProfile!.name[0].toUpperCase()
-                                    : 'A',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? AppColors.cyan : const Color(0xFF0284C7),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    userProfile?.name ?? 'Admin',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(10),
+                                onTap: () => context.go('/profile'),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                                  child: Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 18,
+                                        backgroundColor: (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: 0.15),
+                                        child: Text(
+                                          (userProfile?.name.isNotEmpty ?? false)
+                                              ? userProfile!.name[0].toUpperCase()
+                                              : 'A',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: isDark ? AppColors.cyan : const Color(0xFF0284C7),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              userProfile?.name ?? 'Admin',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.bold,
+                                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            Text(
+                                              userProfile?.isSuperAdmin == true ? 'SUPER ADMIN' : (userProfile?.role ?? 'staff').toUpperCase(),
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: isAdmin
+                                                    ? (isDark ? AppColors.cyan : const Color(0xFF0284C7))
+                                                    : (isDark ? Colors.white54 : const Color(0xFF64748B)),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    userProfile?.isSuperAdmin == true ? 'SUPER ADMIN' : (userProfile?.role ?? 'staff').toUpperCase(),
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: isAdmin
-                                          ? (isDark ? AppColors.cyan : const Color(0xFF0284C7))
-                                          : (isDark ? Colors.white54 : const Color(0xFF64748B)),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
                             // Theme toggle button
@@ -514,81 +528,94 @@ class _AppShellState extends ConsumerState<AppShell> {
                   ),
                   const SizedBox(height: 16),
 
-                  // User Profile Mini Card
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isDark
-                            ? [AppColors.surfaceLightDark, AppColors.cyan.withValues(alpha: 0.08)]
-                            : [const Color(0xFFF1F5F9), const Color(0xFFE0F2FE).withValues(alpha: 0.5)],
+                  // User Profile Mini Card (Klik untuk membuka halaman profil)
+                  InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      context.go('/profile');
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isDark
+                              ? [AppColors.surfaceLightDark, AppColors.cyan.withValues(alpha: 0.08)]
+                              : [const Color(0xFFF1F5F9), const Color(0xFFE0F2FE).withValues(alpha: 0.5)],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isDark ? AppColors.cyan.withValues(alpha: 0.2) : const Color(0xFFBAE6FD),
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isDark ? AppColors.cyan.withValues(alpha: 0.2) : const Color(0xFFBAE6FD),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundColor: (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: 0.15),
-                          child: Text(
-                            (userProfile?.name.isNotEmpty ?? false) ? userProfile!.name[0].toUpperCase() : 'A',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? AppColors.cyan : const Color(0xFF0284C7),
-                              fontSize: 16,
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 22,
+                            backgroundColor: (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: 0.15),
+                            child: Text(
+                              (userProfile?.name.isNotEmpty ?? false) ? userProfile!.name[0].toUpperCase() : 'A',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? AppColors.cyan : const Color(0xFF0284C7),
+                                fontSize: 16,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                userProfile?.name ?? 'Admin FuchurHost',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  userProfile?.name ?? 'Admin FuchurHost',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                userProfile?.email ?? 'admin@fuchurhost.com',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                Text(
+                                  userProfile?.email ?? 'admin@fuchurhost.com',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isAdmin
-                                ? (isDark ? AppColors.cyan.withValues(alpha: 0.2) : const Color(0xFFE0F2FE))
-                                : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            userProfile?.isSuperAdmin == true ? 'SUPER ADMIN' : (userProfile?.role ?? 'staff').toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
                               color: isAdmin
-                                  ? (isDark ? AppColors.cyan : const Color(0xFF0284C7))
-                                  : (isDark ? Colors.white70 : const Color(0xFF475569)),
+                                  ? (isDark ? AppColors.cyan.withValues(alpha: 0.2) : const Color(0xFFE0F2FE))
+                                  : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              userProfile?.isSuperAdmin == true ? 'SUPER ADMIN' : (userProfile?.role ?? 'staff').toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: isAdmin
+                                    ? (isDark ? AppColors.cyan : const Color(0xFF0284C7))
+                                    : (isDark ? Colors.white70 : const Color(0xFF475569)),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -696,6 +723,14 @@ class _AppShellState extends ConsumerState<AppShell> {
                       isDark: isDark,
                     ),
                   ],
+                  _buildListMenuItem(
+                    ctx,
+                    icon: Icons.person_pin_rounded,
+                    title: 'Profil Saya',
+                    subtitle: 'Lihat rincian data diri dan perbarui informasi profil',
+                    route: '/profile',
+                    isDark: isDark,
+                  ),
                   _buildListMenuItem(
                     ctx,
                     icon: Icons.settings_rounded,

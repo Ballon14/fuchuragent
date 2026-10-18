@@ -5,6 +5,8 @@ class UserModel {
   final String email;
   final String name;
   final String role; // 'superadmin' | 'admin' | 'staff'
+  final String phone;
+  final String? photoUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -15,6 +17,8 @@ class UserModel {
     required this.email,
     required this.name,
     this.role = 'staff',
+    this.phone = '',
+    this.photoUrl,
     this.createdAt,
     this.updatedAt,
   });
@@ -35,6 +39,8 @@ class UserModel {
       email: data['email'] as String? ?? '',
       name: data['name'] as String? ?? '',
       role: data['role'] as String? ?? 'staff',
+      phone: data['phone'] as String? ?? '',
+      photoUrl: data['photoUrl'] as String?,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
     );
@@ -45,8 +51,32 @@ class UserModel {
       'email': email,
       'name': name,
       'role': role,
+      'phone': phone,
+      if (photoUrl != null) 'photoUrl': photoUrl,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
+  }
+
+  UserModel copyWith({
+    String? id,
+    String? email,
+    String? name,
+    String? role,
+    String? phone,
+    String? photoUrl,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      name: name ?? this.name,
+      role: role ?? this.role,
+      phone: phone ?? this.phone,
+      photoUrl: photoUrl ?? this.photoUrl,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 }

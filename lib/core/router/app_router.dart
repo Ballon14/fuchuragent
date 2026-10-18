@@ -19,6 +19,7 @@ import '../../features/notifications/views/notification_list_screen.dart';
 import '../../features/settings/views/users_management_screen.dart';
 import '../../features/settings/views/settings_screen.dart';
 import '../../features/audit/views/audit_log_screen.dart';
+import '../../features/profile/views/profile_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -130,6 +131,10 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsScreen(),
+        ),
+        GoRoute(
+          path: '/profile',
+          builder: (context, state) => const ProfileScreen(),
         ),
       ],
     ),
