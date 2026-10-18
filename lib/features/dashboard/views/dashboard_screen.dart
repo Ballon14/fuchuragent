@@ -181,9 +181,11 @@ class DashboardScreen extends ConsumerWidget {
 
   Widget _buildQuickActionBanner(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      padding: EdgeInsets.all(isDesktop ? 20 : 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
@@ -212,74 +214,154 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ],
       ),
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        alignment: WrapAlignment.spaceBetween,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: 0.2),
-                      blurRadius: 10,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 720;
+          if (isWide) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: 0.2),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.asset(AppConstants.logoAsset, width: 44, height: 44, fit: BoxFit.contain),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Selamat Datang di Fuchur Agent',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Sistem VPS & Billing FuchurHost Solutions',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.end,
+                  children: [
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.add_card_rounded, size: 16),
+                      label: const Text('Catat Pembayaran'),
+                      onPressed: () => context.go('/payments'),
+                    ),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.person_add_rounded, size: 16),
+                      label: const Text('Pelanggan Baru'),
+                      onPressed: () => context.go('/customers'),
+                    ),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.add_task_rounded, size: 16),
+                      label: const Text('Tambah VPS'),
+                      onPressed: () => context.go('/services'),
                     ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(AppConstants.logoAsset, width: 44, height: 44, fit: BoxFit.contain),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              ],
+            );
+          }
+
+          // Tampilan Mobile / Layar Sempit (< 720px)
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
                 children: [
-                  const Text(
-                    'Selamat Datang di Fuchur Agent',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: 0.2),
+                          blurRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.asset(AppConstants.logoAsset, width: 42, height: 42, fit: BoxFit.contain),
+                    ),
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Sistem VPS & Billing FuchurHost Solutions',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Selamat Datang di Fuchur Agent',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Sistem VPS & Billing FuchurHost Solutions',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.add_card_rounded, size: 15),
+                    label: const Text('Catat Pembayaran'),
+                    onPressed: () => context.go('/payments'),
+                  ),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.person_add_rounded, size: 15),
+                    label: const Text('Pelanggan Baru'),
+                    onPressed: () => context.go('/customers'),
+                  ),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.add_task_rounded, size: 15),
+                    label: const Text('Tambah VPS'),
+                    onPressed: () => context.go('/services'),
+                  ),
+                ],
+              ),
             ],
-          ),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add_card_rounded, size: 16),
-                label: const Text('Catat Pembayaran'),
-                onPressed: () => context.go('/payments'),
-              ),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.person_add_rounded, size: 16),
-                label: const Text('Pelanggan Baru'),
-                onPressed: () => context.go('/customers'),
-              ),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.add_task_rounded, size: 16),
-                label: const Text('Tambah VPS'),
-                onPressed: () => context.go('/services'),
-              ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
