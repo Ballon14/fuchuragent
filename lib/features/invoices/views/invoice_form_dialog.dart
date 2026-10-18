@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/invoice_model.dart';
 import '../../customers/models/customer_model.dart';
+import '../../customers/views/customer_search_dialog.dart';
+import '../../../shared/widgets/status_badge.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
 
@@ -66,11 +68,26 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
     super.dispose();
   }
 
+  Future<void> _openCustomerSearch() async {
+    final picked = await CustomerSearchDialog.show(
+      context,
+      selectedCustomerId: _selectedCustomerId,
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedCustomerId = picked.id;
+      });
+    }
+  }
+
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCustomerId == null || _selectedCustomerId!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih pelanggan terlebih dahulu')),
+        const SnackBar(
+          content: Text('Pilih pelanggan terlebih dahulu melalui tombol Cari Pelanggan.'),
+          backgroundColor: AppColors.danger,
+        ),
       );
       return;
     }
@@ -172,26 +189,165 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
                         );
                       }
 
-                      final effectiveValue = list.any((c) => c.id == _selectedCustomerId) ? _selectedCustomerId : null;
+                      CustomerModel? selectedCustomer;
+                      if (_selectedCustomerId != null && _selectedCustomerId!.isNotEmpty) {
+                        try {
+                          selectedCustomer = list.firstWhere((c) => c.id == _selectedCustomerId);
+                        } catch (_) {
+                          selectedCustomer = null;
+                        }
+                      }
 
-                      return DropdownButtonFormField<String>(
-                        key: ValueKey(effectiveValue),
-                        initialValue: effectiveValue,
-                        isExpanded: true,
-                        decoration: const InputDecoration(labelText: 'Pilih Pelanggan *'),
-                        items: list.map((c) {
-                          final phoneInfo = c.phone.isNotEmpty ? ' (${c.phone})' : '';
-                          return DropdownMenuItem<String>(
-                            value: c.id,
-                            child: Text(
-                              '${c.name}$phoneInfo',
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                      if (selectedCustomer != null) {
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: primaryColor.withValues(alpha: isDark ? 0.12 : 0.06),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: primaryColor.withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: primaryColor.withValues(alpha: 0.2),
+                                child: Text(
+                                  selectedCustomer.name.isNotEmpty ? selectedCustomer.name[0].toUpperCase() : 'C',
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            selectedCustomer.name,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (selectedCustomer.sourceId.isNotEmpty)
+                                          Container(
+                                            margin: const EdgeInsets.only(left: 6),
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                            decoration: BoxDecoration(
+                                              color: primaryColor.withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              selectedCustomer.sourceId,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: primaryColor,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.phone_rounded,
+                                          size: 12,
+                                          color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          selectedCustomer.phone,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: isDark ? Colors.white70 : const Color(0xFF475569),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        StatusBadge(status: selectedCustomer.status),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              OutlinedButton.icon(
+                                icon: const Icon(Icons.swap_horiz_rounded, size: 16),
+                                label: const Text('Ganti'),
+                                onPressed: _openCustomerSearch,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: primaryColor,
+                                  side: BorderSide(color: primaryColor.withValues(alpha: 0.5)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  textStyle: const TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return InkWell(
+                        onTap: _openCustomerSearch,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.surfaceLightDark : Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isDark ? AppColors.borderDark : const Color(0xFFCBD5E1),
                             ),
-                          );
-                        }).toList(),
-                        onChanged: (val) => setState(() => _selectedCustomerId = val),
-                        validator: (v) => v == null ? 'Pilih pelanggan' : null,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: primaryColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(Icons.person_search_rounded, color: primaryColor, size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Pilih Pelanggan *',
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Klik untuk mencari nama, WhatsApp, ID...',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton.icon(
+                                onPressed: _openCustomerSearch,
+                                icon: const Icon(Icons.search_rounded, size: 16),
+                                label: const Text('Cari'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       );
                     },
                   ),
