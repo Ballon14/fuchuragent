@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../core/constants/app_constants.dart';
 import '../models/customer_model.dart';
 import '../../services/models/service_model.dart';
 import '../../invoices/models/invoice_model.dart';
@@ -11,19 +13,146 @@ class CustomerRepository {
 
   CollectionReference get _customersRef => _firestore.collection('customers');
 
+  /// Memantau data pelanggan secara realtime dengan status dinamis
+  /// yang dihitung langsung dari data kelola layanan VPS:
+  /// - 'active': memiliki minimal 1 layanan VPS aktif yang belum kedaluwarsa (endDate > now).
+  /// - 'inactive': tidak memiliki layanan VPS aktif atau masa aktif telah kedaluwarsa.
+  /// - 'archived': pelanggan yang diarsipkan.
   Stream<List<CustomerModel>> watchCustomers({String? statusFilter}) {
-    return _customersRef.snapshots().map((snap) {
-      var list = snap.docs.map((d) => CustomerModel.fromFirestore(d)).toList();
+    late StreamController<List<CustomerModel>> controller;
+    StreamSubscription? custSub;
+    StreamSubscription? vpsSub;
+    QuerySnapshot? lastCustSnap;
+    QuerySnapshot? lastVpsSnap;
+
+    void emitLatest() {
+      if (lastCustSnap == null) return;
+      final now = DateTime.now();
+
+      final activeCustomerIds = <String>{};
+      if (lastVpsSnap != null) {
+        for (final doc in lastVpsSnap!.docs) {
+          final data = doc.data() as Map<String, dynamic>? ?? {};
+          final status = (data['status'] as String? ?? '').toLowerCase();
+          final isStatusActive = status == 'active' || status == 'actice';
+          final endDate = AppConstants.parseDateTime(data['endDate']);
+          // Layanan aktif dan masa aktif belum kadaluarsa
+          if (isStatusActive && endDate != null && endDate.isAfter(now)) {
+            final custId = data['customerId'] as String?;
+            if (custId != null && custId.isNotEmpty) {
+              activeCustomerIds.add(custId);
+            }
+          }
+        }
+      }
+
+      var list = lastCustSnap!.docs.map((d) {
+        final model = CustomerModel.fromFirestore(d);
+        final dynamicStatus = model.isArchived
+            ? 'archived'
+            : (activeCustomerIds.contains(model.id) ? 'active' : 'inactive');
+        return model.copyWith(status: dynamicStatus);
+      }).toList();
+
       if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
         list = list.where((c) => c.status.toLowerCase() == statusFilter.toLowerCase()).toList();
       }
+
       list.sort((a, b) {
         final aDate = a.createdAt ?? DateTime(2000);
         final bDate = b.createdAt ?? DateTime(2000);
         return bDate.compareTo(aDate);
       });
-      return list;
-    });
+
+      if (!controller.isClosed) {
+        controller.add(list);
+      }
+    }
+
+    controller = StreamController<List<CustomerModel>>.broadcast(
+      onListen: () {
+        custSub = _customersRef.snapshots().listen((snap) {
+          lastCustSnap = snap;
+          emitLatest();
+        }, onError: (err) {
+          if (!controller.isClosed) controller.addError(err);
+        });
+
+        vpsSub = _firestore.collection('vps_services').snapshots().listen((snap) {
+          lastVpsSnap = snap;
+          emitLatest();
+        }, onError: (err) {
+          if (!controller.isClosed) controller.addError(err);
+        });
+      },
+      onCancel: () {
+        custSub?.cancel();
+        vpsSub?.cancel();
+      },
+    );
+
+    return controller.stream;
+  }
+
+  /// Memantau satu pelanggan secara spesifik dengan status dinamis realtime
+  Stream<CustomerModel?> watchCustomerById(String id) {
+    late StreamController<CustomerModel?> controller;
+    StreamSubscription? custSub;
+    StreamSubscription? vpsSub;
+    DocumentSnapshot? lastCustDoc;
+    QuerySnapshot? lastVpsSnap;
+
+    void emitLatest() {
+      if (lastCustDoc == null || !lastCustDoc!.exists) {
+        if (!controller.isClosed) controller.add(null);
+        return;
+      }
+      final now = DateTime.now();
+      final model = CustomerModel.fromFirestore(lastCustDoc!);
+      bool hasActiveService = false;
+
+      if (lastVpsSnap != null) {
+        hasActiveService = lastVpsSnap!.docs.any((d) {
+          final data = d.data() as Map<String, dynamic>? ?? {};
+          final status = (data['status'] as String? ?? '').toLowerCase();
+          final isStatusActive = status == 'active' || status == 'actice';
+          final endDate = AppConstants.parseDateTime(data['endDate']);
+          return isStatusActive && endDate != null && endDate.isAfter(now);
+        });
+      }
+
+      final dynamicStatus = model.isArchived
+          ? 'archived'
+          : (hasActiveService ? 'active' : 'inactive');
+
+      if (!controller.isClosed) {
+        controller.add(model.copyWith(status: dynamicStatus));
+      }
+    }
+
+    controller = StreamController<CustomerModel?>.broadcast(
+      onListen: () {
+        custSub = _customersRef.doc(id).snapshots().listen((doc) {
+          lastCustDoc = doc;
+          emitLatest();
+        }, onError: (err) {
+          if (!controller.isClosed) controller.addError(err);
+        });
+
+        vpsSub = _firestore.collection('vps_services').where('customerId', isEqualTo: id).snapshots().listen((snap) {
+          lastVpsSnap = snap;
+          emitLatest();
+        }, onError: (err) {
+          if (!controller.isClosed) controller.addError(err);
+        });
+      },
+      onCancel: () {
+        custSub?.cancel();
+        vpsSub?.cancel();
+      },
+    );
+
+    return controller.stream;
   }
 
   Future<List<CustomerModel>> getCustomers({
@@ -32,7 +161,30 @@ class CustomerRepository {
     int limit = 50,
   }) async {
     final snap = await _customersRef.limit(200).get();
-    var list = snap.docs.map((d) => CustomerModel.fromFirestore(d)).toList();
+    final now = DateTime.now();
+    final vpsSnap = await _firestore.collection('vps_services').get();
+
+    final activeCustomerIds = <String>{};
+    for (final doc in vpsSnap.docs) {
+      final data = doc.data();
+      final status = (data['status'] as String? ?? '').toLowerCase();
+      final isStatusActive = status == 'active' || status == 'actice';
+      final endDate = AppConstants.parseDateTime(data['endDate']);
+      if (isStatusActive && endDate != null && endDate.isAfter(now)) {
+        final custId = data['customerId'] as String?;
+        if (custId != null && custId.isNotEmpty) {
+          activeCustomerIds.add(custId);
+        }
+      }
+    }
+
+    var list = snap.docs.map((d) {
+      final model = CustomerModel.fromFirestore(d);
+      final dynamicStatus = model.isArchived
+          ? 'archived'
+          : (activeCustomerIds.contains(model.id) ? 'active' : 'inactive');
+      return model.copyWith(status: dynamicStatus);
+    }).toList();
 
     if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
       list = list.where((c) => c.status.toLowerCase() == statusFilter.toLowerCase()).toList();
@@ -60,7 +212,23 @@ class CustomerRepository {
   Future<CustomerModel?> getCustomerById(String id) async {
     final doc = await _customersRef.doc(id).get();
     if (!doc.exists) return null;
-    return CustomerModel.fromFirestore(doc);
+    final model = CustomerModel.fromFirestore(doc);
+
+    final now = DateTime.now();
+    final vpsSnap = await _firestore.collection('vps_services').where('customerId', isEqualTo: id).get();
+    final hasActiveService = vpsSnap.docs.any((d) {
+      final data = d.data();
+      final status = (data['status'] as String? ?? '').toLowerCase();
+      final isStatusActive = status == 'active' || status == 'actice';
+      final endDate = AppConstants.parseDateTime(data['endDate']);
+      return isStatusActive && endDate != null && endDate.isAfter(now);
+    });
+
+    final dynamicStatus = model.isArchived
+        ? 'archived'
+        : (hasActiveService ? 'active' : 'inactive');
+
+    return model.copyWith(status: dynamicStatus);
   }
 
   /// Menghasilkan ID Pelanggan berurutan otomatis (contoh: CUS-021)

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../services/models/service_model.dart';
 
 class CustomerModel {
   final String id;
@@ -26,6 +27,25 @@ class CustomerModel {
 
   bool get isActive => status == 'active';
   bool get isArchived => status == 'archived';
+
+  /// Menghitung status pelanggan secara dinamis dari daftar layanan VPS miliknya:
+  /// - 'archived': jika pelanggan berstatus diarsipkan
+  /// - 'active': jika memiliki minimal 1 layanan VPS aktif yang belum kedaluwarsa (endDate > now)
+  /// - 'inactive': jika tidak memiliki layanan VPS aktif atau seluruh masa aktifnya telah kadaluarsa (endDate <= now)
+  static String calculateStatusFromServices({
+    required Iterable<VpsServiceModel> services,
+    bool isArchived = false,
+    DateTime? now,
+  }) {
+    if (isArchived) return 'archived';
+    final refNow = now ?? DateTime.now();
+    final hasActiveRental = services.any((s) {
+      final isStatusActive = s.status.toLowerCase() == 'active' || s.status.toLowerCase() == 'actice';
+      if (!isStatusActive) return false;
+      return s.endDate != null && s.endDate!.isAfter(refNow);
+    });
+    return hasActiveRental ? 'active' : 'inactive';
+  }
 
   factory CustomerModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};

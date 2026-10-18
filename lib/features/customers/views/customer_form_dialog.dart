@@ -26,7 +26,6 @@ class _CustomerFormDialogState extends ConsumerState<CustomerFormDialog> {
   late TextEditingController _phoneCtrl;
   late TextEditingController _emailCtrl;
   late TextEditingController _notesCtrl;
-  late String _status;
   bool _isGeneratingId = false;
 
   @override
@@ -38,7 +37,6 @@ class _CustomerFormDialogState extends ConsumerState<CustomerFormDialog> {
     _phoneCtrl = TextEditingController(text: c?.phone ?? '');
     _emailCtrl = TextEditingController(text: c?.email ?? '');
     _notesCtrl = TextEditingController(text: c?.notes ?? '');
-    _status = c?.status ?? 'active';
 
     // Auto-generate customer ID if creating new customer or if ID is empty
     if (widget.customer == null || (c != null && c.sourceId.trim().isEmpty)) {
@@ -85,7 +83,7 @@ class _CustomerFormDialogState extends ConsumerState<CustomerFormDialog> {
       name: _nameCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
       email: _emailCtrl.text.trim().isNotEmpty ? _emailCtrl.text.trim() : null,
-      status: _status,
+      status: widget.customer?.status ?? 'inactive',
       notes: _notesCtrl.text.trim(),
       createdAt: widget.customer?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
@@ -172,19 +170,6 @@ class _CustomerFormDialogState extends ConsumerState<CustomerFormDialog> {
                 TextFormField(
                   controller: _emailCtrl,
                   decoration: const InputDecoration(labelText: 'Email (Opsional)'),
-                ),
-                const SizedBox(height: 14),
-                DropdownButtonFormField<String>(
-                  initialValue: _status,
-                  decoration: const InputDecoration(labelText: 'Status Pelanggan'),
-                  items: const [
-                    DropdownMenuItem(value: 'active', child: Text('Aktif')),
-                    DropdownMenuItem(value: 'inactive', child: Text('Nonaktif')),
-                    DropdownMenuItem(value: 'archived', child: Text('Diarsipkan')),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) setState(() => _status = val);
-                  },
                 ),
                 const SizedBox(height: 14),
                 TextFormField(

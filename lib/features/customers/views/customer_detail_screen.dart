@@ -102,8 +102,8 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
   Widget build(BuildContext context) {
     final customerRepo = ref.watch(customerRepositoryProvider);
 
-    return FutureBuilder<CustomerModel?>(
-      future: customerRepo.getCustomerById(widget.customerId),
+    return StreamBuilder<CustomerModel?>(
+      stream: customerRepo.watchCustomerById(widget.customerId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator(color: AppColors.cyan)));

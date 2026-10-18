@@ -9,20 +9,31 @@ class DashboardRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<DashboardStats> getDashboardStats() async {
-    // 1. Customers
-    final customersSnap = await _firestore.collection('customers').orderBy('createdAt', descending: true).get();
-    final allCustomers = customersSnap.docs.map((d) => CustomerModel.fromFirestore(d)).toList();
-    final totalCustomers = allCustomers.length;
-    final activeCustomers = allCustomers.where((c) => c.status == 'active').length;
-    final recentCustomers = allCustomers.take(5).toList();
-
-    // 2. Services
+    // 1. Services (Dibutuhkan untuk parameter status pelanggan aktif / nonaktif)
     final servicesSnap = await _firestore.collection('vps_services').get();
     final allServices = servicesSnap.docs.map((d) => VpsServiceModel.fromFirestore(d)).toList();
     final totalServices = allServices.length;
     final activeServices = allServices.where((s) => s.isActive).length;
 
     final now = DateTime.now();
+
+    // ID Pelanggan Aktif: memiliki minimal 1 layanan VPS berstatus aktif yang belum kedaluwarsa
+    final activeCustomerIds = allServices
+        .where((s) => s.isActive && s.endDate != null && s.endDate!.isAfter(now))
+        .map((s) => s.customerId)
+        .toSet();
+
+    // 2. Customers
+    final customersSnap = await _firestore.collection('customers').orderBy('createdAt', descending: true).get();
+    final allCustomers = customersSnap.docs.map((d) => CustomerModel.fromFirestore(d)).toList();
+    final totalCustomers = allCustomers.length;
+    final activeCustomers = allCustomers.where((c) => !c.isArchived && activeCustomerIds.contains(c.id)).length;
+    final recentCustomers = allCustomers.take(5).map((c) {
+      final dynamicStatus = c.isArchived
+          ? 'archived'
+          : (activeCustomerIds.contains(c.id) ? 'active' : 'inactive');
+      return c.copyWith(status: dynamicStatus);
+    }).toList();
     final sevenDaysLater = now.add(const Duration(days: 7));
 
     final expiringServices = allServices.where((s) {
