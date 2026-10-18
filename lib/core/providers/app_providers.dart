@@ -17,6 +17,7 @@ import '../../features/dashboard/models/dashboard_stats.dart';
 import '../../features/expenses/repositories/expense_repository.dart';
 import '../../features/settings/models/system_settings_model.dart';
 import '../../features/settings/repositories/settings_repository.dart';
+export '../../features/finance/repositories/finance_repository.dart';
 
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
@@ -68,4 +69,5 @@ final systemSettingsProvider = StreamProvider<SystemSettingsModel>((ref) {
 final dashboardStatsProvider = FutureProvider.autoDispose<DashboardStats>((ref) async {
   return await ref.watch(dashboardRepositoryProvider).getDashboardStats();
 });
+
 
