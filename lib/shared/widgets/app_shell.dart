@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/app_providers.dart';
 import '../../features/notifications/services/local_notification_service.dart';
+import 'confirmation_dialog.dart';
 
 class NavItem {
   final String title;
@@ -302,10 +303,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                                 color: isDark ? Colors.white54 : const Color(0xFF64748B),
                               ),
                               tooltip: 'Keluar',
-                              onPressed: () async {
-                                await ref.read(authRepositoryProvider).signOut();
-                                if (context.mounted) context.go('/login');
-                              },
+                              onPressed: () => ConfirmationDialog.confirmAndSignOut(context, ref),
                             ),
                           ],
                         ),
@@ -801,8 +799,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                     ),
                     onTap: () async {
                       Navigator.of(ctx).pop();
-                      await ref.read(authRepositoryProvider).signOut();
-                      if (context.mounted) context.go('/login');
+                      await ConfirmationDialog.confirmAndSignOut(context, ref);
                     },
                   ),
                   const SizedBox(height: 8),
