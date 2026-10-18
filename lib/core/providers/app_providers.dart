@@ -17,22 +17,69 @@ import '../../features/dashboard/models/dashboard_stats.dart';
 import '../../features/expenses/repositories/expense_repository.dart';
 import '../../features/settings/models/system_settings_model.dart';
 import '../../features/settings/repositories/settings_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 export '../../features/finance/repositories/finance_repository.dart';
 
-class ThemeModeNotifier extends Notifier<ThemeMode> {
-  @override
-  ThemeMode build() => ThemeMode.dark;
+final sharedPreferencesProvider = Provider<SharedPreferences?>((ref) => null);
 
-  void toggle() {
-    state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+class ThemeModeNotifier extends Notifier<ThemeMode> {
+  static const String _themeKey = 'app_theme_mode';
+
+  @override
+  ThemeMode build() {
+    final prefs = ref.watch(sharedPreferencesProvider);
+    if (prefs != null) {
+      final savedTheme = prefs.getString(_themeKey);
+      if (savedTheme == 'light') {
+        return ThemeMode.light;
+      } else if (savedTheme == 'system') {
+        return ThemeMode.system;
+      } else if (savedTheme == 'dark') {
+        return ThemeMode.dark;
+      }
+    } else {
+      _loadSavedThemeAsync();
+    }
+    return ThemeMode.dark;
   }
 
-  void setTheme(ThemeMode mode) {
+  Future<void> _loadSavedThemeAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedTheme = prefs.getString(_themeKey);
+      if (savedTheme == 'light' && state != ThemeMode.light) {
+        state = ThemeMode.light;
+      } else if (savedTheme == 'system' && state != ThemeMode.system) {
+        state = ThemeMode.system;
+      } else if (savedTheme == 'dark' && state != ThemeMode.dark) {
+        state = ThemeMode.dark;
+      }
+    } catch (_) {}
+  }
+
+  Future<void> toggle() async {
+    final newMode = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    await setTheme(newMode);
+  }
+
+  Future<void> setTheme(ThemeMode mode) async {
     state = mode;
+    try {
+      final prefs = ref.read(sharedPreferencesProvider) ?? await SharedPreferences.getInstance();
+      String value = 'dark';
+      if (mode == ThemeMode.light) {
+        value = 'light';
+      } else if (mode == ThemeMode.system) {
+        value = 'system';
+      }
+      await prefs.setString(_themeKey, value);
+    } catch (e) {
+      debugPrint('Failed to persist themeMode: $e');
+    }
   }
 }
 
-// Theme Mode Provider (Dark by default)
+// Theme Mode Provider (Dark by default, persisted in local storage)
 final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
 
 // Auth Providers

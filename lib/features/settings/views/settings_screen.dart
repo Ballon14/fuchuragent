@@ -1545,7 +1545,7 @@ ${_waClosingCtrl.text}
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Gunakan Dark Mode (Tema Utama)'),
-                  subtitle: const Text('Warna charcoal/slate dengan aksen cyan elektrik'),
+                  subtitle: const Text('Pilihan tema disimpan otomatis secara permanen di perangkat ini'),
                   value: themeMode == ThemeMode.dark,
                   onChanged: (val) {
                     ref.read(themeModeProvider.notifier).setTheme(val ? ThemeMode.dark : ThemeMode.light);

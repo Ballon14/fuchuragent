@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
@@ -31,9 +32,21 @@ void main() async {
     debugPrint('Failed to initialize local notifications: $e');
   }
 
+  // Initialize Persistent Preferences (Theme Mode, local settings)
+  SharedPreferences? sharedPreferences;
+  try {
+    sharedPreferences = await SharedPreferences.getInstance();
+  } catch (e) {
+    debugPrint('Failed to initialize SharedPreferences: $e');
+  }
+
   runApp(
-    const ProviderScope(
-      child: FuchurAgentApp(),
+    ProviderScope(
+      overrides: [
+        if (sharedPreferences != null)
+          sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+      ],
+      child: const FuchurAgentApp(),
     ),
   );
 }
