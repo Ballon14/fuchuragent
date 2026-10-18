@@ -82,6 +82,17 @@ class ServiceRepository {
       'timestamp': FieldValue.serverTimestamp(),
     });
 
+    // Buat Notifikasi Sistem untuk Administrator & Staff
+    await _firestore.collection('notifications').add({
+      'title': 'Layanan VPS Baru Dibuat',
+      'message': 'Layanan VPS ${service.domain} (${service.packageName}) telah didaftarkan.',
+      'category': 'SYSTEM',
+      'serviceId': docRef.id,
+      'customerId': service.customerId,
+      'isRead': false,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
     return docRef.id;
   }
 

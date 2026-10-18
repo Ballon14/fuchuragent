@@ -3,6 +3,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import '../models/payment_model.dart';
+import '../../../core/constants/app_constants.dart';
 
 class PaymentRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -50,6 +51,19 @@ class PaymentRepository {
 
       final paymentData = result.data['payment'] as Map<String, dynamic>;
       final docSnap = await _paymentsRef.doc(paymentData['id'] as String).get();
+
+      // Buat Notifikasi Sistem untuk Administrator & Staff
+      try {
+        await _firestore.collection('notifications').add({
+          'title': 'Pembayaran Diterima',
+          'message': 'Pembayaran ${AppConstants.formatRupiah(amount)} ($paymentMethod) telah berhasil dicatat.',
+          'category': 'PAYMENT',
+          'invoiceId': invoiceId,
+          'isRead': false,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      } catch (_) {}
+
       return PaymentModel.fromFirestore(docSnap);
     } catch (_) {
       // 2. Atomic fallback transaction ensuring financial consistency
@@ -104,6 +118,19 @@ class PaymentRepository {
           'details': 'Pembayaran Rp$amount dicatat untuk tagihan ${inv['invoiceNumber']} ($paymentMethod). Status: $newStatus',
           'targetId': paymentRef.id,
           'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        // Buat Notifikasi Sistem untuk Administrator & Staff
+        final notifRef = _firestore.collection('notifications').doc();
+        transaction.set(notifRef, {
+          'title': 'Pembayaran Diterima',
+          'message': 'Pembayaran ${AppConstants.formatRupiah(amount)} dicatat untuk tagihan ${inv['invoiceNumber']} ($paymentMethod). Status tagihan: $newStatus.',
+          'category': 'PAYMENT',
+          'invoiceId': invoiceId,
+          'customerId': inv['customerId'] as String?,
+          'serviceId': inv['serviceId'] as String?,
+          'isRead': false,
+          'createdAt': FieldValue.serverTimestamp(),
         });
 
         return payment;

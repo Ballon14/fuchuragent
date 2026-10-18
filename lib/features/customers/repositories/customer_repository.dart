@@ -125,6 +125,16 @@ class CustomerRepository {
       'timestamp': FieldValue.serverTimestamp(),
     });
 
+    // Buat Notifikasi Sistem untuk Administrator & Staff
+    await _firestore.collection('notifications').add({
+      'title': 'Pelanggan Baru Terdaftar',
+      'message': '${effectiveCustomer.name} (${effectiveCustomer.sourceId}) telah didaftarkan ke sistem.',
+      'category': 'SYSTEM',
+      'customerId': docRef.id,
+      'isRead': false,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
     return docRef.id;
   }
 

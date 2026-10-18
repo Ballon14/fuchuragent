@@ -18,7 +18,7 @@ class NavItem {
   });
 }
 
-class AppShell extends ConsumerWidget {
+class AppShell extends ConsumerStatefulWidget {
   final Widget child;
   final String currentRoute;
 
@@ -44,14 +44,31 @@ class AppShell extends ConsumerWidget {
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
+  String get currentRoute => widget.currentRoute;
+  Widget get child => widget.child;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(notificationRepositoryProvider).syncSystemAlerts();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final userProfile = ref.watch(currentUserProfileProvider).value;
     final themeMode = ref.watch(themeModeProvider);
+    final notifRepo = ref.watch(notificationRepositoryProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final isAdmin = userProfile?.isAdmin ?? false;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final visibleNavItems = navItems.where((item) => !item.adminOnly || isAdmin).toList();
+    final visibleNavItems = AppShell.navItems.where((item) => !item.adminOnly || isAdmin).toList();
 
     if (isDesktop) {
       return Scaffold(
@@ -154,6 +171,30 @@ class AppShell extends ConsumerWidget {
                                 fontSize: 13,
                               ),
                             ),
+                            trailing: item.route == '/notifications'
+                                ? StreamBuilder<int>(
+                                    stream: notifRepo.watchUnreadCount(),
+                                    builder: (context, snap) {
+                                      final count = snap.data ?? 0;
+                                      if (count == 0) return const SizedBox.shrink();
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.danger,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          count > 99 ? '99+' : '$count',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : null,
                             onTap: () => context.go(item.route),
                           ),
                         );
@@ -259,7 +300,6 @@ class AppShell extends ConsumerWidget {
     // ==========================================
     // MOBILE FIRST INTERFACE (< 900px)
     // ==========================================
-    final notifRepo = ref.watch(notificationRepositoryProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -611,6 +651,7 @@ class AppShell extends ConsumerWidget {
                         title: 'Notifikasi',
                         route: '/notifications',
                         isDark: isDark,
+                        badgeCountStream: ref.read(notificationRepositoryProvider).watchUnreadCount(),
                       ),
                       _buildMenuGridItem(
                         ctx,
@@ -705,6 +746,7 @@ class AppShell extends ConsumerWidget {
     required String title,
     required String route,
     required bool isDark,
+    Stream<int>? badgeCountStream,
   }) {
     return InkWell(
       onTap: () {
@@ -718,29 +760,61 @@ class AppShell extends ConsumerWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.borderLight),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 22),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: 22),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
+            if (badgeCountStream != null)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: StreamBuilder<int>(
+                  stream: badgeCountStream,
+                  builder: (context, snap) {
+                    final count = snap.data ?? 0;
+                    if (count == 0) return const SizedBox.shrink();
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.danger,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        count > 99 ? '99+' : '$count',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
           ],
         ),
       ),

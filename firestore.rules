@@ -73,7 +73,12 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // 9. Koleksi Laporan & Dokumen Lainnya
+    // 9. Koleksi Notifikasi (notifications)
+    match /notifications/{notificationId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 10. Koleksi Laporan & Dokumen Lainnya
     match /{document=**} {
       allow read, write: if isAuthenticated();
     }

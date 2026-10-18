@@ -3,6 +3,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/invoice_model.dart';
 import '../../payments/models/payment_model.dart';
+import '../../../core/constants/app_constants.dart';
 
 class InvoiceRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -83,6 +84,22 @@ class InvoiceRepository {
 
       final invoiceData = result.data['invoice'] as Map<String, dynamic>;
       final docSnap = await _invoicesRef.doc(invoiceData['id'] as String).get();
+
+      // Buat Notifikasi Sistem untuk Administrator & Staff
+      try {
+        final totalAmount = (invoiceData['total'] as num?)?.toInt() ?? 0;
+        await _firestore.collection('notifications').add({
+          'title': 'Tagihan Baru Diterbitkan',
+          'message': 'Tagihan ${invoiceData['invoiceNumber']} diterbitkan senilai ${AppConstants.formatRupiah(totalAmount)}.',
+          'category': 'INVOICE',
+          'invoiceId': invoiceData['id'],
+          'customerId': customerId,
+          'serviceId': serviceId,
+          'isRead': false,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      } catch (_) {}
+
       return InvoiceModel.fromFirestore(docSnap);
     } catch (_) {
       // 2. Atomic fallback transaction for local emulator or when functions are pending deploy
@@ -138,6 +155,19 @@ class InvoiceRepository {
           'details': 'Tagihan $invoiceNumber dibuat sejumlah Rp$total',
           'targetId': docRef.id,
           'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        // Buat Notifikasi Sistem untuk Administrator & Staff
+        final notifRef = _firestore.collection('notifications').doc();
+        transaction.set(notifRef, {
+          'title': 'Tagihan Baru Diterbitkan',
+          'message': 'Tagihan $invoiceNumber diterbitkan senilai ${AppConstants.formatRupiah(total)}.',
+          'category': 'INVOICE',
+          'invoiceId': docRef.id,
+          'customerId': customerId,
+          'serviceId': serviceId,
+          'isRead': false,
+          'createdAt': FieldValue.serverTimestamp(),
         });
 
         return invoice;
