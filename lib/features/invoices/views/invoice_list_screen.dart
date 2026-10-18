@@ -308,55 +308,81 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
 
     return AppCard(
       padding: EdgeInsets.zero,
-      child: SingleChildScrollView(
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columns: const [
-              DataColumn(label: Text('Nomor Tagihan')),
-              DataColumn(label: Text('Item Layanan')),
-              DataColumn(label: Text('Total')),
-              DataColumn(label: Text('Dibayar')),
-              DataColumn(label: Text('Sisa Saldo')),
-              DataColumn(label: Text('Jatuh Tempo')),
-              DataColumn(label: Text('Status')),
-              DataColumn(label: Text('Aksi')),
-            ],
-            rows: list.map((inv) {
-              return DataRow(
-                cells: [
-                  DataCell(Text(inv.invoiceNumber, style: const TextStyle(fontWeight: FontWeight.bold))),
-                  DataCell(
-                    Text(
-                      inv.items.map((i) => i.description).join(', '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final availableWidth = constraints.maxWidth;
+          final bool canFitWithoutScroll = availableWidth >= 780;
+          final double dynamicSpacing = ((availableWidth - 720) / 7).clamp(10.0, 32.0);
+
+          return SizedBox(
+            width: availableWidth,
+            child: SingleChildScrollView(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: canFitWithoutScroll
+                    ? const NeverScrollableScrollPhysics()
+                    : const BouncingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: availableWidth),
+                  child: DataTable(
+                    columnSpacing: dynamicSpacing,
+                    horizontalMargin: 16,
+                    dataRowMinHeight: 48,
+                    dataRowMaxHeight: 56,
+                    headingRowHeight: 46,
+                    columns: const [
+                      DataColumn(label: Text('Nomor Tagihan')),
+                      DataColumn(label: Text('Item Layanan')),
+                      DataColumn(label: Text('Total')),
+                      DataColumn(label: Text('Dibayar')),
+                      DataColumn(label: Text('Sisa Saldo')),
+                      DataColumn(label: Text('Jatuh Tempo')),
+                      DataColumn(label: Text('Status')),
+                      DataColumn(label: Text('Aksi')),
+                    ],
+                    rows: list.map((inv) {
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(inv.invoiceNumber, style: const TextStyle(fontWeight: FontWeight.bold))),
+                          DataCell(
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 160),
+                              child: Text(
+                                inv.items.map((i) => i.description).join(', '),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          DataCell(Text(AppConstants.formatRupiah(inv.total), style: const TextStyle(fontWeight: FontWeight.bold))),
+                          DataCell(Text(AppConstants.formatRupiah(inv.paidAmount), style: const TextStyle(color: AppColors.success))),
+                          DataCell(
+                            Text(
+                              AppConstants.formatRupiah(inv.remainingBalance),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: inv.remainingBalance > 0 ? AppColors.warning : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                              ),
+                            ),
+                          ),
+                          DataCell(Text(AppConstants.formatShortDate(inv.dueDate))),
+                          DataCell(StatusBadge(status: inv.isOverdue ? 'overdue' : inv.status)),
+                          DataCell(
+                            IconButton(
+                              icon: Icon(Icons.chevron_right_rounded, color: primaryColor),
+                              tooltip: 'Detail Tagihan',
+                              onPressed: () => context.go('/invoices/${inv.id}'),
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
                   ),
-                  DataCell(Text(AppConstants.formatRupiah(inv.total), style: const TextStyle(fontWeight: FontWeight.bold))),
-                  DataCell(Text(AppConstants.formatRupiah(inv.paidAmount), style: const TextStyle(color: AppColors.success))),
-                  DataCell(
-                    Text(
-                      AppConstants.formatRupiah(inv.remainingBalance),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: inv.remainingBalance > 0 ? AppColors.warning : (isDark ? Colors.white60 : const Color(0xFF64748B)),
-                      ),
-                    ),
-                  ),
-                  DataCell(Text(AppConstants.formatShortDate(inv.dueDate))),
-                  DataCell(StatusBadge(status: inv.isOverdue ? 'overdue' : inv.status)),
-                  DataCell(
-                    IconButton(
-                      icon: Icon(Icons.chevron_right_rounded, color: primaryColor),
-                      onPressed: () => context.go('/invoices/${inv.id}'),
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

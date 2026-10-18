@@ -302,54 +302,85 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
 
     return AppCard(
       padding: EdgeInsets.zero,
-      child: SingleChildScrollView(
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columns: const [
-              DataColumn(label: Text('ID Pelanggan')),
-              DataColumn(label: Text('Nama Pelanggan')),
-              DataColumn(label: Text('Nomor HP / WA')),
-              DataColumn(label: Text('Email')),
-              DataColumn(label: Text('Status')),
-              DataColumn(label: Text('Terdaftar')),
-              DataColumn(label: Text('Aksi')),
-            ],
-            rows: list.map((c) {
-              return DataRow(
-                cells: [
-                  DataCell(Text(c.sourceId.isNotEmpty ? c.sourceId : '-', style: const TextStyle(fontWeight: FontWeight.bold))),
-                  DataCell(
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 14,
-                          backgroundColor: primaryColor.withValues(alpha: 0.15),
-                          child: Text(
-                            c.name.isNotEmpty ? c.name[0].toUpperCase() : 'C',
-                            style: TextStyle(fontSize: 11, color: primaryColor, fontWeight: FontWeight.bold),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final availableWidth = constraints.maxWidth;
+          final bool canFitWithoutScroll = availableWidth >= 700;
+          final double dynamicSpacing = ((availableWidth - 650) / 6).clamp(12.0, 36.0);
+
+          return SizedBox(
+            width: availableWidth,
+            child: SingleChildScrollView(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: canFitWithoutScroll
+                    ? const NeverScrollableScrollPhysics()
+                    : const BouncingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: availableWidth),
+                  child: DataTable(
+                    columnSpacing: dynamicSpacing,
+                    horizontalMargin: 16,
+                    dataRowMinHeight: 48,
+                    dataRowMaxHeight: 56,
+                    headingRowHeight: 46,
+                    columns: const [
+                      DataColumn(label: Text('ID Pelanggan')),
+                      DataColumn(label: Text('Nama Pelanggan')),
+                      DataColumn(label: Text('Nomor HP / WA')),
+                      DataColumn(label: Text('Email')),
+                      DataColumn(label: Text('Status')),
+                      DataColumn(label: Text('Terdaftar')),
+                      DataColumn(label: Text('Aksi')),
+                    ],
+                    rows: list.map((c) {
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(c.sourceId.isNotEmpty ? c.sourceId : '-', style: const TextStyle(fontWeight: FontWeight.bold))),
+                          DataCell(
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 14,
+                                  backgroundColor: primaryColor.withValues(alpha: 0.15),
+                                  child: Text(
+                                    c.name.isNotEmpty ? c.name[0].toUpperCase() : 'C',
+                                    style: TextStyle(fontSize: 11, color: primaryColor, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 180),
+                                  child: Text(
+                                    c.name,
+                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(c.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      ],
-                    ),
+                          DataCell(Text(c.phone)),
+                          DataCell(Text(c.email ?? '-')),
+                          DataCell(StatusBadge(status: c.status)),
+                          DataCell(Text(AppConstants.formatShortDate(c.createdAt))),
+                          DataCell(
+                            IconButton(
+                              icon: Icon(Icons.chevron_right_rounded, color: primaryColor),
+                              tooltip: 'Detail Pelanggan',
+                              onPressed: () => context.go('/customers/${c.id}'),
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
                   ),
-                  DataCell(Text(c.phone)),
-                  DataCell(Text(c.email ?? '-')),
-                  DataCell(StatusBadge(status: c.status)),
-                  DataCell(Text(AppConstants.formatShortDate(c.createdAt))),
-                  DataCell(
-                    IconButton(
-                      icon: Icon(Icons.chevron_right_rounded, color: primaryColor),
-                      onPressed: () => context.go('/customers/${c.id}'),
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
