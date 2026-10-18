@@ -182,6 +182,7 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
                     currentPage: safeCurrentPage,
                     totalItems: totalItems,
                     itemsPerPage: _itemsPerPage,
+                    hasBottomFab: !isDesktop,
                     availableItemsPerPage: const [10, 20, 50],
                     onPageChanged: (newPage) {
                       setState(() => _currentPage = newPage);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fuchuragent/shared/widgets/status_badge.dart';
 import 'package:fuchuragent/shared/widgets/stat_card.dart';
+import 'package:fuchuragent/shared/widgets/app_card.dart';
 
 void main() {
   group('Widget Tests for Fuchur Agent', () {
@@ -60,5 +61,47 @@ void main() {
       expect(find.text('10 Aktif'), findsOneWidget);
       expect(find.byIcon(Icons.people), findsOneWidget);
     });
+
+    testWidgets('AppCard without header supports Expanded flex children like desktop tables', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                const Text('Top Header'),
+                Expanded(
+                  child: AppCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        Container(height: 40, color: Colors.blue, child: const Text('Table Header')),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: 10,
+                            itemBuilder: (context, index) => ListTile(
+                              title: Text('Customer Row $index'),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Table Header'), findsOneWidget);
+      expect(find.text('Customer Row 0'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
   });
 }
+

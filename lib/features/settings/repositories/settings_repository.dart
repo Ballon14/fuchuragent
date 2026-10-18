@@ -47,14 +47,27 @@ class SettingsRepository {
     try {
       final doc = await _configRef.get();
       if (doc.exists && doc.data() != null) {
-        return SystemSettingsModel.fromMap(doc.data()!);
+        final settings = SystemSettingsModel.fromMap(doc.data()!);
+        // If Firestore had old dummy accounts, update it with clean Bank Jago
+        final rawMethods = doc.data()!['paymentMethods'] as List?;
+        final hasDummy = rawMethods?.any((m) =>
+                m['accountNumber'] == '1234567890' ||
+                m['accountNumber'] == '0987654321') ??
+            false;
+        if (hasDummy) {
+          _configRef.set(settings.toMap(), SetOptions(merge: true)).ignore();
+        }
+        return settings;
       }
-      return SystemSettingsModel.defaultSettings();
+      final def = SystemSettingsModel.defaultSettings();
+      _configRef.set(def.toMap(), SetOptions(merge: true)).ignore();
+      return def;
     } catch (e) {
       debugPrint('Error getting settings from Firestore: $e');
       return SystemSettingsModel.defaultSettings();
     }
   }
+
 
   /// Watch settings in real-time
   Stream<SystemSettingsModel> watchSettings() {

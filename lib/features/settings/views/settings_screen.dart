@@ -1046,15 +1046,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     currentMethods.add(newMethod);
                   }
 
+                  final updated = _settings!.copyWith(
+                    paymentMethods: currentMethods,
+                    bankAccounts: currentMethods.map((m) => m.toBankAccount()).toList(),
+                  );
+
                   setState(() {
-                    _settings = _settings!.copyWith(
-                      paymentMethods: currentMethods,
-                      bankAccounts: currentMethods.map((m) => m.toBankAccount()).toList(),
-                    );
-                    _hasUnsavedChanges = true;
+                    _settings = updated;
+                    _hasUnsavedChanges = false;
                   });
 
                   Navigator.pop(ctx);
+
+                  final messenger = ScaffoldMessenger.of(context);
+
+                  // Persist directly to Firestore database
+                  try {
+                    final user = FirebaseAuth.instance.currentUser;
+                    final updatedBy = user?.displayName ?? user?.email ?? 'Admin';
+                    await ref.read(settingsRepositoryProvider).saveSettings(updated, updatedBy: updatedBy);
+                    if (!mounted) return;
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(isEdit
+                            ? 'Metode pembayaran "${newMethod.name}" berhasil diperbarui dan tersimpan permanen.'
+                            : 'Metode pembayaran "${newMethod.name}" berhasil ditambahkan dan tersimpan permanen.'),
+                        backgroundColor: AppColors.success,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('Gagal menyimpan metode pembayaran: $e'),
+                        backgroundColor: AppColors.danger,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+
                 },
                 child: const Text('Simpan Metode Pembayaran'),
               ),
@@ -1065,18 +1096,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     );
   }
 
-  void _togglePaymentMethodActive(String id, bool isActive) {
+  Future<void> _togglePaymentMethodActive(String id, bool isActive) async {
     final currentMethods = List<PaymentMethodModel>.from(_settings!.paymentMethods);
     final idx = currentMethods.indexWhere((m) => m.id == id);
     if (idx >= 0) {
       currentMethods[idx] = currentMethods[idx].copyWith(isActive: isActive);
+      final updated = _settings!.copyWith(
+        paymentMethods: currentMethods,
+        bankAccounts: currentMethods.map((m) => m.toBankAccount()).toList(),
+      );
       setState(() {
-        _settings = _settings!.copyWith(
-          paymentMethods: currentMethods,
-          bankAccounts: currentMethods.map((m) => m.toBankAccount()).toList(),
-        );
-        _hasUnsavedChanges = true;
+        _settings = updated;
       });
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        final updatedBy = user?.displayName ?? user?.email ?? 'Admin';
+        await ref.read(settingsRepositoryProvider).saveSettings(updated, updatedBy: updatedBy);
+      } catch (_) {}
     }
   }
 
@@ -1104,13 +1140,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
     final currentMethods = List<PaymentMethodModel>.from(_settings!.paymentMethods);
     currentMethods.removeWhere((m) => m.id == id);
+    final updated = _settings!.copyWith(
+      paymentMethods: currentMethods,
+      bankAccounts: currentMethods.map((m) => m.toBankAccount()).toList(),
+    );
     setState(() {
-      _settings = _settings!.copyWith(
-        paymentMethods: currentMethods,
-        bankAccounts: currentMethods.map((m) => m.toBankAccount()).toList(),
-      );
-      _hasUnsavedChanges = true;
+      _settings = updated;
     });
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      final updatedBy = user?.displayName ?? user?.email ?? 'Admin';
+      await ref.read(settingsRepositoryProvider).saveSettings(updated, updatedBy: updatedBy);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Metode pembayaran berhasil dihapus dari database.'),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {}
   }
 
   // ===========================================================================

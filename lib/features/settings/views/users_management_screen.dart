@@ -5,12 +5,21 @@ import '../../../core/providers/app_providers.dart';
 import '../../auth/models/user_model.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/confirmation_dialog.dart';
+import '../../../shared/widgets/app_pagination_bar.dart';
 
-class UsersManagementScreen extends ConsumerWidget {
+class UsersManagementScreen extends ConsumerStatefulWidget {
   const UsersManagementScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<UsersManagementScreen> createState() => _UsersManagementScreenState();
+}
+
+class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
+  int _currentPage = 1;
+  int _itemsPerPage = 10;
+
+  @override
+  Widget build(BuildContext context) {
     final authRepo = ref.watch(authRepositoryProvider);
     final currentUser = ref.watch(currentUserProfileProvider).value;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -37,9 +46,13 @@ class UsersManagementScreen extends ConsumerWidget {
           }
 
           final users = snapshot.data ?? [];
+          final totalItems = users.length;
+          final totalPages = totalItems == 0 ? 1 : (totalItems / _itemsPerPage).ceil();
+          final safeCurrentPage = _currentPage.clamp(1, totalPages);
+          final startIndex = (safeCurrentPage - 1) * _itemsPerPage;
+          final pageUsers = users.skip(startIndex).take(_itemsPerPage).toList();
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -141,10 +154,10 @@ class UsersManagementScreen extends ConsumerWidget {
                       : ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: users.length,
+                          itemCount: pageUsers.length,
                           separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (context, idx) {
-                            final u = users[idx];
+                            final u = pageUsers[idx];
                             final isRootSuperAdmin = u.email.toLowerCase().trim() == UserModel.superAdminEmail;
                             final isTargetSuperAdmin = u.isSuperAdmin;
 
@@ -310,6 +323,25 @@ class UsersManagementScreen extends ConsumerWidget {
                           },
                         ),
                 ),
+
+                if (totalItems > _itemsPerPage) ...[
+                  const SizedBox(height: 16),
+                  AppPaginationBar(
+                    currentPage: safeCurrentPage,
+                    totalItems: totalItems,
+                    itemsPerPage: _itemsPerPage,
+                    availableItemsPerPage: const [10, 20, 50],
+                    onPageChanged: (newPage) {
+                      setState(() => _currentPage = newPage);
+                    },
+                    onItemsPerPageChanged: (newLimit) {
+                      setState(() {
+                        _itemsPerPage = newLimit;
+                        _currentPage = 1;
+                      });
+                    },
+                  ),
+                ],
               ],
             ),
           );

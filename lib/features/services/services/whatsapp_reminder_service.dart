@@ -28,13 +28,27 @@ class WhatsAppReminderService {
     return cleaned;
   }
 
-  /// Formats bank account list for WhatsApp messages
-  static String formatBankAccounts(List<BankAccountModel>? banks) {
-    if (banks == null || banks.isEmpty) {
-      return '• Bank BCA: *1234567890* a.n *Fuchur Agent*\n• Bank Mandiri: *0987654321* a.n *Fuchur Agent*';
+  /// Formats bank account list for WhatsApp messages with priority for active payment methods
+  static String formatBankAccounts(List<BankAccountModel>? banks, {List<PaymentMethodModel>? paymentMethods}) {
+    if (paymentMethods != null && paymentMethods.isNotEmpty) {
+      final active = paymentMethods.where((p) => p.isActive && p.accountNumber.trim().isNotEmpty).toList();
+      if (active.isNotEmpty) {
+        return active
+            .map((b) => '• ${b.name}: *${b.accountNumber.trim()}* a.n *${b.accountHolder.trim()}*')
+            .join('\n');
+      }
     }
-    return banks.map((b) => '• ${b.bankName}: *${b.accountNumber}* a.n *${b.accountHolder}*').join('\n');
+    if (banks != null && banks.isNotEmpty) {
+      final valid = banks.where((b) => b.accountNumber.trim().isNotEmpty).toList();
+      if (valid.isNotEmpty) {
+        return valid
+            .map((b) => '• ${b.bankName}: *${b.accountNumber.trim()}* a.n *${b.accountHolder.trim()}*')
+            .join('\n');
+      }
+    }
+    return '• Bank Jago: *1078-5455-7360* a.n *MUHAMMAD IQBAL FATCHURROHMAN*';
   }
+
 
   /// Generates template for VPS service that is expiring soon
   static String generateExpiringSoonTemplate({
@@ -53,7 +67,7 @@ class WhatsAppReminderService {
         ? 'hari ini'
         : (daysLeft == 1 ? 'besok (1 hari lagi)' : '$daysLeft hari lagi');
 
-    final bankListStr = formatBankAccounts(settings?.bankAccounts);
+    final bankListStr = formatBankAccounts(settings?.bankAccounts, paymentMethods: settings?.paymentMethods);
     final brand = settings?.brandName ?? 'Fuchur Agent';
     final greeting = settings != null
         ? settings.waGreeting.replaceAll('{name}', customerName)
@@ -92,7 +106,7 @@ $closing''';
     final expiryDate = AppConstants.formatDate(service.endDate);
     final priceStr = AppConstants.formatRupiah(service.price);
 
-    final bankListStr = formatBankAccounts(settings?.bankAccounts);
+    final bankListStr = formatBankAccounts(settings?.bankAccounts, paymentMethods: settings?.paymentMethods);
     final brand = settings?.brandName ?? 'Fuchur Agent';
     final greeting = settings != null
         ? settings.waGreeting.replaceAll('{name}', customerName)
@@ -135,7 +149,8 @@ Terima kasih atas kerja samanya,
     final greeting = settings != null
         ? settings.waGreeting.replaceAll('{name}', customerName)
         : 'Halo Kak *$customerName*,';
-    final bankListStr = formatBankAccounts(settings?.bankAccounts);
+    final bankListStr = formatBankAccounts(settings?.bankAccounts, paymentMethods: settings?.paymentMethods);
+
 
     final description = invoice.items.isNotEmpty
         ? invoice.items.first.description

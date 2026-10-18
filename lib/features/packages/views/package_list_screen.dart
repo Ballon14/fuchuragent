@@ -5,12 +5,21 @@ import '../../../core/providers/app_providers.dart';
 import '../models/package_model.dart';
 import 'package:fuchuragent/features/packages/views/package_form_dialog.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_pagination_bar.dart';
 
-class PackageListScreen extends ConsumerWidget {
+class PackageListScreen extends ConsumerStatefulWidget {
   const PackageListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PackageListScreen> createState() => _PackageListScreenState();
+}
+
+class _PackageListScreenState extends ConsumerState<PackageListScreen> {
+  int _currentPage = 1;
+  int _itemsPerPage = 10;
+
+  @override
+  Widget build(BuildContext context) {
     final packageRepo = ref.watch(packageRepositoryProvider);
 
     return Scaffold(
@@ -45,6 +54,12 @@ class PackageListScreen extends ConsumerWidget {
               : List<VpsPackageModel>.from(VpsPackageModel.defaultCatalog);
           packages.sort((a, b) => a.basePrice.compareTo(b.basePrice));
 
+          final totalItems = packages.length;
+          final totalPages = totalItems == 0 ? 1 : (totalItems / _itemsPerPage).ceil();
+          final safeCurrentPage = _currentPage.clamp(1, totalPages);
+          final startIndex = (safeCurrentPage - 1) * _itemsPerPage;
+          final pagePackages = packages.skip(startIndex).take(_itemsPerPage).toList();
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -72,9 +87,9 @@ class PackageListScreen extends ConsumerWidget {
                         mainAxisSpacing: 16,
                         childAspectRatio: 0.85,
                       ),
-                      itemCount: packages.length,
+                      itemCount: pagePackages.length,
                       itemBuilder: (context, idx) {
-                        final pkg = packages[idx];
+                        final pkg = pagePackages[idx];
                         return AppCard(
                           title: pkg.name,
                           trailing: IconButton(
@@ -142,6 +157,25 @@ class PackageListScreen extends ConsumerWidget {
                     );
                   },
                 ),
+
+                if (totalItems > _itemsPerPage) ...[
+                  const SizedBox(height: 20),
+                  AppPaginationBar(
+                    currentPage: safeCurrentPage,
+                    totalItems: totalItems,
+                    itemsPerPage: _itemsPerPage,
+                    availableItemsPerPage: const [10, 20, 50],
+                    onPageChanged: (newPage) {
+                      setState(() => _currentPage = newPage);
+                    },
+                    onItemsPerPageChanged: (newLimit) {
+                      setState(() {
+                        _itemsPerPage = newLimit;
+                        _currentPage = 1;
+                      });
+                    },
+                  ),
+                ],
               ],
             ),
           );

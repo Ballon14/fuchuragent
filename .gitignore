@@ -19,7 +19,7 @@ migrate_working_dir/
 .idea/
 
 .vscode/
-.kotlin/
+**/.kotlin/
 
 # Flutter/Dart/Pub related
 **/doc/api/

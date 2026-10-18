@@ -8,6 +8,8 @@ import 'renew_action_dialog.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/status_badge.dart';
 
+import '../../../shared/widgets/app_pagination_bar.dart';
+
 class RenewalListScreen extends ConsumerStatefulWidget {
   const RenewalListScreen({super.key});
 
@@ -18,6 +20,9 @@ class RenewalListScreen extends ConsumerStatefulWidget {
 class _RenewalListScreenState extends ConsumerState<RenewalListScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedFilterDays = 30;
+  int _currentPageTab1 = 1;
+  int _currentPageTab2 = 1;
+  int _itemsPerPage = 10;
 
   @override
   void initState() {
@@ -82,7 +87,12 @@ class _RenewalListScreenState extends ConsumerState<RenewalListScreen> with Sing
                               fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                             ),
                             onSelected: (s) {
-                              if (s) setState(() => _selectedFilterDays = days);
+                              if (s) {
+                                setState(() {
+                                  _selectedFilterDays = days;
+                                  _currentPageTab1 = 1;
+                                });
+                              }
                             },
                           ),
                         );
@@ -97,7 +107,12 @@ class _RenewalListScreenState extends ConsumerState<RenewalListScreen> with Sing
                           fontWeight: _selectedFilterDays == -1 ? FontWeight.bold : FontWeight.normal,
                         ),
                         onSelected: (s) {
-                          if (s) setState(() => _selectedFilterDays = -1);
+                          if (s) {
+                            setState(() {
+                              _selectedFilterDays = -1;
+                              _currentPageTab1 = 1;
+                            });
+                          }
                         },
                       ),
                     ],
@@ -134,9 +149,39 @@ class _RenewalListScreenState extends ConsumerState<RenewalListScreen> with Sing
                         );
                       }
 
-                      return isDesktop
-                          ? _buildDesktopTable(services)
-                          : _buildMobileList(services);
+                      final totalItems = services.length;
+                      final totalPages = totalItems == 0 ? 1 : (totalItems / _itemsPerPage).ceil();
+                      final safeCurrentPage = _currentPageTab1.clamp(1, totalPages);
+                      final startIndex = (safeCurrentPage - 1) * _itemsPerPage;
+                      final pageServices = services.skip(startIndex).take(_itemsPerPage).toList();
+
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: isDesktop
+                                ? _buildDesktopTable(pageServices)
+                                : _buildMobileList(pageServices),
+                          ),
+                          if (totalItems > _itemsPerPage) ...[
+                            const SizedBox(height: 14),
+                            AppPaginationBar(
+                              currentPage: safeCurrentPage,
+                              totalItems: totalItems,
+                              itemsPerPage: _itemsPerPage,
+                              availableItemsPerPage: const [10, 20, 50],
+                              onPageChanged: (newPage) {
+                                setState(() => _currentPageTab1 = newPage);
+                              },
+                              onItemsPerPageChanged: (newLimit) {
+                                setState(() {
+                                  _itemsPerPage = newLimit;
+                                  _currentPageTab1 = 1;
+                                });
+                              },
+                            ),
+                          ],
+                        ],
+                      );
                     },
                   ),
                 ),
@@ -145,44 +190,76 @@ class _RenewalListScreenState extends ConsumerState<RenewalListScreen> with Sing
           ),
 
           // Tab 2: Renewals Log History
-          StreamBuilder<List<ServiceRenewalModel>>(
-            stream: renewalRepo.watchRenewals(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator(color: primaryColor));
-              }
-              final renewals = snapshot.data ?? [];
-              if (renewals.isEmpty) {
-                return Center(
-                  child: Text(
-                    'Belum ada riwayat perpanjangan.',
-                    style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
-                  ),
-                );
-              }
-
-              return ListView.separated(
-                padding: const EdgeInsets.all(24),
-                itemCount: renewals.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (context, idx) {
-                  final r = renewals[idx];
-                  return Card(
-                    child: ListTile(
-                      leading: Icon(Icons.autorenew_rounded, color: primaryColor),
-                      title: Text('Perpanjangan +${r.durationMonths} Bulan', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(
-                        'Jatuh Tempo Baru: ${AppConstants.formatDate(r.newEndDate)} • Dicatat: ${AppConstants.formatDateTime(r.createdAt)}',
-                      ),
-                      trailing: Text(
-                        r.notes.isNotEmpty ? r.notes : 'Selesai',
-                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : const Color(0xFF64748B)),
-                      ),
+          Padding(
+            padding: EdgeInsets.all(isDesktop ? 24 : 14),
+            child: StreamBuilder<List<ServiceRenewalModel>>(
+              stream: renewalRepo.watchRenewals(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator(color: primaryColor));
+                }
+                final renewals = snapshot.data ?? [];
+                if (renewals.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'Belum ada riwayat perpanjangan.',
+                      style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
                     ),
                   );
-                },
-              );
-            },
+                }
+
+                final totalItems = renewals.length;
+                final totalPages = totalItems == 0 ? 1 : (totalItems / _itemsPerPage).ceil();
+                final safeCurrentPage = _currentPageTab2.clamp(1, totalPages);
+                final startIndex = (safeCurrentPage - 1) * _itemsPerPage;
+                final pageRenewals = renewals.skip(startIndex).take(_itemsPerPage).toList();
+
+                return Column(
+                  children: [
+                    Expanded(
+                      child: ListView.separated(
+                        itemCount: pageRenewals.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 8),
+                        itemBuilder: (context, idx) {
+                          final r = pageRenewals[idx];
+                          return Card(
+                            child: ListTile(
+                              leading: Icon(Icons.autorenew_rounded, color: primaryColor),
+                              title: Text('Perpanjangan +${r.durationMonths} Bulan', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: Text(
+                                'Jatuh Tempo Baru: ${AppConstants.formatDate(r.newEndDate)} • Dicatat: ${AppConstants.formatDateTime(r.createdAt)}',
+                              ),
+                              trailing: Text(
+                                r.notes.isNotEmpty ? r.notes : 'Selesai',
+                                style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : const Color(0xFF64748B)),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    if (totalItems > _itemsPerPage) ...[
+                      const SizedBox(height: 14),
+                      AppPaginationBar(
+                        currentPage: safeCurrentPage,
+                        totalItems: totalItems,
+                        itemsPerPage: _itemsPerPage,
+                        availableItemsPerPage: const [10, 20, 50],
+                        onPageChanged: (newPage) {
+                          setState(() => _currentPageTab2 = newPage);
+                        },
+                        onItemsPerPageChanged: (newLimit) {
+                          setState(() {
+                            _itemsPerPage = newLimit;
+                            _currentPageTab2 = 1;
+                          });
+                        },
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
           ),
         ],
       ),

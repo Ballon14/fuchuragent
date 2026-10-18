@@ -6,6 +6,7 @@ import '../models/notification_model.dart';
 import '../repositories/notification_repository.dart';
 import '../services/local_notification_service.dart';
 import '../../../shared/widgets/confirmation_dialog.dart';
+import '../../../shared/widgets/app_pagination_bar.dart';
 
 class NotificationListScreen extends ConsumerStatefulWidget {
   const NotificationListScreen({super.key});
@@ -18,6 +19,8 @@ class _NotificationListScreenState extends ConsumerState<NotificationListScreen>
   String _selectedFilter = 'ALL'; // 'ALL', 'UNREAD', 'EXPIRATION', 'FINANCE', 'SYSTEM'
   bool _isSyncing = false;
   bool? _isPermissionGranted;
+  int _currentPage = 1;
+  int _itemsPerPage = 10;
 
   @override
   void initState() {
@@ -309,14 +312,46 @@ class _NotificationListScreenState extends ConsumerState<NotificationListScreen>
                   );
                 }
 
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: notifications.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, idx) {
-                    final n = notifications[idx];
-                    return _buildNotificationCard(context, n, notifRepo, isDark, primaryAccent);
-                  },
+                final totalItems = notifications.length;
+                final totalPages = totalItems == 0 ? 1 : (totalItems / _itemsPerPage).ceil();
+                final safeCurrentPage = _currentPage.clamp(1, totalPages);
+                final startIndex = (safeCurrentPage - 1) * _itemsPerPage;
+                final pageNotifications = notifications.skip(startIndex).take(_itemsPerPage).toList();
+
+                return Column(
+                  children: [
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: pageNotifications.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, idx) {
+                          final n = pageNotifications[idx];
+                          return _buildNotificationCard(context, n, notifRepo, isDark, primaryAccent);
+                        },
+                      ),
+                    ),
+                    if (totalItems > _itemsPerPage) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                        child: AppPaginationBar(
+                          currentPage: safeCurrentPage,
+                          totalItems: totalItems,
+                          itemsPerPage: _itemsPerPage,
+                          availableItemsPerPage: const [10, 20, 50],
+                          onPageChanged: (newPage) {
+                            setState(() => _currentPage = newPage);
+                          },
+                          onItemsPerPageChanged: (newLimit) {
+                            setState(() {
+                              _itemsPerPage = newLimit;
+                              _currentPage = 1;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
                 );
               },
             ),
@@ -336,7 +371,12 @@ class _NotificationListScreenState extends ConsumerState<NotificationListScreen>
     final isSelected = _selectedFilter == value;
 
     return InkWell(
-      onTap: () => setState(() => _selectedFilter = value),
+      onTap: () {
+        setState(() {
+          _selectedFilter = value;
+          _currentPage = 1;
+        });
+      },
       borderRadius: BorderRadius.circular(20),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),

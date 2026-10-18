@@ -6,6 +6,8 @@ import '../../customers/models/customer_model.dart';
 import '../models/service_model.dart';
 import '../../invoices/models/invoice_model.dart';
 import '../services/whatsapp_reminder_service.dart';
+import '../../settings/models/system_settings_model.dart';
+
 
 class WhatsAppReminderDialog extends ConsumerStatefulWidget {
   final VpsServiceModel service;
@@ -45,6 +47,8 @@ class _WhatsAppReminderDialogState extends ConsumerState<WhatsAppReminderDialog>
   WhatsAppTemplateType _selectedType = WhatsAppTemplateType.expiringSoon;
   CustomerModel? _customer;
   bool _isLoadingCustomer = false;
+  SystemSettingsModel? _settings;
+  bool _userHasEditedManually = false;
 
   @override
   void initState() {
@@ -60,30 +64,48 @@ class _WhatsAppReminderDialogState extends ConsumerState<WhatsAppReminderDialog>
       _selectedType = WhatsAppTemplateType.expiringSoon;
     }
 
-    if (_customer == null) {
-      _loadCustomer();
-    } else {
-      _updateTemplateText();
-    }
+    _loadInitialData();
   }
 
-  Future<void> _loadCustomer() async {
-    setState(() => _isLoadingCustomer = true);
+  Future<void> _loadInitialData() async {
+    // 1. Immediately fetch fresh settings from Firestore repository
     try {
-      final cust = await ref.read(customerRepositoryProvider).getCustomerById(widget.service.customerId);
+      final s = await ref.read(settingsRepositoryProvider).getSettings();
       if (mounted) {
         setState(() {
-          _customer = cust;
-          _phoneCtrl.text = cust?.phone ?? '';
-          _isLoadingCustomer = false;
+          _settings = s;
         });
-        _updateTemplateText();
+        if (!_userHasEditedManually) {
+          _updateTemplateText();
+        }
       }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isLoadingCustomer = false);
-        _updateTemplateText();
+    } catch (_) {}
+
+    // 2. Fetch customer if not passed directly
+    if (_customer == null) {
+      setState(() => _isLoadingCustomer = true);
+      try {
+        final cust = await ref.read(customerRepositoryProvider).getCustomerById(widget.service.customerId);
+        if (mounted) {
+          setState(() {
+            _customer = cust;
+            _phoneCtrl.text = cust?.phone ?? '';
+            _isLoadingCustomer = false;
+          });
+          if (!_userHasEditedManually) {
+            _updateTemplateText();
+          }
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() => _isLoadingCustomer = false);
+          if (!_userHasEditedManually) {
+            _updateTemplateText();
+          }
+        }
       }
+    } else {
+      _updateTemplateText();
     }
   }
 
@@ -97,7 +119,8 @@ class _WhatsAppReminderDialogState extends ConsumerState<WhatsAppReminderDialog>
           updatedAt: DateTime.now(),
         );
 
-    final settings = ref.read(systemSettingsProvider).asData?.value;
+    final settings = _settings ?? ref.read(systemSettingsProvider).asData?.value;
+
 
     String template = '';
     switch (_selectedType) {
@@ -179,6 +202,7 @@ class _WhatsAppReminderDialogState extends ConsumerState<WhatsAppReminderDialog>
   void _onTemplateTypeChanged(WhatsAppTemplateType type) {
     if (_selectedType == type) return;
     _selectedType = type;
+    _userHasEditedManually = false;
     _updateTemplateText();
   }
 
@@ -207,10 +231,21 @@ class _WhatsAppReminderDialogState extends ConsumerState<WhatsAppReminderDialog>
 
   @override
   Widget build(BuildContext context) {
+    final liveSettings = ref.watch(systemSettingsProvider).asData?.value;
+    if (liveSettings != null && _settings == null) {
+      _settings = liveSettings;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_userHasEditedManually) {
+          _updateTemplateText();
+        }
+      });
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
     const waGreen = Color(0xFF25D366);
     final isMobile = MediaQuery.of(context).size.width < 640;
+
 
     final customerName = _isLoadingCustomer
         ? 'Memuat data pelanggan...'
@@ -426,7 +461,10 @@ class _WhatsAppReminderDialogState extends ConsumerState<WhatsAppReminderDialog>
                     ),
                     icon: const Icon(Icons.refresh_rounded, size: 14),
                     label: const Text('Reset Template', style: TextStyle(fontSize: 11)),
-                    onPressed: _updateTemplateText,
+                    onPressed: () {
+                      _userHasEditedManually = false;
+                      _updateTemplateText();
+                    },
                   ),
                 ],
               ),
@@ -434,6 +472,9 @@ class _WhatsAppReminderDialogState extends ConsumerState<WhatsAppReminderDialog>
 
               TextFormField(
                 controller: _messageCtrl,
+                onChanged: (_) {
+                  _userHasEditedManually = true;
+                },
                 maxLines: isMobile ? 8 : 10,
                 style: const TextStyle(fontSize: 12.5, height: 1.45),
                 decoration: InputDecoration(

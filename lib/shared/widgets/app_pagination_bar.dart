@@ -9,6 +9,7 @@ class AppPaginationBar extends StatelessWidget {
   final ValueChanged<int>? onItemsPerPageChanged;
   final List<int> availableItemsPerPage;
   final bool alwaysShow;
+  final bool hasBottomFab;
 
   const AppPaginationBar({
     super.key,
@@ -19,6 +20,7 @@ class AppPaginationBar extends StatelessWidget {
     this.onItemsPerPageChanged,
     this.availableItemsPerPage = const [10, 20, 50],
     this.alwaysShow = false,
+    this.hasBottomFab = false,
   });
 
   int get totalPages {
@@ -86,8 +88,10 @@ class AppPaginationBar extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 680;
+        final bottomMargin = (hasBottomFab && isCompact) ? 76.0 : 0.0;
 
         return Container(
+          margin: EdgeInsets.only(bottom: bottomMargin),
           padding: EdgeInsets.symmetric(
             horizontal: isCompact ? 10 : 16,
             vertical: isCompact ? 8 : 10,

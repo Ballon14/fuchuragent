@@ -1290,8 +1290,10 @@ class _FinanceMonitoringScreenState extends ConsumerState<FinanceMonitoringScree
   // ==========================================
   // SECTION: DIALOGS & EXPORT
   // ==========================================
-  void _openWhatsAppReminderDialog(BuildContext context, ReceivableAgingItem item) {
-    final settings = ref.read(systemSettingsProvider).value;
+  Future<void> _openWhatsAppReminderDialog(BuildContext context, ReceivableAgingItem item) async {
+    final settings = ref.read(systemSettingsProvider).value ??
+        await ref.read(settingsRepositoryProvider).getSettings();
+    if (!context.mounted) return;
     final customer = CustomerModel(
       id: item.invoice.customerId,
       name: item.customerName,

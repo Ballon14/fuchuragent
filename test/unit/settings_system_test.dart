@@ -12,12 +12,14 @@ void main() {
       expect(settings.companyName, 'FuchurHost Solutions');
       expect(settings.brandName, 'Fuchur Agent');
       expect(settings.supportEmail, 'support@fuchuragent.id');
-      expect(settings.supportPhone, '081234567890');
-      expect(settings.paymentMethods.length, greaterThanOrEqualTo(3));
-      expect(settings.paymentMethods.first.name, 'Bank BCA');
+      expect(settings.paymentMethods.length, 1);
+      expect(settings.paymentMethods.first.name, 'Bank Jago');
+      expect(settings.paymentMethods.first.accountNumber, '1078-5455-7360');
+      expect(settings.paymentMethods.first.accountHolder, 'MUHAMMAD IQBAL FATCHURROHMAN');
       expect(settings.paymentMethods.first.isDefault, true);
-      expect(settings.bankAccounts.length, greaterThanOrEqualTo(2));
+      expect(settings.bankAccounts.length, 1);
       expect(settings.enableDueReminders, true);
+
       expect(settings.reminderDays, containsAll([7, 3, 1, 0]));
       expect(settings.currencyCode, 'IDR');
       expect(settings.defaultItemsPerPage, 10);

@@ -94,8 +94,9 @@ void main() {
       expect(message, contains('Standard'));
       expect(message, contains('150.000'));
       expect(message, contains('Fuchur Agent'));
-      expect(message, contains('BCA'));
-      expect(message, contains('Mandiri'));
+      expect(message, contains('Bank Jago'));
+      expect(message, contains('1078-5455-7360'));
+      expect(message, contains('MUHAMMAD IQBAL FATCHURROHMAN'));
       expect(message, contains('hari lagi'));
     });
 
@@ -110,8 +111,8 @@ void main() {
       expect(message, contains('berakhir'));
       expect(message, contains('Kedaluwarsa / Nonaktif'));
       expect(message, contains('80.000'));
-      expect(message, contains('BCA'));
-      expect(message, contains('Mandiri'));
+      expect(message, contains('Bank Jago'));
+      expect(message, contains('1078-5455-7360'));
     });
 
     test('Invoice reminder template contains invoice number and total amount', () {
@@ -145,8 +146,9 @@ void main() {
       expect(message, contains('Budi Santoso'));
       expect(message, contains('INV-2026-0042'));
       expect(message, contains('150.000'));
-      expect(message, contains('BCA'));
+      expect(message, contains('Bank Jago'));
     });
+
 
     test('buildWhatsAppUri creates correct wa.me link with encoded text', () {
       final uri = WhatsAppReminderService.buildWhatsAppUri('08123456789', 'Halo *Budi*!');

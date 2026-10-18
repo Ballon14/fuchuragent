@@ -230,46 +230,17 @@ class SystemSettingsModel {
   factory SystemSettingsModel.defaultSettings() {
     const defaultMethods = [
       PaymentMethodModel(
-        id: 'pm-bca',
-        name: 'Bank BCA',
-        accountNumber: '1234567890',
-        accountHolder: 'Fuchur Agent',
+        id: 'pm-jago',
+        name: 'Bank Jago',
+        accountNumber: '1078-5455-7360',
+        accountHolder: 'MUHAMMAD IQBAL FATCHURROHMAN',
         type: 'bank_transfer',
-        notes: 'Transfer via ATM, m-BCA, atau KlikBCA',
+        notes: 'Transfer via Aplikasi Bank Jago, ATM, atau Mobile Banking',
         isActive: true,
         isDefault: true,
       ),
-      PaymentMethodModel(
-        id: 'pm-mandiri',
-        name: 'Bank Mandiri',
-        accountNumber: '0987654321',
-        accountHolder: 'Fuchur Agent',
-        type: 'bank_transfer',
-        notes: 'Transfer via Livin by Mandiri atau ATM',
-        isActive: true,
-        isDefault: false,
-      ),
-      PaymentMethodModel(
-        id: 'pm-bri',
-        name: 'Bank BRI',
-        accountNumber: '556677889900',
-        accountHolder: 'Fuchur Agent',
-        type: 'bank_transfer',
-        notes: 'Transfer via BRImo atau ATM',
-        isActive: true,
-        isDefault: false,
-      ),
-      PaymentMethodModel(
-        id: 'pm-qris',
-        name: 'QRIS / E-Wallet',
-        accountNumber: 'ID1020030040',
-        accountHolder: 'Fuchur Agent Store',
-        type: 'qris',
-        notes: 'Scan QRIS via GoPay, OVO, Dana, ShopeePay',
-        isActive: true,
-        isDefault: false,
-      ),
     ];
+
 
     return SystemSettingsModel(
       companyName: 'FuchurHost Solutions',
@@ -425,7 +396,7 @@ class SystemSettingsModel {
   factory SystemSettingsModel.fromMap(Map<String, dynamic> map) {
     final defaults = SystemSettingsModel.defaultSettings();
 
-    List<PaymentMethodModel> methods = defaults.paymentMethods;
+    List<PaymentMethodModel> methods = [];
     if (map['paymentMethods'] != null && map['paymentMethods'] is List) {
       methods = (map['paymentMethods'] as List)
           .map((item) => PaymentMethodModel.fromMap(Map<String, dynamic>.from(item)))
@@ -435,6 +406,17 @@ class SystemSettingsModel {
           .map((item) => PaymentMethodModel.fromMap(Map<String, dynamic>.from(item)))
           .toList();
     }
+
+    // Filter out legacy dummy sample accounts
+    methods.removeWhere((m) =>
+        m.accountNumber == '1234567890' ||
+        m.accountNumber == '0987654321' ||
+        m.accountNumber == '556677889900');
+
+    if (methods.isEmpty) {
+      methods = defaults.paymentMethods;
+    }
+
 
     List<int> reminderDays = defaults.reminderDays;
     if (map['reminderDays'] != null && map['reminderDays'] is List) {

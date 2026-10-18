@@ -16,36 +16,50 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasHeader = title != null || trailing != null;
+
+    if (!hasHeader) {
+      return Card(
+        clipBehavior: Clip.antiAlias,
+        child: padding == EdgeInsets.zero
+            ? child
+            : Padding(
+                padding: padding,
+                child: child,
+              ),
+      );
+    }
+
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: padding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (title != null || trailing != null) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (title != null)
-                    Expanded(
-                      child: Text(
-                        title!,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (title != null)
+                  Expanded(
+                    child: Text(
+                      title!,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  if (trailing != null) ...[
-                    const SizedBox(width: 8),
-                    trailing!,
-                  ],
+                  ),
+                if (trailing != null) ...[
+                  const SizedBox(width: 8),
+                  trailing!,
                 ],
-              ),
-              const SizedBox(height: 16),
-            ],
+              ],
+            ),
+            const SizedBox(height: 16),
             child,
           ],
         ),

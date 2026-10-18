@@ -205,6 +205,7 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                     currentPage: safeCurrentPage,
                     totalItems: totalItems,
                     itemsPerPage: _itemsPerPage,
+                    hasBottomFab: !isDesktop,
                     availableItemsPerPage: const [10, 20, 50],
                     onPageChanged: (newPage) {
                       setState(() => _currentPage = newPage);

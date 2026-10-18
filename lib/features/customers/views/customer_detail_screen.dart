@@ -14,6 +14,7 @@ import '../../invoices/views/invoice_form_dialog.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../shared/widgets/confirmation_dialog.dart';
+import '../../../shared/widgets/app_pagination_bar.dart';
 
 class CustomerDetailScreen extends ConsumerStatefulWidget {
   final String customerId;
@@ -26,6 +27,10 @@ class CustomerDetailScreen extends ConsumerStatefulWidget {
 
 class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  int _currentPageServices = 1;
+  int _currentPageInvoices = 1;
+  int _currentPagePayments = 1;
+  static const int _itemsPerPage = 10;
 
   @override
   void initState() {
@@ -318,13 +323,23 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
           );
         }
         final services = snapshot.data ?? [];
+        final totalItems = services.length;
+        final totalPages = totalItems == 0 ? 1 : (totalItems / _itemsPerPage).ceil();
+        final safeCurrentPage = _currentPageServices.clamp(1, totalPages);
+        final startIndex = (safeCurrentPage - 1) * _itemsPerPage;
+        final pageServices = services.skip(startIndex).take(_itemsPerPage).toList();
 
         return Column(
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Total ${services.length} Layanan VPS', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  totalItems > _itemsPerPage
+                      ? 'Total $totalItems Layanan VPS (Hal. $safeCurrentPage/$totalPages)'
+                      : 'Total $totalItems Layanan VPS',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text('Tambah VPS'),
@@ -348,10 +363,10 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
                       ),
                     )
                   : ListView.separated(
-                      itemCount: services.length,
+                      itemCount: pageServices.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (context, idx) {
-                        final s = services[idx];
+                        final s = pageServices[idx];
                         return Card(
                           child: ListTile(
                             leading: Icon(Icons.dns_rounded, color: primaryColor),
@@ -381,6 +396,18 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
                       },
                     ),
             ),
+            if (totalItems > _itemsPerPage) ...[
+              const SizedBox(height: 10),
+              AppPaginationBar(
+                currentPage: safeCurrentPage,
+                totalItems: totalItems,
+                itemsPerPage: _itemsPerPage,
+                availableItemsPerPage: const [10, 20, 50],
+                onPageChanged: (newPage) {
+                  setState(() => _currentPageServices = newPage);
+                },
+              ),
+            ],
           ],
         );
       },
@@ -417,13 +444,23 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
           );
         }
         final invoices = snapshot.data ?? [];
+        final totalItems = invoices.length;
+        final totalPages = totalItems == 0 ? 1 : (totalItems / _itemsPerPage).ceil();
+        final safeCurrentPage = _currentPageInvoices.clamp(1, totalPages);
+        final startIndex = (safeCurrentPage - 1) * _itemsPerPage;
+        final pageInvoices = invoices.skip(startIndex).take(_itemsPerPage).toList();
 
         return Column(
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Total ${invoices.length} Tagihan', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  totalItems > _itemsPerPage
+                      ? 'Total $totalItems Tagihan (Hal. $safeCurrentPage/$totalPages)'
+                      : 'Total $totalItems Tagihan',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text('Buat Tagihan Baru'),
@@ -454,10 +491,10 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
                       ),
                     )
                   : ListView.separated(
-                      itemCount: invoices.length,
+                      itemCount: pageInvoices.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (context, idx) {
-                        final inv = invoices[idx];
+                        final inv = pageInvoices[idx];
                         return Card(
                           child: ListTile(
                             leading: const Icon(Icons.receipt_long_rounded, color: AppColors.electricBlue),
@@ -479,6 +516,18 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
                       },
                     ),
             ),
+            if (totalItems > _itemsPerPage) ...[
+              const SizedBox(height: 10),
+              AppPaginationBar(
+                currentPage: safeCurrentPage,
+                totalItems: totalItems,
+                itemsPerPage: _itemsPerPage,
+                availableItemsPerPage: const [10, 20, 50],
+                onPageChanged: (newPage) {
+                  setState(() => _currentPageInvoices = newPage);
+                },
+              ),
+            ],
           ],
         );
       },
@@ -515,13 +564,23 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
           );
         }
         final payments = snapshot.data ?? [];
+        final totalItems = payments.length;
+        final totalPages = totalItems == 0 ? 1 : (totalItems / _itemsPerPage).ceil();
+        final safeCurrentPage = _currentPagePayments.clamp(1, totalPages);
+        final startIndex = (safeCurrentPage - 1) * _itemsPerPage;
+        final pagePayments = payments.skip(startIndex).take(_itemsPerPage).toList();
 
         return Column(
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Total ${payments.length} Pembayaran', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  totalItems > _itemsPerPage
+                      ? 'Total $totalItems Pembayaran (Hal. $safeCurrentPage/$totalPages)'
+                      : 'Total $totalItems Pembayaran',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -534,10 +593,10 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
                       ),
                     )
                   : ListView.separated(
-                      itemCount: payments.length,
+                      itemCount: pagePayments.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (context, idx) {
-                        final p = payments[idx];
+                        final p = pagePayments[idx];
                         return Card(
                           child: ListTile(
                             leading: const Icon(Icons.payment_rounded, color: AppColors.success),
@@ -549,6 +608,18 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
                       },
                     ),
             ),
+            if (totalItems > _itemsPerPage) ...[
+              const SizedBox(height: 10),
+              AppPaginationBar(
+                currentPage: safeCurrentPage,
+                totalItems: totalItems,
+                itemsPerPage: _itemsPerPage,
+                availableItemsPerPage: const [10, 20, 50],
+                onPageChanged: (newPage) {
+                  setState(() => _currentPagePayments = newPage);
+                },
+              ),
+            ],
           ],
         );
       },

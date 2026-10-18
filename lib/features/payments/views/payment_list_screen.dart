@@ -7,8 +7,18 @@ import 'record_payment_dialog.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../shared/widgets/app_card.dart';
 
-class PaymentListScreen extends ConsumerWidget {
+import '../../../shared/widgets/app_pagination_bar.dart';
+
+class PaymentListScreen extends ConsumerStatefulWidget {
   const PaymentListScreen({super.key});
+
+  @override
+  ConsumerState<PaymentListScreen> createState() => _PaymentListScreenState();
+}
+
+class _PaymentListScreenState extends ConsumerState<PaymentListScreen> {
+  int _currentPage = 1;
+  int _itemsPerPage = 10;
 
   Future<void> _handleReversePayment(BuildContext context, WidgetRef ref, PaymentModel p) async {
     final reasonCtrl = TextEditingController();
@@ -62,7 +72,7 @@ class PaymentListScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final paymentRepo = ref.watch(paymentRepositoryProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 900;
 
@@ -115,6 +125,12 @@ class PaymentListScreen extends ConsumerWidget {
           final payments = snapshot.data ?? [];
           final isDark = Theme.of(context).brightness == Brightness.dark;
 
+          final totalItems = payments.length;
+          final totalPages = totalItems == 0 ? 1 : (totalItems / _itemsPerPage).ceil();
+          final safeCurrentPage = _currentPage.clamp(1, totalPages);
+          final startIndex = (safeCurrentPage - 1) * _itemsPerPage;
+          final pagePayments = payments.skip(startIndex).take(_itemsPerPage).toList();
+
           return Padding(
             padding: EdgeInsets.all(isDesktop ? 24 : 14),
             child: Column(
@@ -124,7 +140,9 @@ class PaymentListScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Total ${payments.length} Transaksi Tercatat',
+                      totalItems > _itemsPerPage
+                          ? 'Total $totalItems Transaksi Tercatat (Hal. $safeCurrentPage/$totalPages)'
+                          : 'Total $totalItems Transaksi Tercatat',
                       style: TextStyle(
                         fontSize: 13,
                         color: isDark ? Colors.white70 : const Color(0xFF475569),
@@ -137,8 +155,29 @@ class PaymentListScreen extends ConsumerWidget {
                 Expanded(
                   child: payments.isEmpty
                       ? _buildEmptyState(context, ref, openRecordDialog)
-                      : (isDesktop ? _buildDesktopTable(context, ref, payments) : _buildMobileList(context, ref, payments)),
+                      : (isDesktop ? _buildDesktopTable(context, ref, pagePayments) : _buildMobileList(context, ref, pagePayments)),
                 ),
+
+                // Pagination Bar (Only when data exceeds itemsPerPage)
+                if (totalItems > _itemsPerPage) ...[
+                  const SizedBox(height: 14),
+                  AppPaginationBar(
+                    currentPage: safeCurrentPage,
+                    totalItems: totalItems,
+                    itemsPerPage: _itemsPerPage,
+                    hasBottomFab: !isDesktop,
+                    availableItemsPerPage: const [10, 20, 50],
+                    onPageChanged: (newPage) {
+                      setState(() => _currentPage = newPage);
+                    },
+                    onItemsPerPageChanged: (newLimit) {
+                      setState(() {
+                        _itemsPerPage = newLimit;
+                        _currentPage = 1;
+                      });
+                    },
+                  ),
+                ],
               ],
             ),
           );
