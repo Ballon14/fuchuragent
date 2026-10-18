@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/app_providers.dart';
 import '../models/customer_model.dart';
 
-class CustomerFormDialog extends StatefulWidget {
+class CustomerFormDialog extends ConsumerStatefulWidget {
   final CustomerModel? customer;
 
   const CustomerFormDialog({super.key, this.customer});
@@ -14,10 +16,10 @@ class CustomerFormDialog extends StatefulWidget {
   }
 
   @override
-  State<CustomerFormDialog> createState() => _CustomerFormDialogState();
+  ConsumerState<CustomerFormDialog> createState() => _CustomerFormDialogState();
 }
 
-class _CustomerFormDialogState extends State<CustomerFormDialog> {
+class _CustomerFormDialogState extends ConsumerState<CustomerFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _sourceIdCtrl;
   late TextEditingController _nameCtrl;
@@ -25,6 +27,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
   late TextEditingController _emailCtrl;
   late TextEditingController _notesCtrl;
   late String _status;
+  bool _isGeneratingId = false;
 
   @override
   void initState() {
@@ -36,6 +39,31 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
     _emailCtrl = TextEditingController(text: c?.email ?? '');
     _notesCtrl = TextEditingController(text: c?.notes ?? '');
     _status = c?.status ?? 'active';
+
+    // Auto-generate customer ID if creating new customer or if ID is empty
+    if (widget.customer == null || (c != null && c.sourceId.trim().isEmpty)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _autoGenerateId();
+      });
+    }
+  }
+
+  Future<void> _autoGenerateId() async {
+    if (!mounted) return;
+    setState(() => _isGeneratingId = true);
+    try {
+      final nextId = await ref.read(customerRepositoryProvider).generateNextCustomerId();
+      if (mounted) {
+        setState(() {
+          _sourceIdCtrl.text = nextId;
+          _isGeneratingId = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isGeneratingId = false);
+      }
+    }
   }
 
   @override
@@ -66,6 +94,32 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
     Navigator.of(context).pop(result);
   }
 
+  Widget _buildCustomerIdField() {
+    return TextFormField(
+      controller: _sourceIdCtrl,
+      decoration: InputDecoration(
+        labelText: 'ID Pelanggan (Otomatis) *',
+        hintText: 'Contoh: CUS-021',
+        helperText: 'Digenerate otomatis (dapat diubah jika perlu)',
+        suffixIcon: _isGeneratingId
+            ? const Padding(
+                padding: EdgeInsets.all(12),
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            : IconButton(
+                icon: const Icon(Icons.refresh_rounded, size: 20),
+                tooltip: 'Generate Ulang ID',
+                onPressed: _autoGenerateId,
+              ),
+      ),
+      validator: (v) => (v == null || v.trim().isEmpty) ? 'ID Pelanggan wajib diisi' : null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.customer != null;
@@ -74,7 +128,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
     return AlertDialog(
       title: Text(isEdit ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru'),
       content: SizedBox(
-        width: isMobile ? double.maxFinite : 480,
+        width: isMobile ? double.maxFinite : 520,
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
@@ -95,12 +149,10 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Nomor telepon wajib diisi' : null,
                   ),
                   const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _sourceIdCtrl,
-                    decoration: const InputDecoration(labelText: 'ID Sumber (misal: Cus-020)'),
-                  ),
+                  _buildCustomerIdField(),
                 ] else ...[
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: TextFormField(
@@ -111,10 +163,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: TextFormField(
-                          controller: _sourceIdCtrl,
-                          decoration: const InputDecoration(labelText: 'ID Sumber (misal: Cus-020)'),
-                        ),
+                        child: _buildCustomerIdField(),
                       ),
                     ],
                   ),

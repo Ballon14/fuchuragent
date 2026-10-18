@@ -267,7 +267,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
           scrollDirection: Axis.horizontal,
           child: DataTable(
             columns: const [
-              DataColumn(label: Text('ID Sumber')),
+              DataColumn(label: Text('ID Pelanggan')),
               DataColumn(label: Text('Nama Pelanggan')),
               DataColumn(label: Text('Nomor HP / WA')),
               DataColumn(label: Text('Email')),

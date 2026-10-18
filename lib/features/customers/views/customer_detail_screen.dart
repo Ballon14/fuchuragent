@@ -204,7 +204,7 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
                                       children: [
                                         Icon(Icons.badge_rounded, size: 16, color: mutedIconColor),
                                         const SizedBox(width: 6),
-                                        Text('ID Sumber: ${customer.sourceId}', style: const TextStyle(fontSize: 13)),
+                                        Text('ID Pelanggan: ${customer.sourceId}', style: const TextStyle(fontSize: 13)),
                                       ],
                                     ),
                                   if (customer.email != null && customer.email!.isNotEmpty)

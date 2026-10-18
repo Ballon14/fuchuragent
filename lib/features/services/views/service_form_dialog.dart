@@ -197,8 +197,8 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                                 onPressed: () async {
                                   final newCust = await CustomerFormDialog.show(context);
                                   if (newCust != null) {
-                                    await ref.read(customerRepositoryProvider).addCustomer(newCust);
-                                    setState(() => _selectedCustomerId = newCust.id);
+                                    final createdId = await ref.read(customerRepositoryProvider).addCustomer(newCust);
+                                    setState(() => _selectedCustomerId = createdId);
                                   }
                                 },
                                 child: Text('Tambah', style: TextStyle(color: primaryColor, fontSize: 12)),

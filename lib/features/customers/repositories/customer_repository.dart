@@ -63,9 +63,56 @@ class CustomerRepository {
     return CustomerModel.fromFirestore(doc);
   }
 
+  /// Menghasilkan ID Pelanggan berurutan otomatis (contoh: CUS-021)
+  /// berdasarkan data pelanggan yang ada di Firestore.
+  Future<String> generateNextCustomerId() async {
+    try {
+      final snap = await _customersRef.get();
+      final existingIds = snap.docs
+          .map((doc) => (doc.data() as Map<String, dynamic>?)?['sourceId'] as String? ?? '')
+          .toList();
+      return calculateNextCustomerId(existingIds);
+    } catch (e) {
+      // Fallback jika query error / offline
+      final now = DateTime.now();
+      final fallbackNum = (now.millisecondsSinceEpoch % 900) + 100;
+      return 'CUS-$fallbackNum';
+    }
+  }
+
+  /// Menghitung ID sequential berikutnya dari daftar ID pelanggan yang ada.
+  static String calculateNextCustomerId(Iterable<String> existingIds) {
+    int maxNum = 0;
+    final regExp = RegExp(r'(?:cus|customer|c)?\s*[-_]?\s*(\d+)', caseSensitive: false);
+
+    for (final raw in existingIds) {
+      final id = raw.trim();
+      if (id.isEmpty) continue;
+      final match = regExp.firstMatch(id);
+      if (match != null) {
+        final numStr = match.group(1);
+        if (numStr != null) {
+          final n = int.tryParse(numStr);
+          if (n != null && n > 0 && n < 100000 && n > maxNum) {
+            maxNum = n;
+          }
+        }
+      }
+    }
+
+    final nextNum = maxNum + 1;
+    return 'CUS-${nextNum.toString().padLeft(3, '0')}';
+  }
+
   Future<String> addCustomer(CustomerModel customer) async {
-    final docRef = _customersRef.doc(customer.id.isNotEmpty ? customer.id : null);
-    await docRef.set(customer.toMap());
+    var effectiveCustomer = customer;
+    if (effectiveCustomer.sourceId.trim().isEmpty) {
+      final autoId = await generateNextCustomerId();
+      effectiveCustomer = effectiveCustomer.copyWith(sourceId: autoId);
+    }
+
+    final docRef = _customersRef.doc(effectiveCustomer.id.isNotEmpty ? effectiveCustomer.id : null);
+    await docRef.set(effectiveCustomer.toMap());
 
     // Log Activity
     await _firestore.collection('activity_logs').add({
@@ -73,7 +120,7 @@ class CustomerRepository {
       'actorName': _auth.currentUser?.email ?? 'Admin',
       'action': 'CREATE_CUSTOMER',
       'category': 'CUSTOMERS',
-      'details': 'Menambahkan pelanggan baru: ${customer.name} (${customer.phone})',
+      'details': 'Menambahkan pelanggan baru: ${effectiveCustomer.name} (${effectiveCustomer.sourceId})',
       'targetId': docRef.id,
       'timestamp': FieldValue.serverTimestamp(),
     });
