@@ -32,6 +32,13 @@ class LocalNotificationService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
+    // flutter_local_notifications is tailored for mobile OS (Android/iOS).
+    // On Windows desktop, skip plugin initialization to avoid WinRT/C++ exceptions.
+    if (kIsWeb || Platform.isWindows) {
+      _isInitialized = true;
+      return;
+    }
+
     try {
       const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
       const darwinSettings = DarwinInitializationSettings(
@@ -169,6 +176,9 @@ class LocalNotificationService {
     String? payload,
     String? targetChannelId,
   }) async {
+    if (kIsWeb || Platform.isWindows) {
+      return;
+    }
     if (!_isInitialized) {
       await initialize();
     }

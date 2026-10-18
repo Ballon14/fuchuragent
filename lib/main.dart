@@ -21,9 +21,15 @@ void main() async {
   }
 
   // Initialize Firebase with auto-generated platform options
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+  } catch (e) {
+    debugPrint('Firebase initialization error: $e');
+  }
 
   // Initialize Local & Background Notifications for Android & Windows
   try {
