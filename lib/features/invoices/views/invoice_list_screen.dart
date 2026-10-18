@@ -305,84 +305,181 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
   Widget _buildDesktopTable(List<InvoiceModel> list) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+    final headerStyle = TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 0.5,
+      color: isDark ? Colors.white70 : const Color(0xFF64748B),
+    );
 
     return AppCard(
       padding: EdgeInsets.zero,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final availableWidth = constraints.maxWidth;
-          final bool canFitWithoutScroll = availableWidth >= 780;
-          final double dynamicSpacing = ((availableWidth - 720) / 7).clamp(10.0, 32.0);
-
-          return SizedBox(
-            width: availableWidth,
-            child: SingleChildScrollView(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                physics: canFitWithoutScroll
-                    ? const NeverScrollableScrollPhysics()
-                    : const BouncingScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: availableWidth),
-                  child: DataTable(
-                    columnSpacing: dynamicSpacing,
-                    horizontalMargin: 16,
-                    dataRowMinHeight: 48,
-                    dataRowMaxHeight: 56,
-                    headingRowHeight: 46,
-                    columns: const [
-                      DataColumn(label: Text('Nomor Tagihan')),
-                      DataColumn(label: Text('Item Layanan')),
-                      DataColumn(label: Text('Total')),
-                      DataColumn(label: Text('Dibayar')),
-                      DataColumn(label: Text('Sisa Saldo')),
-                      DataColumn(label: Text('Jatuh Tempo')),
-                      DataColumn(label: Text('Status')),
-                      DataColumn(label: Text('Aksi')),
-                    ],
-                    rows: list.map((inv) {
-                      return DataRow(
-                        cells: [
-                          DataCell(Text(inv.invoiceNumber, style: const TextStyle(fontWeight: FontWeight.bold))),
-                          DataCell(
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 160),
-                              child: Text(
-                                inv.items.map((i) => i.description).join(', '),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          DataCell(Text(AppConstants.formatRupiah(inv.total), style: const TextStyle(fontWeight: FontWeight.bold))),
-                          DataCell(Text(AppConstants.formatRupiah(inv.paidAmount), style: const TextStyle(color: AppColors.success))),
-                          DataCell(
-                            Text(
-                              AppConstants.formatRupiah(inv.remainingBalance),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: inv.remainingBalance > 0 ? AppColors.warning : (isDark ? Colors.white60 : const Color(0xFF64748B)),
-                              ),
-                            ),
-                          ),
-                          DataCell(Text(AppConstants.formatShortDate(inv.dueDate))),
-                          DataCell(StatusBadge(status: inv.isOverdue ? 'overdue' : inv.status)),
-                          DataCell(
-                            IconButton(
-                              icon: Icon(Icons.chevron_right_rounded, color: primaryColor),
-                              tooltip: 'Detail Tagihan',
-                              onPressed: () => context.go('/invoices/${inv.id}'),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                ),
+      child: Column(
+        children: [
+          // Header Tabel (Memanfaatkan 100% lebar layar, tanpa scroll horizontal)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceLightDark.withValues(alpha: 0.3) : const Color(0xFFF8FAFC),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              border: Border(
+                bottom: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
               ),
             ),
-          );
-        },
+            child: Row(
+              children: [
+                Expanded(flex: 3, child: Text('NOMOR TAGIHAN', style: headerStyle)),
+                Expanded(flex: 4, child: Text('ITEM LAYANAN', style: headerStyle)),
+                Expanded(flex: 2, child: Text('TOTAL', style: headerStyle)),
+                Expanded(flex: 2, child: Text('DIBAYAR', style: headerStyle)),
+                Expanded(flex: 2, child: Text('SISA SALDO', style: headerStyle)),
+                Expanded(flex: 2, child: Text('JATUH TEMPO', style: headerStyle)),
+                Expanded(flex: 2, child: Text('STATUS', style: headerStyle)),
+                SizedBox(
+                  width: 44,
+                  child: Center(child: Text('AKSI', style: headerStyle)),
+                ),
+              ],
+            ),
+          ),
+
+          // Daftar Baris Tagihan (Pas satu layar, interaktif dengan hover)
+          Expanded(
+            child: ListView.separated(
+              itemCount: list.length,
+              separatorBuilder: (_, _) => Divider(
+                height: 1,
+                thickness: 1,
+                color: isDark ? AppColors.borderDark.withValues(alpha: 0.5) : AppColors.borderLight,
+              ),
+              itemBuilder: (context, idx) {
+                final inv = list[idx];
+                return InkWell(
+                  onTap: () => context.go('/invoices/${inv.id}'),
+                  hoverColor: primaryColor.withValues(alpha: 0.05),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        // Nomor Tagihan
+                        Expanded(
+                          flex: 3,
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: primaryColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Icon(Icons.receipt_long_rounded, size: 14, color: primaryColor),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  inv.invoiceNumber,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Item Layanan
+                        Expanded(
+                          flex: 4,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Text(
+                              inv.items.map((i) => i.description).join(', '),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? Colors.white70 : const Color(0xFF334155),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+
+                        // Total
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            AppConstants.formatRupiah(inv.total),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+
+                        // Dibayar
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            AppConstants.formatRupiah(inv.paidAmount),
+                            style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.w600, fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+
+                        // Sisa Saldo
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            AppConstants.formatRupiah(inv.remainingBalance),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: inv.remainingBalance > 0
+                                  ? AppColors.warning
+                                  : (isDark ? Colors.white54 : const Color(0xFF64748B)),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+
+                        // Jatuh Tempo
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            AppConstants.formatShortDate(inv.dueDate),
+                            style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : const Color(0xFF475569)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+
+                        // Status
+                        Expanded(
+                          flex: 2,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: StatusBadge(status: inv.isOverdue ? 'overdue' : inv.status),
+                          ),
+                        ),
+
+                        // Aksi
+                        SizedBox(
+                          width: 44,
+                          child: IconButton(
+                            icon: Icon(Icons.chevron_right_rounded, color: primaryColor, size: 20),
+                            tooltip: 'Detail Tagihan',
+                            onPressed: () => context.go('/invoices/${inv.id}'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

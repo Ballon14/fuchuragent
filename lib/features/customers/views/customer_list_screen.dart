@@ -299,88 +299,158 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
   Widget _buildDesktopTable(List<CustomerModel> list) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+    final headerStyle = TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 0.5,
+      color: isDark ? Colors.white70 : const Color(0xFF64748B),
+    );
 
     return AppCard(
       padding: EdgeInsets.zero,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final availableWidth = constraints.maxWidth;
-          final bool canFitWithoutScroll = availableWidth >= 700;
-          final double dynamicSpacing = ((availableWidth - 650) / 6).clamp(12.0, 36.0);
-
-          return SizedBox(
-            width: availableWidth,
-            child: SingleChildScrollView(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                physics: canFitWithoutScroll
-                    ? const NeverScrollableScrollPhysics()
-                    : const BouncingScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: availableWidth),
-                  child: DataTable(
-                    columnSpacing: dynamicSpacing,
-                    horizontalMargin: 16,
-                    dataRowMinHeight: 48,
-                    dataRowMaxHeight: 56,
-                    headingRowHeight: 46,
-                    columns: const [
-                      DataColumn(label: Text('ID Pelanggan')),
-                      DataColumn(label: Text('Nama Pelanggan')),
-                      DataColumn(label: Text('Nomor HP / WA')),
-                      DataColumn(label: Text('Email')),
-                      DataColumn(label: Text('Status')),
-                      DataColumn(label: Text('Terdaftar')),
-                      DataColumn(label: Text('Aksi')),
-                    ],
-                    rows: list.map((c) {
-                      return DataRow(
-                        cells: [
-                          DataCell(Text(c.sourceId.isNotEmpty ? c.sourceId : '-', style: const TextStyle(fontWeight: FontWeight.bold))),
-                          DataCell(
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 14,
-                                  backgroundColor: primaryColor.withValues(alpha: 0.15),
-                                  child: Text(
-                                    c.name.isNotEmpty ? c.name[0].toUpperCase() : 'C',
-                                    style: TextStyle(fontSize: 11, color: primaryColor, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                ConstrainedBox(
-                                  constraints: const BoxConstraints(maxWidth: 180),
-                                  child: Text(
-                                    c.name,
-                                    style: const TextStyle(fontWeight: FontWeight.w600),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          DataCell(Text(c.phone)),
-                          DataCell(Text(c.email ?? '-')),
-                          DataCell(StatusBadge(status: c.status)),
-                          DataCell(Text(AppConstants.formatShortDate(c.createdAt))),
-                          DataCell(
-                            IconButton(
-                              icon: Icon(Icons.chevron_right_rounded, color: primaryColor),
-                              tooltip: 'Detail Pelanggan',
-                              onPressed: () => context.go('/customers/${c.id}'),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                ),
+      child: Column(
+        children: [
+          // Header Tabel (Memanfaatkan 100% lebar layar, tanpa scroll horizontal)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceLightDark.withValues(alpha: 0.3) : const Color(0xFFF8FAFC),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              border: Border(
+                bottom: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
               ),
             ),
-          );
-        },
+            child: Row(
+              children: [
+                Expanded(flex: 2, child: Text('ID PELANGGAN', style: headerStyle)),
+                Expanded(flex: 4, child: Text('NAMA PELANGGAN', style: headerStyle)),
+                Expanded(flex: 3, child: Text('NOMOR HP / WA', style: headerStyle)),
+                Expanded(flex: 3, child: Text('EMAIL', style: headerStyle)),
+                Expanded(flex: 2, child: Text('STATUS', style: headerStyle)),
+                Expanded(flex: 2, child: Text('TERDAFTAR', style: headerStyle)),
+                SizedBox(
+                  width: 44,
+                  child: Center(child: Text('AKSI', style: headerStyle)),
+                ),
+              ],
+            ),
+          ),
+
+          // Daftar Baris Pelanggan (Pas satu layar, interaktif dengan hover)
+          Expanded(
+            child: ListView.separated(
+              itemCount: list.length,
+              separatorBuilder: (_, _) => Divider(
+                height: 1,
+                thickness: 1,
+                color: isDark ? AppColors.borderDark.withValues(alpha: 0.5) : AppColors.borderLight,
+              ),
+              itemBuilder: (context, idx) {
+                final c = list[idx];
+                return InkWell(
+                  onTap: () => context.go('/customers/${c.id}'),
+                  hoverColor: primaryColor.withValues(alpha: 0.05),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        // ID Pelanggan
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            c.sourceId.isNotEmpty ? c.sourceId : '-',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ),
+
+                        // Nama Pelanggan
+                        Expanded(
+                          flex: 4,
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 14,
+                                backgroundColor: primaryColor.withValues(alpha: 0.15),
+                                child: Text(
+                                  c.name.isNotEmpty ? c.name[0].toUpperCase() : 'C',
+                                  style: TextStyle(fontSize: 11, color: primaryColor, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  c.name,
+                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Nomor HP / WA
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            c.phone,
+                            style: const TextStyle(fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+
+                        // Email
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            c.email ?? '-',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white70 : const Color(0xFF475569),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+
+                        // Status
+                        Expanded(
+                          flex: 2,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: StatusBadge(status: c.status),
+                          ),
+                        ),
+
+                        // Terdaftar
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            AppConstants.formatShortDate(c.createdAt),
+                            style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : const Color(0xFF64748B)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+
+                        // Aksi
+                        SizedBox(
+                          width: 44,
+                          child: IconButton(
+                            icon: Icon(Icons.chevron_right_rounded, color: primaryColor, size: 20),
+                            tooltip: 'Detail Pelanggan',
+                            onPressed: () => context.go('/customers/${c.id}'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

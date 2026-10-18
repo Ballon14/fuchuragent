@@ -302,120 +302,194 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
   Widget _buildDesktopTable(List<VpsServiceModel> list) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+    final headerStyle = TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 0.5,
+      color: isDark ? Colors.white70 : const Color(0xFF64748B),
+    );
 
     return AppCard(
       padding: EdgeInsets.zero,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final availableWidth = constraints.maxWidth;
-          final bool canFitWithoutScroll = availableWidth >= 780;
-          // Distribusikan jarak antar kolom secara proporsional sesuai lebar tampilan Windows
-          final double dynamicSpacing = ((availableWidth - 720) / 7).clamp(10.0, 32.0);
-
-          return SizedBox(
-            width: availableWidth,
-            child: SingleChildScrollView(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                physics: canFitWithoutScroll
-                    ? const NeverScrollableScrollPhysics()
-                    : const BouncingScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: availableWidth),
-                  child: DataTable(
-                    columnSpacing: dynamicSpacing,
-                    horizontalMargin: 16,
-                    dataRowMinHeight: 48,
-                    dataRowMaxHeight: 56,
-                    headingRowHeight: 46,
-                    columns: const [
-                      DataColumn(label: Text('Domain / Host')),
-                      DataColumn(label: Text('Paket')),
-                      DataColumn(label: Text('Spesifikasi')),
-                      DataColumn(label: Text('Harga / Bulan')),
-                      DataColumn(label: Text('Masa Aktif')),
-                      DataColumn(label: Text('Worker')),
-                      DataColumn(label: Text('Status')),
-                      DataColumn(label: Text('Aksi')),
-                    ],
-                    rows: list.map((s) {
-                      return DataRow(
-                        cells: [
-                          DataCell(
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 160),
-                              child: Text(
-                                s.domain,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          DataCell(
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 120),
-                              child: Text(
-                                s.packageName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          DataCell(
-                            Text(
-                              '${s.vcpu} vCPU • ${s.ramGb}GB • ${s.storageGb}GB',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
-                          DataCell(
-                            Text(
-                              AppConstants.formatRupiah(s.price),
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                            ),
-                          ),
-                          DataCell(
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  's.d ${AppConstants.formatShortDate(s.endDate)}',
-                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-                                ),
-                                if (s.isExpired)
-                                  const Text('Kedaluwarsa', style: TextStyle(fontSize: 10, color: AppColors.danger, fontWeight: FontWeight.bold))
-                                else
-                                  Text(
-                                    '${s.daysUntilExpiry} hari lagi',
-                                    style: TextStyle(fontSize: 10, color: isDark ? Colors.white54 : const Color(0xFF64748B)),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          DataCell(
-                            Text(
-                              s.worker ?? '-',
-                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : const Color(0xFF475569)),
-                            ),
-                          ),
-                          DataCell(StatusBadge(status: s.status)),
-                          DataCell(
-                            IconButton(
-                              icon: Icon(Icons.chevron_right_rounded, color: primaryColor),
-                              tooltip: 'Detail Layanan',
-                              onPressed: () => context.go('/services/${s.id}'),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                ),
+      child: Column(
+        children: [
+          // Header Tabel (Memanfaatkan 100% lebar layar, tanpa scroll horizontal)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceLightDark.withValues(alpha: 0.3) : const Color(0xFFF8FAFC),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              border: Border(
+                bottom: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
               ),
             ),
-          );
-        },
+            child: Row(
+              children: [
+                Expanded(flex: 3, child: Text('DOMAIN / HOST', style: headerStyle)),
+                Expanded(flex: 2, child: Text('PAKET', style: headerStyle)),
+                Expanded(flex: 3, child: Text('SPESIFIKASI', style: headerStyle)),
+                Expanded(flex: 2, child: Text('HARGA / BULAN', style: headerStyle)),
+                Expanded(flex: 2, child: Text('MASA AKTIF', style: headerStyle)),
+                Expanded(flex: 2, child: Text('WORKER', style: headerStyle)),
+                Expanded(flex: 2, child: Text('STATUS', style: headerStyle)),
+                SizedBox(
+                  width: 44,
+                  child: Center(child: Text('AKSI', style: headerStyle)),
+                ),
+              ],
+            ),
+          ),
+
+          // Daftar Baris Layanan VPS (Pas satu layar, interaktif dengan hover)
+          Expanded(
+            child: ListView.separated(
+              itemCount: list.length,
+              separatorBuilder: (_, _) => Divider(
+                height: 1,
+                thickness: 1,
+                color: isDark ? AppColors.borderDark.withValues(alpha: 0.5) : AppColors.borderLight,
+              ),
+              itemBuilder: (context, idx) {
+                final s = list[idx];
+                return InkWell(
+                  onTap: () => context.go('/services/${s.id}'),
+                  hoverColor: primaryColor.withValues(alpha: 0.05),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        // Domain / Host
+                        Expanded(
+                          flex: 3,
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: primaryColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Icon(Icons.dns_rounded, size: 14, color: primaryColor),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  s.domain,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Paket
+                        Expanded(
+                          flex: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Text(
+                              s.packageName,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white70 : const Color(0xFF334155),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+
+                        // Spesifikasi
+                        Expanded(
+                          flex: 3,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Text(
+                              '${s.vcpu} vCPU • ${s.ramGb}GB • ${s.storageGb}GB',
+                              style: const TextStyle(fontSize: 12),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+
+                        // Harga / Bulan
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            AppConstants.formatRupiah(s.price),
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+
+                        // Masa Aktif
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                's.d ${AppConstants.formatShortDate(s.endDate)}',
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (s.isExpired)
+                                const Text('Kedaluwarsa', style: TextStyle(fontSize: 10, color: AppColors.danger, fontWeight: FontWeight.bold))
+                              else
+                                Text(
+                                  '${s.daysUntilExpiry} hari lagi',
+                                  style: TextStyle(fontSize: 10, color: isDark ? Colors.white54 : const Color(0xFF64748B)),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        // Worker
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            s.worker ?? '-',
+                            style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : const Color(0xFF475569)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+
+                        // Status
+                        Expanded(
+                          flex: 2,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: StatusBadge(status: s.status),
+                          ),
+                        ),
+
+                        // Aksi
+                        SizedBox(
+                          width: 44,
+                          child: IconButton(
+                            icon: Icon(Icons.chevron_right_rounded, color: primaryColor, size: 20),
+                            tooltip: 'Detail Layanan',
+                            onPressed: () => context.go('/services/${s.id}'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
