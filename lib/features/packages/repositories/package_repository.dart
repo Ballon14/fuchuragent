@@ -14,7 +14,19 @@ class PackageRepository {
       if (snap.docs.isEmpty) {
         list = List<VpsPackageModel>.from(VpsPackageModel.defaultCatalog);
       } else {
-        list = snap.docs.map((d) => VpsPackageModel.fromFirestore(d)).toList();
+        final existing = snap.docs.map((d) => VpsPackageModel.fromFirestore(d)).toList();
+        final existingNames = existing.map((p) => p.name.toLowerCase()).toSet();
+        list = List<VpsPackageModel>.from(existing);
+        for (final def in VpsPackageModel.defaultCatalog) {
+          if (!existingNames.contains(def.name.toLowerCase())) {
+            list.add(def);
+          }
+        }
+      }
+      for (int i = 0; i < list.length; i++) {
+        if (list[i].name.toLowerCase() == 'basic' && list[i].basePrice == 80000) {
+          list[i] = list[i].copyWith(basePrice: 76000);
+        }
       }
       list.sort((a, b) => a.basePrice.compareTo(b.basePrice));
       return list;
@@ -28,7 +40,19 @@ class PackageRepository {
       await seedDefaultPackages();
       list = List<VpsPackageModel>.from(VpsPackageModel.defaultCatalog);
     } else {
-      list = snap.docs.map((d) => VpsPackageModel.fromFirestore(d)).toList();
+      final existing = snap.docs.map((d) => VpsPackageModel.fromFirestore(d)).toList();
+      final existingNames = existing.map((p) => p.name.toLowerCase()).toSet();
+      list = List<VpsPackageModel>.from(existing);
+      for (final def in VpsPackageModel.defaultCatalog) {
+        if (!existingNames.contains(def.name.toLowerCase())) {
+          list.add(def);
+        }
+      }
+    }
+    for (int i = 0; i < list.length; i++) {
+      if (list[i].name.toLowerCase() == 'basic' && list[i].basePrice == 80000) {
+        list[i] = list[i].copyWith(basePrice: 76000);
+      }
     }
     list.sort((a, b) => a.basePrice.compareTo(b.basePrice));
     return list;

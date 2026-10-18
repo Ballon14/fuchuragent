@@ -57,7 +57,7 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
     super.initState();
     _selectedCustomerId = widget.preselectedCustomerId;
     _selectedServiceId = widget.preselectedServiceId;
-    _unitPriceCtrl.text = widget.suggestedAmount != null ? widget.suggestedAmount.toString() : '80000';
+    _unitPriceCtrl.text = widget.suggestedAmount != null ? widget.suggestedAmount.toString() : '76000';
   }
 
   @override

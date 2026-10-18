@@ -39,7 +39,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
   late TextEditingController _notesCtrl;
 
   String? _selectedCustomerId;
-  String _selectedPackageName = 'Basic';
+  String _selectedPackageName = 'Basic 1 Bulan';
   String _status = 'active';
   String _deploymentType = 'Publish';
   DateTime _startDate = DateTime.now();
@@ -53,7 +53,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
     _selectedCustomerId = widget.preselectedCustomerId ?? s?.customerId;
     _domainCtrl = TextEditingController(text: s?.domain ?? '');
     _serviceNameCtrl = TextEditingController(text: s?.serviceName ?? '');
-    _priceCtrl = TextEditingController(text: s?.price != null ? s!.price.toString() : '80000');
+    _priceCtrl = TextEditingController(text: s?.price != null ? s!.price.toString() : '76000');
     _vcpuCtrl = TextEditingController(text: s?.vcpu != null ? s!.vcpu.toString() : '1');
     _ramCtrl = TextEditingController(text: s?.ramGb != null ? s!.ramGb.toString() : '1');
     _storageCtrl = TextEditingController(text: s?.storageGb != null ? s!.storageGb.toString() : '20');
@@ -89,6 +89,17 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
       _ramCtrl.text = pkg.ramGb.toString();
       _storageCtrl.text = pkg.storageGb.toString();
       _priceCtrl.text = pkg.basePrice.toString();
+
+      final lowerName = pkg.name.toLowerCase();
+      if (lowerName.contains('3 bulan') || lowerName.contains('3 bln')) {
+        _endDate = _startDate.add(const Duration(days: 90));
+      } else if (lowerName.contains('6 bulan') || lowerName.contains('6 bln')) {
+        _endDate = _startDate.add(const Duration(days: 180));
+      } else if (lowerName.contains('1 tahun') || lowerName.contains('12 bulan') || lowerName.contains('1 thn')) {
+        _endDate = _startDate.add(const Duration(days: 365));
+      } else if (lowerName.contains('1 bulan') || lowerName.contains('1 bln')) {
+        _endDate = _startDate.add(const Duration(days: 30));
+      }
     });
   }
 
@@ -121,19 +132,34 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
         ? _serviceNameCtrl.text.trim()
         : 'VPS ${domain.replaceAll("https://", "").replaceAll("http://", "")}';
 
+    final durationDays = _endDate.difference(_startDate).inDays;
+    int cycleMonths = 1;
+    if (durationDays >= 330) {
+      cycleMonths = 12;
+    } else if (durationDays >= 150) {
+      cycleMonths = 6;
+    } else if (durationDays >= 75) {
+      cycleMonths = 3;
+    } else {
+      cycleMonths = 1;
+    }
+
+    final cycleLabel = cycleMonths > 1 ? '$cycleMonths Bulan' : '1 Bulan';
+    final priceVal = int.tryParse(_priceCtrl.text) ?? 0;
+
     final isEdit = widget.service != null;
     final confirmed = isEdit
         ? await ConfirmationDialog.showUpdateConfirmation(
             context: context,
             title: 'Konfirmasi Perubahan Layanan VPS',
             itemName: '$domain ($_selectedPackageName)',
-            detail: 'Biaya Sewa: ${AppConstants.formatRupiah(int.tryParse(_priceCtrl.text) ?? 0)}/bln',
+            detail: 'Biaya Sewa: ${AppConstants.formatRupiah(priceVal)} / $cycleLabel',
           )
         : await ConfirmationDialog.showCreateConfirmation(
             context: context,
             title: 'Konfirmasi Tambah Layanan VPS Baru',
             itemName: '$domain ($_selectedPackageName)',
-            detail: 'Biaya Sewa: ${AppConstants.formatRupiah(int.tryParse(_priceCtrl.text) ?? 0)}/bln',
+            detail: 'Biaya Sewa: ${AppConstants.formatRupiah(priceVal)} / $cycleLabel',
           );
 
     if (!confirmed || !mounted) return;
@@ -147,8 +173,8 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
       vcpu: int.tryParse(_vcpuCtrl.text) ?? 1,
       ramGb: int.tryParse(_ramCtrl.text) ?? 1,
       storageGb: int.tryParse(_storageCtrl.text) ?? 20,
-      price: int.tryParse(_priceCtrl.text) ?? 0,
-      billingCycleMonths: 1,
+      price: priceVal,
+      billingCycleMonths: cycleMonths,
       startDate: _startDate,
       endDate: _endDate,
       status: _status,
@@ -163,11 +189,50 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
     Navigator.of(context).pop(result);
   }
 
-  Widget _buildDurationPreset(String label, int days, Color primaryColor, bool isDark) {
+  Widget _buildDurationPreset(
+    String label,
+    int days,
+    int months,
+    List<VpsPackageModel> packages,
+    Color primaryColor,
+    bool isDark,
+  ) {
     return InkWell(
       onTap: () {
         setState(() {
           _endDate = _startDate.add(Duration(days: days));
+
+          // Auto-adjust package selection and price for popular durations
+          if (months == 3) {
+            final p3 = packages.cast<VpsPackageModel?>().firstWhere(
+              (p) => p != null && p.name.toLowerCase().contains('3 bulan'),
+              orElse: () => null,
+            );
+            if (p3 != null &&
+                (_selectedPackageName.toLowerCase().contains('basic') ||
+                    _selectedPackageName.toLowerCase().contains('1 bulan'))) {
+              _selectedPackageName = p3.name;
+              _priceCtrl.text = p3.basePrice.toString();
+              _vcpuCtrl.text = p3.vcpu.toString();
+              _ramCtrl.text = p3.ramGb.toString();
+              _storageCtrl.text = p3.storageGb.toString();
+            }
+          } else if (months == 1) {
+            final p1 = packages.cast<VpsPackageModel?>().firstWhere(
+              (p) =>
+                  p != null &&
+                  (p.name.toLowerCase().contains('basic 1 bulan') ||
+                      p.name.toLowerCase() == 'basic'),
+              orElse: () => null,
+            );
+            if (p1 != null && _selectedPackageName.toLowerCase().contains('3 bulan')) {
+              _selectedPackageName = p1.name;
+              _priceCtrl.text = p1.basePrice.toString();
+              _vcpuCtrl.text = p1.vcpu.toString();
+              _ramCtrl.text = p1.ramGb.toString();
+              _storageCtrl.text = p1.storageGb.toString();
+            }
+          }
         });
       },
       borderRadius: BorderRadius.circular(6),
@@ -195,14 +260,31 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
   @override
   Widget build(BuildContext context) {
     final customersAsync = ref.watch(customerRepositoryProvider).watchCustomers();
-    final packages = List<VpsPackageModel>.from(VpsPackageModel.defaultCatalog)
-      ..sort((a, b) => a.basePrice.compareTo(b.basePrice));
+    final packagesStream = ref.watch(packageRepositoryProvider).watchPackages();
     final isEdit = widget.service != null;
     final isMobile = MediaQuery.of(context).size.width < 600;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
 
-    return AlertDialog(
+    return StreamBuilder<List<VpsPackageModel>>(
+      stream: packagesStream,
+      builder: (context, pkgSnapshot) {
+        final rawPackages = (pkgSnapshot.hasData && pkgSnapshot.data!.isNotEmpty)
+            ? pkgSnapshot.data!
+            : VpsPackageModel.defaultCatalog;
+        final packages = List<VpsPackageModel>.from(rawPackages)
+          ..sort((a, b) => a.basePrice.compareTo(b.basePrice));
+
+        final durationDays = _endDate.difference(_startDate).inDays;
+        final effectiveCycleText = durationDays >= 330
+            ? '1 Tahun'
+            : (durationDays >= 150
+                ? '6 Bulan'
+                : (durationDays >= 75
+                    ? '3 Bulan'
+                    : '1 Bulan'));
+
+        return AlertDialog(
       titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
       contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
       actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
@@ -595,7 +677,8 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                     controller: _priceCtrl,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      labelText: 'Harga Sewa (IDR/Bln) *',
+                      labelText: 'Biaya Sewa Layanan (IDR) *',
+                      hintText: 'Contoh: 76000 atau 135000',
                       prefixIcon: Icon(Icons.payments_outlined, size: 20),
                     ),
                     onChanged: (_) => setState(() {}),
@@ -623,7 +706,8 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                           controller: _priceCtrl,
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(
-                            labelText: 'Harga Sewa (IDR/Bln) *',
+                            labelText: 'Biaya Sewa Layanan (IDR) *',
+                            hintText: 'Contoh: 76000 atau 135000',
                             prefixIcon: Icon(Icons.payments_outlined, size: 20),
                           ),
                           onChanged: (_) => setState(() {}),
@@ -742,13 +826,13 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                           scrollDirection: Axis.horizontal,
                           child: Row(
                             children: [
-                              _buildDurationPreset('+1 Bulan', 30, primaryColor, isDark),
+                              _buildDurationPreset('+1 Bulan', 30, 1, packages, primaryColor, isDark),
                               const SizedBox(width: 6),
-                              _buildDurationPreset('+3 Bulan', 90, primaryColor, isDark),
+                              _buildDurationPreset('+3 Bulan', 90, 3, packages, primaryColor, isDark),
                               const SizedBox(width: 6),
-                              _buildDurationPreset('+6 Bulan', 180, primaryColor, isDark),
+                              _buildDurationPreset('+6 Bulan', 180, 6, packages, primaryColor, isDark),
                               const SizedBox(width: 6),
-                              _buildDurationPreset('+1 Tahun', 365, primaryColor, isDark),
+                              _buildDurationPreset('+1 Tahun', 365, 12, packages, primaryColor, isDark),
                             ],
                           ),
                         ),
@@ -818,7 +902,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                             style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
                           ),
                           Text(
-                            '${AppConstants.formatDate(_startDate)} s/d ${AppConstants.formatDate(_endDate)}',
+                            '${AppConstants.formatDate(_startDate)} s/d ${AppConstants.formatDate(_endDate)} ($effectiveCycleText)',
                             style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
                           ),
                         ],
@@ -827,9 +911,12 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Biaya Sewa Bulanan:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                           Text(
-                            '${AppConstants.formatRupiah(int.tryParse(_priceCtrl.text) ?? 0)}/bln',
+                            'Biaya Sewa ($effectiveCycleText):',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            '${AppConstants.formatRupiah(int.tryParse(_priceCtrl.text) ?? 0)} / $effectiveCycleText',
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primaryColor),
                           ),
                         ],
@@ -850,6 +937,8 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
           onPressed: _submit,
         ),
       ],
+    );
+      },
     );
   }
 }

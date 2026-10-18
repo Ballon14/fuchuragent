@@ -38,6 +38,32 @@ class VpsPackageModel {
     return subtotal - discount;
   }
 
+  VpsPackageModel copyWith({
+    String? id,
+    String? name,
+    String? code,
+    int? vcpu,
+    int? ramGb,
+    int? storageGb,
+    int? basePrice,
+    bool? isActive,
+    String? description,
+    Map<int, double>? durationDiscounts,
+  }) {
+    return VpsPackageModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      code: code ?? this.code,
+      vcpu: vcpu ?? this.vcpu,
+      ramGb: ramGb ?? this.ramGb,
+      storageGb: storageGb ?? this.storageGb,
+      basePrice: basePrice ?? this.basePrice,
+      isActive: isActive ?? this.isActive,
+      description: description ?? this.description,
+      durationDiscounts: durationDiscounts ?? this.durationDiscounts,
+    );
+  }
+
   factory VpsPackageModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
     final discountsRaw = data['durationDiscounts'] as Map<String, dynamic>? ?? {};
@@ -88,6 +114,16 @@ class VpsPackageModel {
   // Predefined catalog reference packages (sorted from cheapest to most expensive)
   static List<VpsPackageModel> get defaultCatalog => [
     VpsPackageModel(
+      id: 'pkg-basic-1-bulan',
+      name: 'Basic 1 Bulan',
+      code: 'basic-1-bulan',
+      vcpu: 1,
+      ramGb: 1,
+      storageGb: 20,
+      basePrice: 76000,
+      description: '1 vCPU, RAM 1 GB, storage 20 GB (Sewa 1 Bulan)',
+    ),
+    VpsPackageModel(
       id: 'pkg-snipeit-basic',
       name: 'Snipe-it Basic',
       code: 'snipe-it-basic',
@@ -104,8 +140,18 @@ class VpsPackageModel {
       vcpu: 1,
       ramGb: 1,
       storageGb: 20,
-      basePrice: 80000,
+      basePrice: 76000,
       description: '1 vCPU, RAM 1 GB, storage 20 GB HDD',
+    ),
+    VpsPackageModel(
+      id: 'pkg-basic-3-bulan',
+      name: 'Basic 3 Bulan',
+      code: 'basic-3-bulan',
+      vcpu: 1,
+      ramGb: 1,
+      storageGb: 20,
+      basePrice: 135000,
+      description: '1 vCPU, RAM 1 GB, storage 20 GB (Paket 3 Bulan Hemat)',
     ),
     VpsPackageModel(
       id: 'pkg-standard',
