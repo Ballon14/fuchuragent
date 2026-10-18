@@ -12,6 +12,7 @@ class VpsServiceModel {
   final int ramGb;
   final int storageGb;
   final int price; // Integer IDR
+  final int setupFee; // Integer IDR (Additional setup charge: 10000, 30000, or custom)
   final int billingCycleMonths;
   final DateTime? startDate;
   final DateTime? endDate;
@@ -34,6 +35,7 @@ class VpsServiceModel {
     this.ramGb = 1,
     this.storageGb = 20,
     required this.price,
+    this.setupFee = 0,
     this.billingCycleMonths = 1,
     this.startDate,
     this.endDate,
@@ -45,6 +47,9 @@ class VpsServiceModel {
     this.createdAt,
     this.updatedAt,
   }) : _status = status.toLowerCase();
+
+  /// Total biaya tagihan pertama (Biaya sewa + Additional setup charge)
+  int get totalInitialPrice => price + setupFee;
 
   /// Status layanan VPS:
   /// Jika masa aktif telah kedaluwarsa (endDate < now), status otomatis menjadi 'deactive' (Nonaktif).
@@ -77,6 +82,7 @@ class VpsServiceModel {
       ramGb: (data['ramGb'] as num?)?.toInt() ?? 1,
       storageGb: (data['storageGb'] as num?)?.toInt() ?? 20,
       price: (data['price'] as num?)?.toInt() ?? 0,
+      setupFee: (data['setupFee'] as num?)?.toInt() ?? (data['additionalCharge'] as num?)?.toInt() ?? 0,
       billingCycleMonths: (data['billingCycleMonths'] as num?)?.toInt() ?? 1,
       startDate: AppConstants.parseDateTime(data['startDate']),
       endDate: AppConstants.parseDateTime(data['endDate']),
@@ -101,6 +107,7 @@ class VpsServiceModel {
       'ramGb': ramGb,
       'storageGb': storageGb,
       'price': price,
+      'setupFee': setupFee,
       'billingCycleMonths': billingCycleMonths,
       'startDate': startDate != null ? Timestamp.fromDate(startDate!) : null,
       'endDate': endDate != null ? Timestamp.fromDate(endDate!) : null,
@@ -125,6 +132,7 @@ class VpsServiceModel {
     int? ramGb,
     int? storageGb,
     int? price,
+    int? setupFee,
     int? billingCycleMonths,
     DateTime? startDate,
     DateTime? endDate,
@@ -147,6 +155,7 @@ class VpsServiceModel {
       ramGb: ramGb ?? this.ramGb,
       storageGb: storageGb ?? this.storageGb,
       price: price ?? this.price,
+      setupFee: setupFee ?? this.setupFee,
       billingCycleMonths: billingCycleMonths ?? this.billingCycleMonths,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,

@@ -195,7 +195,26 @@ class ServiceDetailScreen extends ConsumerWidget {
                         title: 'Masa Aktif & Biaya',
                         child: Column(
                           children: [
-                            _buildInfoRow(context, 'Harga Sewa', '${AppConstants.formatRupiah(svc.price)} / bln'),
+                            _buildInfoRow(
+                              context,
+                              'Harga Sewa',
+                              '${AppConstants.formatRupiah(svc.price)} / ${svc.billingCycleMonths > 1 ? "${svc.billingCycleMonths} bln" : "bln"}',
+                            ),
+                            if (svc.setupFee > 0) ...[
+                              const Divider(height: 16),
+                              _buildInfoRow(
+                                context,
+                                'Biaya Setup (Awal)',
+                                '+${AppConstants.formatRupiah(svc.setupFee)} (${svc.deploymentType})',
+                                color: AppColors.warning,
+                              ),
+                              const Divider(height: 16),
+                              _buildInfoRow(
+                                context,
+                                'Total Tagihan Pertama',
+                                AppConstants.formatRupiah(svc.totalInitialPrice),
+                              ),
+                            ],
                             const Divider(height: 16),
                             _buildInfoRow(context, 'Mulai Aktif', AppConstants.formatDate(svc.startDate)),
                             const Divider(height: 16),

@@ -32,6 +32,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
   late TextEditingController _domainCtrl;
   late TextEditingController _serviceNameCtrl;
   late TextEditingController _priceCtrl;
+  late TextEditingController _setupFeeCtrl;
   late TextEditingController _vcpuCtrl;
   late TextEditingController _ramCtrl;
   late TextEditingController _storageCtrl;
@@ -41,7 +42,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
   String? _selectedCustomerId;
   String _selectedPackageName = 'Basic 1 Bulan';
   String _status = 'active';
-  String _deploymentType = 'Publish';
+  String _deploymentType = 'Project Running / Public';
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 30));
   bool _workerPaid = false;
@@ -54,6 +55,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
     _domainCtrl = TextEditingController(text: s?.domain ?? '');
     _serviceNameCtrl = TextEditingController(text: s?.serviceName ?? '');
     _priceCtrl = TextEditingController(text: s?.price != null ? s!.price.toString() : '76000');
+    _setupFeeCtrl = TextEditingController(text: s?.setupFee != null ? s!.setupFee.toString() : '10000');
     _vcpuCtrl = TextEditingController(text: s?.vcpu != null ? s!.vcpu.toString() : '1');
     _ramCtrl = TextEditingController(text: s?.ramGb != null ? s!.ramGb.toString() : '1');
     _storageCtrl = TextEditingController(text: s?.storageGb != null ? s!.storageGb.toString() : '20');
@@ -74,6 +76,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
     _domainCtrl.dispose();
     _serviceNameCtrl.dispose();
     _priceCtrl.dispose();
+    _setupFeeCtrl.dispose();
     _vcpuCtrl.dispose();
     _ramCtrl.dispose();
     _storageCtrl.dispose();
@@ -146,20 +149,26 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
 
     final cycleLabel = cycleMonths > 1 ? '$cycleMonths Bulan' : '1 Bulan';
     final priceVal = int.tryParse(_priceCtrl.text) ?? 0;
+    final setupFeeVal = int.tryParse(_setupFeeCtrl.text) ?? 0;
+    final totalInitialVal = priceVal + setupFeeVal;
 
     final isEdit = widget.service != null;
+    final detailText = 'Sewa: ${AppConstants.formatRupiah(priceVal)} / $cycleLabel'
+        '${setupFeeVal > 0 ? " | Setup: ${AppConstants.formatRupiah(setupFeeVal)}" : ""}'
+        ' | Total Awal: ${AppConstants.formatRupiah(totalInitialVal)}';
+
     final confirmed = isEdit
         ? await ConfirmationDialog.showUpdateConfirmation(
             context: context,
             title: 'Konfirmasi Perubahan Layanan VPS',
             itemName: '$domain ($_selectedPackageName)',
-            detail: 'Biaya Sewa: ${AppConstants.formatRupiah(priceVal)} / $cycleLabel',
+            detail: detailText,
           )
         : await ConfirmationDialog.showCreateConfirmation(
             context: context,
             title: 'Konfirmasi Tambah Layanan VPS Baru',
             itemName: '$domain ($_selectedPackageName)',
-            detail: 'Biaya Sewa: ${AppConstants.formatRupiah(priceVal)} / $cycleLabel',
+            detail: detailText,
           );
 
     if (!confirmed || !mounted) return;
@@ -174,6 +183,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
       ramGb: int.tryParse(_ramCtrl.text) ?? 1,
       storageGb: int.tryParse(_storageCtrl.text) ?? 20,
       price: priceVal,
+      setupFee: setupFeeVal,
       billingCycleMonths: cycleMonths,
       startDate: _startDate,
       endDate: _endDate,
@@ -187,6 +197,60 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
     );
 
     Navigator.of(context).pop(result);
+  }
+
+  Widget _buildSetupPresetChip({
+    required String label,
+    required int amount,
+    required String deploymentType,
+    required Color primaryColor,
+    required bool isDark,
+  }) {
+    final currentVal = int.tryParse(_setupFeeCtrl.text) ?? 0;
+    final isSelected = currentVal == amount;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _setupFeeCtrl.text = amount.toString();
+          _deploymentType = deploymentType;
+        });
+      },
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? primaryColor.withValues(alpha: isDark ? 0.25 : 0.12)
+              : (isDark ? AppColors.surfaceLightDark : Colors.white),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isSelected
+                ? primaryColor
+                : (isDark ? AppColors.borderDark : const Color(0xFFCBD5E1)),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSelected) ...[
+              Icon(Icons.check_circle_rounded, size: 13, color: primaryColor),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                color: isSelected
+                    ? primaryColor
+                    : (isDark ? Colors.white70 : const Color(0xFF334155)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildDurationPreset(
@@ -283,6 +347,10 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                 : (durationDays >= 75
                     ? '3 Bulan'
                     : '1 Bulan'));
+
+        final priceVal = int.tryParse(_priceCtrl.text) ?? 0;
+        final setupFeeVal = int.tryParse(_setupFeeCtrl.text) ?? 0;
+        final totalInitialVal = priceVal + setupFeeVal;
 
         return AlertDialog(
       titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
@@ -679,6 +747,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                     decoration: const InputDecoration(
                       labelText: 'Biaya Sewa Layanan (IDR) *',
                       hintText: 'Contoh: 76000 atau 135000',
+                      helperText: 'Harga sewa dinamis — dapat disesuaikan manual',
                       prefixIcon: Icon(Icons.payments_outlined, size: 20),
                     ),
                     onChanged: (_) => setState(() {}),
@@ -700,6 +769,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                   ),
                 ] else ...[
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: TextFormField(
@@ -708,6 +778,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                           decoration: const InputDecoration(
                             labelText: 'Biaya Sewa Layanan (IDR) *',
                             hintText: 'Contoh: 76000 atau 135000',
+                            helperText: 'Harga sewa dinamis — dapat disesuaikan manual',
                             prefixIcon: Icon(Icons.payments_outlined, size: 20),
                           ),
                           onChanged: (_) => setState(() {}),
@@ -733,6 +804,137 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                     ],
                   ),
                 ],
+                const SizedBox(height: 14),
+
+                // Additional Setup Charge Section (Dinamis: Rp 10.000 / Rp 30.000 / Custom)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surfaceLightDark : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isDark ? AppColors.borderDark : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.build_circle_outlined, size: 16, color: primaryColor),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'Biaya Setup Awal (Additional Charge)',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: primaryColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Dinamis / Opsional',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: primaryColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Preset Buttons
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          _buildSetupPresetChip(
+                            label: 'Setup Pertama Kali (+Rp 10.000)',
+                            amount: 10000,
+                            deploymentType: 'Setup Pertama Kali',
+                            primaryColor: primaryColor,
+                            isDark: isDark,
+                          ),
+                          _buildSetupPresetChip(
+                            label: 'Project Running / Public (+Rp 30.000)',
+                            amount: 30000,
+                            deploymentType: 'Project Running / Public',
+                            primaryColor: primaryColor,
+                            isDark: isDark,
+                          ),
+                          _buildSetupPresetChip(
+                            label: 'Tanpa Setup (Rp 0)',
+                            amount: 0,
+                            deploymentType: 'Tanpa Setup',
+                            primaryColor: primaryColor,
+                            isDark: isDark,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      // Editable Setup Fee Input & Deployment Type
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: TextFormField(
+                              controller: _setupFeeCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Nominal Biaya Setup (IDR)',
+                                hintText: '10000 / 30000 / 0',
+                                helperText: 'Bisa diubah bebas sesuai kesepakatan',
+                                prefixIcon: Icon(Icons.add_task_rounded, size: 18),
+                              ),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 3,
+                            child: DropdownButtonFormField<String>(
+                              key: ValueKey(_deploymentType),
+                              initialValue: ['Publish', 'Project Running / Public', 'Setup Pertama Kali', 'Tanpa Setup'].contains(_deploymentType)
+                                  ? _deploymentType
+                                  : 'Project Running / Public',
+                              decoration: const InputDecoration(
+                                labelText: 'Tipe Deployment',
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 'Setup Pertama Kali', child: Text('Setup Pertama Kali')),
+                                DropdownMenuItem(value: 'Project Running / Public', child: Text('Running / Public')),
+                                DropdownMenuItem(value: 'Publish', child: Text('Publish')),
+                                DropdownMenuItem(value: 'Tanpa Setup', child: Text('Tanpa Setup')),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() {
+                                    _deploymentType = val;
+                                    if (val == 'Setup Pertama Kali') {
+                                      _setupFeeCtrl.text = '10000';
+                                    } else if (val == 'Project Running / Public' || val == 'Publish') {
+                                      _setupFeeCtrl.text = '30000';
+                                    } else if (val == 'Tanpa Setup') {
+                                      _setupFeeCtrl.text = '0';
+                                    }
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 14),
 
                 // Specs: vCPU, RAM, Storage
@@ -916,11 +1118,53 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            '${AppConstants.formatRupiah(int.tryParse(_priceCtrl.text) ?? 0)} / $effectiveCycleText',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primaryColor),
+                            '${AppConstants.formatRupiah(priceVal)} / $effectiveCycleText',
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: primaryColor),
                           ),
                         ],
                       ),
+                      if (setupFeeVal > 0) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Biaya Setup Awal ($_deploymentType):',
+                              style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white70 : const Color(0xFF475569)),
+                            ),
+                            Text(
+                              '+${AppConstants.formatRupiah(setupFeeVal)}',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.warning),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const Divider(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total Tagihan Pertama:',
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            AppConstants.formatRupiah(totalInitialVal),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: primaryColor),
+                          ),
+                        ],
+                      ),
+                      if (setupFeeVal > 0) ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              '(Tagihan perpanjangan berikutnya: ${AppConstants.formatRupiah(priceVal)} / $effectiveCycleText)',
+                              style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: isDark ? Colors.white54 : const Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

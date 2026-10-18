@@ -500,6 +500,55 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
                   ),
                 ],
 
+                // Quick Item Template Chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      ActionChip(
+                        label: const Text('Sewa 1 Bln (76rb)', style: TextStyle(fontSize: 11)),
+                        onPressed: () {
+                          setState(() {
+                            _itemDescCtrl.text = 'Perpanjangan Sewa VPS (1 Bulan)';
+                            _unitPriceCtrl.text = '76000';
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 6),
+                      ActionChip(
+                        label: const Text('Sewa 3 Bln (135rb)', style: TextStyle(fontSize: 11)),
+                        onPressed: () {
+                          setState(() {
+                            _itemDescCtrl.text = 'Sewa VPS Paket Hemat (3 Bulan)';
+                            _unitPriceCtrl.text = '135000';
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 6),
+                      ActionChip(
+                        label: const Text('Setup Pertama (10rb)', style: TextStyle(fontSize: 11)),
+                        onPressed: () {
+                          setState(() {
+                            _itemDescCtrl.text = 'Biaya Setup Pertama Kali Layanan VPS';
+                            _unitPriceCtrl.text = '10000';
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 6),
+                      ActionChip(
+                        label: const Text('Setup Running/Public (30rb)', style: TextStyle(fontSize: 11)),
+                        onPressed: () {
+                          setState(() {
+                            _itemDescCtrl.text = 'Biaya Setup Deploy s/d Project Running/Public';
+                            _unitPriceCtrl.text = '30000';
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+
                 TextFormField(
                   controller: _itemDescCtrl,
                   decoration: const InputDecoration(
