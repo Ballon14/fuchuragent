@@ -111,19 +111,37 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                         width: 320,
                         child: _buildSearchField(),
                       ),
-                      DropdownButton<String>(
-                        value: _statusFilter,
-                        dropdownColor: isDark ? AppColors.surfaceDark : Colors.white,
-                        items: const [
-                          DropdownMenuItem(value: 'all', child: Text('Semua Status')),
-                          DropdownMenuItem(value: 'active', child: Text('Hanya Aktif')),
-                          DropdownMenuItem(value: 'deactive', child: Text('Hanya Nonaktif')),
-                          DropdownMenuItem(value: 'pending', child: Text('Pending')),
-                          DropdownMenuItem(value: 'suspended', child: Text('Ditangguhkan')),
-                        ],
-                        onChanged: (val) {
-                          if (val != null) setState(() => _statusFilter = val);
-                        },
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.surfaceLightDark : Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isDark ? AppColors.borderDark : const Color(0xFFCBD5E1),
+                          ),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _statusFilter,
+                            dropdownColor: isDark ? AppColors.surfaceDark : Colors.white,
+                            icon: Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? Colors.white70 : const Color(0xFF475569)),
+                            style: TextStyle(
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 'all', child: Text('Semua Status')),
+                              DropdownMenuItem(value: 'active', child: Text('Hanya Aktif')),
+                              DropdownMenuItem(value: 'deactive', child: Text('Hanya Nonaktif')),
+                              DropdownMenuItem(value: 'pending', child: Text('Pending')),
+                              DropdownMenuItem(value: 'suspended', child: Text('Ditangguhkan')),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) setState(() => _statusFilter = val);
+                            },
+                          ),
+                        ),
                       ),
                       Text(
                         'Menampilkan ${services.length} Layanan VPS',
@@ -201,7 +219,12 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
       onSelected: (selected) {
         if (selected) setState(() => _statusFilter = value);
       },
-      selectedColor: primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
+      backgroundColor: isDark ? AppColors.surfaceLightDark : Colors.white,
+      selectedColor: primaryColor.withValues(alpha: isDark ? 0.25 : 0.15),
+      side: BorderSide(
+        color: isSelected ? primaryColor : (isDark ? AppColors.borderDark : const Color(0xFFCBD5E1)),
+        width: 1,
+      ),
       labelStyle: TextStyle(
         color: isSelected ? primaryColor : (isDark ? Colors.white70 : const Color(0xFF475569)),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

@@ -50,6 +50,8 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
   Widget build(BuildContext context) {
     final invoiceRepo = ref.watch(invoiceRepositoryProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 900;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
 
     return Scaffold(
       appBar: AppBar(
@@ -74,8 +76,8 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
           ? null
           : FloatingActionButton.extended(
               onPressed: _openCreateDialog,
-              backgroundColor: AppColors.cyan,
-              foregroundColor: Colors.black,
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
               icon: const Icon(Icons.post_add_rounded),
               label: const Text('Buat Tagihan', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
@@ -83,7 +85,7 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
         stream: invoiceRepo.watchInvoices(statusFilter: _statusFilter),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
+            return Center(child: CircularProgressIndicator(color: primaryColor));
           }
 
           if (snapshot.hasError) {
@@ -112,24 +114,45 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
                         width: 320,
                         child: _buildSearchField(),
                       ),
-                      DropdownButton<String>(
-                        value: _statusFilter,
-                        dropdownColor: AppColors.surfaceDark,
-                        items: const [
-                          DropdownMenuItem(value: 'all', child: Text('Semua Status')),
-                          DropdownMenuItem(value: 'unpaid', child: Text('Belum Dibayar')),
-                          DropdownMenuItem(value: 'partial', child: Text('Dibayar Sebagian')),
-                          DropdownMenuItem(value: 'paid', child: Text('Lunas')),
-                          DropdownMenuItem(value: 'overdue', child: Text('Terlambat')),
-                          DropdownMenuItem(value: 'cancelled', child: Text('Dibatalkan')),
-                        ],
-                        onChanged: (val) {
-                          if (val != null) setState(() => _statusFilter = val);
-                        },
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.surfaceLightDark : Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isDark ? AppColors.borderDark : const Color(0xFFCBD5E1),
+                          ),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _statusFilter,
+                            dropdownColor: isDark ? AppColors.surfaceDark : Colors.white,
+                            icon: Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? Colors.white70 : const Color(0xFF475569)),
+                            style: TextStyle(
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 'all', child: Text('Semua Status')),
+                              DropdownMenuItem(value: 'unpaid', child: Text('Belum Dibayar')),
+                              DropdownMenuItem(value: 'partial', child: Text('Dibayar Sebagian')),
+                              DropdownMenuItem(value: 'paid', child: Text('Lunas')),
+                              DropdownMenuItem(value: 'overdue', child: Text('Terlambat')),
+                              DropdownMenuItem(value: 'cancelled', child: Text('Dibatalkan')),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) setState(() => _statusFilter = val);
+                            },
+                          ),
+                        ),
                       ),
                       Text(
                         'Menampilkan ${invoices.length} Tagihan',
-                        style: const TextStyle(color: Colors.white54, fontSize: 13),
+                        style: TextStyle(
+                          color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -200,7 +223,12 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
       onSelected: (selected) {
         if (selected) setState(() => _statusFilter = value);
       },
-      selectedColor: primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
+      backgroundColor: isDark ? AppColors.surfaceLightDark : Colors.white,
+      selectedColor: primaryColor.withValues(alpha: isDark ? 0.25 : 0.15),
+      side: BorderSide(
+        color: isSelected ? primaryColor : (isDark ? AppColors.borderDark : const Color(0xFFCBD5E1)),
+        width: 1,
+      ),
       labelStyle: TextStyle(
         color: isSelected ? primaryColor : (isDark ? Colors.white70 : const Color(0xFF475569)),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
