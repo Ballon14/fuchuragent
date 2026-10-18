@@ -34,9 +34,8 @@ class StatusBadge extends StatelessWidget {
     } else if (s == 'expired' || s == 'deactive' || s == 'inactive' || s == 'overdue' || s == 'terlambat') {
       bg = (isDark ? AppColors.danger : const Color(0xFFEF4444)).withValues(alpha: isDark ? 0.15 : 0.12);
       fg = isDark ? AppColors.danger : const Color(0xFFB91C1C);
-      if (s == 'deactive' || s == 'inactive') display = 'Nonaktif';
-      if (s == 'expired') display = 'Kedaluwarsa';
-      if (s == 'overdue') display = 'Terlambat';
+      if (s == 'deactive' || s == 'inactive' || s == 'expired') display = 'Nonaktif';
+      if (s == 'overdue' || s == 'terlambat') display = 'Terlambat';
     } else if (s == 'cancelled' || s == 'dibatalkan' || s == 'archived') {
       bg = (isDark ? Colors.grey : const Color(0xFF94A3B8)).withValues(alpha: isDark ? 0.2 : 0.15);
       fg = isDark ? Colors.grey.shade400 : const Color(0xFF475569);

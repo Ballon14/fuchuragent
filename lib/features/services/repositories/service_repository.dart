@@ -10,7 +10,20 @@ class ServiceRepository {
 
   Stream<List<VpsServiceModel>> watchServices({String? statusFilter}) {
     return _servicesRef.snapshots().map((snap) {
-      var list = snap.docs.map((d) => VpsServiceModel.fromFirestore(d)).toList();
+      var list = snap.docs.map((d) {
+        final service = VpsServiceModel.fromFirestore(d);
+        final data = d.data() as Map<String, dynamic>? ?? {};
+        final rawStatus = (data['status'] as String? ?? '').toLowerCase();
+        // Otomatis sinkronkan status ke 'deactive' di Firestore jika masa aktif sudah kedaluwarsa (exp)
+        if (service.isExpired && (rawStatus == 'active' || rawStatus == 'actice')) {
+          _servicesRef.doc(d.id).update({
+            'status': 'deactive',
+            'updatedAt': FieldValue.serverTimestamp(),
+          }).catchError((_) {});
+        }
+        return service;
+      }).toList();
+
       if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
         if (statusFilter == 'active') {
           list = list.where((s) => s.status.toLowerCase() == 'active' || s.status.toLowerCase() == 'actice').toList();
@@ -33,7 +46,18 @@ class ServiceRepository {
     int limit = 100,
   }) async {
     final snap = await _servicesRef.limit(200).get();
-    var list = snap.docs.map((d) => VpsServiceModel.fromFirestore(d)).toList();
+    var list = snap.docs.map((d) {
+      final service = VpsServiceModel.fromFirestore(d);
+      final data = d.data() as Map<String, dynamic>? ?? {};
+      final rawStatus = (data['status'] as String? ?? '').toLowerCase();
+      if (service.isExpired && (rawStatus == 'active' || rawStatus == 'actice')) {
+        _servicesRef.doc(d.id).update({
+          'status': 'deactive',
+          'updatedAt': FieldValue.serverTimestamp(),
+        }).catchError((_) {});
+      }
+      return service;
+    }).toList();
 
     if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
       if (statusFilter == 'active') {
@@ -65,7 +89,16 @@ class ServiceRepository {
   Future<VpsServiceModel?> getServiceById(String id) async {
     final doc = await _servicesRef.doc(id).get();
     if (!doc.exists) return null;
-    return VpsServiceModel.fromFirestore(doc);
+    final service = VpsServiceModel.fromFirestore(doc);
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    final rawStatus = (data['status'] as String? ?? '').toLowerCase();
+    if (service.isExpired && (rawStatus == 'active' || rawStatus == 'actice')) {
+      _servicesRef.doc(id).update({
+        'status': 'deactive',
+        'updatedAt': FieldValue.serverTimestamp(),
+      }).catchError((_) {});
+    }
+    return service;
   }
 
   Future<String> addService(VpsServiceModel service) async {

@@ -15,7 +15,7 @@ class VpsServiceModel {
   final int billingCycleMonths;
   final DateTime? startDate;
   final DateTime? endDate;
-  final String status; // 'active', 'deactive', 'expired', 'pending', 'suspended', 'cancelled'
+  final String _status; // 'active', 'deactive', 'expired', 'pending', 'suspended', 'cancelled'
   final String deploymentType; // 'Publish'
   final String? worker; // 'Iqbal'
   final bool workerPaid;
@@ -37,16 +37,23 @@ class VpsServiceModel {
     this.billingCycleMonths = 1,
     this.startDate,
     this.endDate,
-    this.status = 'active',
+    String status = 'active',
     this.deploymentType = 'Publish',
     this.worker,
     this.workerPaid = false,
     this.notes = '',
     this.createdAt,
     this.updatedAt,
-  });
+  }) : _status = status.toLowerCase();
 
-  bool get isActive => status.toLowerCase() == 'active' || status.toLowerCase() == 'actice';
+  /// Status layanan VPS:
+  /// Jika masa aktif telah kedaluwarsa (endDate < now), status otomatis menjadi 'deactive' (Nonaktif).
+  String get status {
+    if (isExpired) return 'deactive';
+    return _status;
+  }
+
+  bool get isActive => !isExpired && (status.toLowerCase() == 'active' || status.toLowerCase() == 'actice');
   bool get isExpired {
     if (endDate == null) return false;
     return DateTime.now().isAfter(endDate!);

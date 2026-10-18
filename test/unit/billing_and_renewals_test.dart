@@ -135,5 +135,22 @@ void main() {
       // Payment status is in Invoice, not hardcoded on Service
       expect(svc.status, equals('active'));
     });
+
+    test('When VPS service is expired (endDate past), its status is automatically deactive (nonaktif)', () {
+      final expiredSvc = VpsServiceModel(
+        id: 'svc-exp',
+        customerId: 'cus-1',
+        serviceName: 'VPS Expired',
+        domain: 'expired.site',
+        packageName: 'Basic',
+        price: 80000,
+        status: 'active', // Dikirim dengan status active
+        endDate: DateTime.now().subtract(const Duration(days: 1)), // Namun sudah lewat masa aktif
+      );
+
+      expect(expiredSvc.isExpired, isTrue);
+      expect(expiredSvc.status, equals('deactive')); // Otomatis berubah menjadi nonaktif
+      expect(expiredSvc.isActive, isFalse);
+    });
   });
 }
