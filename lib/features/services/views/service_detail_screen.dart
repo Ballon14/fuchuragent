@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
 import '../models/service_model.dart';
 import 'service_form_dialog.dart';
+import 'whatsapp_reminder_dialog.dart';
 import '../../renewals/views/renew_action_dialog.dart';
 import '../../invoices/views/invoice_form_dialog.dart';
 import '../../../shared/widgets/app_card.dart';
@@ -111,6 +112,17 @@ class ServiceDetailScreen extends ConsumerWidget {
                               spacing: 12,
                               runSpacing: 8,
                               children: [
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF25D366),
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  icon: const Icon(Icons.chat_rounded, size: 16),
+                                  label: const Text('Kirim WhatsApp'),
+                                  onPressed: () {
+                                    WhatsAppReminderDialog.show(context, service: svc);
+                                  },
+                                ),
                                 ElevatedButton.icon(
                                   icon: const Icon(Icons.autorenew_rounded, size: 16),
                                   label: const Text('Perpanjang Layanan'),

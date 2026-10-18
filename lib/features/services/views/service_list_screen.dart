@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
 import '../models/service_model.dart';
 import 'service_form_dialog.dart';
+import 'whatsapp_reminder_dialog.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_pagination_bar.dart';
@@ -340,7 +341,7 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                 Expanded(flex: 2, child: Text('WORKER', style: headerStyle)),
                 Expanded(flex: 2, child: Text('STATUS', style: headerStyle)),
                 SizedBox(
-                  width: 44,
+                  width: 76,
                   child: Center(child: Text('AKSI', style: headerStyle)),
                 ),
               ],
@@ -482,11 +483,29 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
 
                         // Aksi
                         SizedBox(
-                          width: 44,
-                          child: IconButton(
-                            icon: Icon(Icons.chevron_right_rounded, color: primaryColor, size: 20),
-                            tooltip: 'Detail Layanan',
-                            onPressed: () => context.go('/services/${s.id}'),
+                          width: 76,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 18),
+                                tooltip: 'Kirim Pengingat WhatsApp',
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                onPressed: () {
+                                  WhatsAppReminderDialog.show(context, service: s);
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.chevron_right_rounded, color: primaryColor, size: 20),
+                                tooltip: 'Detail Layanan',
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                onPressed: () => context.go('/services/${s.id}'),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -593,6 +612,27 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF25D366),
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        ),
+                        icon: const Icon(Icons.chat_rounded, size: 14),
+                        label: const Text(
+                          'WhatsApp Pengingat',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () {
+                          WhatsAppReminderDialog.show(context, service: s);
+                        },
                       ),
                     ],
                   ),

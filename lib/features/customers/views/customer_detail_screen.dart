@@ -9,6 +9,7 @@ import '../../invoices/models/invoice_model.dart';
 import '../../payments/models/payment_model.dart';
 import 'customer_form_dialog.dart';
 import '../../services/views/service_form_dialog.dart';
+import '../../services/views/whatsapp_reminder_dialog.dart';
 import '../../invoices/views/invoice_form_dialog.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/status_badge.dart';
@@ -361,7 +362,15 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> wit
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 StatusBadge(status: s.status),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  icon: const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 18),
+                                  tooltip: 'Kirim Pengingat WhatsApp',
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: () {
+                                    WhatsAppReminderDialog.show(context, service: s, customer: customer);
+                                  },
+                                ),
                                 IconButton(
                                   icon: const Icon(Icons.chevron_right_rounded),
                                   onPressed: () => context.go('/services/${s.id}'),
