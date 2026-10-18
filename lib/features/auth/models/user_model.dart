@@ -4,7 +4,7 @@ class UserModel {
   final String id;
   final String email;
   final String name;
-  final String role; // 'admin' | 'staff'
+  final String role; // 'superadmin' | 'admin' | 'staff'
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -19,8 +19,14 @@ class UserModel {
     this.updatedAt,
   });
 
-  bool get isSuperAdmin => email.toLowerCase().trim() == superAdminEmail;
+  bool get isSuperAdmin => email.toLowerCase().trim() == superAdminEmail || role == 'superadmin';
   bool get isAdmin => role == 'admin' || isSuperAdmin;
+
+  String get roleLabel {
+    if (isSuperAdmin) return 'Super Admin';
+    if (role == 'admin') return 'Administrator';
+    return 'Staf Teknis';
+  }
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};

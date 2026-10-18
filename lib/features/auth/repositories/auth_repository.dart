@@ -29,7 +29,7 @@ class AuthRepository {
         id: user.uid,
         email: user.email ?? '',
         name: user.displayName ?? (user.email?.split('@').first ?? (isSuperAdmin ? 'Super Administrator' : 'Staff')),
-        role: (isFirstAdmin || isSuperAdmin) ? 'admin' : 'staff',
+        role: isSuperAdmin ? 'superadmin' : (isFirstAdmin ? 'admin' : 'staff'),
         createdAt: DateTime.now(),
       );
       await _firestore.collection('users').doc(user.uid).set(newUser.toMap(), SetOptions(merge: true));
@@ -37,10 +37,23 @@ class AuthRepository {
     }
 
     final userModel = UserModel.fromFirestore(doc);
-    // Ensure Super Admin email or initial user is upgraded to admin
-    if (isSuperAdmin || userModel.role != 'admin') {
-      final shouldPromote = isSuperAdmin || (await _firestore.collection('users').where('role', isEqualTo: 'admin').limit(1).get()).docs.isEmpty;
-      if (shouldPromote && userModel.role != 'admin') {
+    // Ensure Super Admin email or initial user has highest rank
+    if (isSuperAdmin && userModel.role != 'superadmin') {
+      await _firestore.collection('users').doc(user.uid).update({
+        'role': 'superadmin',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return UserModel(
+        id: userModel.id,
+        email: userModel.email,
+        name: userModel.name,
+        role: 'superadmin',
+        createdAt: userModel.createdAt,
+        updatedAt: DateTime.now(),
+      );
+    } else if (!isSuperAdmin && userModel.role != 'admin') {
+      final adminsSnap = await _firestore.collection('users').where('role', isEqualTo: 'admin').limit(1).get();
+      if (adminsSnap.docs.isEmpty) {
         await _firestore.collection('users').doc(user.uid).update({
           'role': 'admin',
           'updatedAt': FieldValue.serverTimestamp(),
@@ -70,19 +83,19 @@ class AuthRepository {
               id: user.uid,
               email: user.email ?? UserModel.superAdminEmail,
               name: user.displayName ?? 'Super Administrator',
-              role: 'admin',
+              role: 'superadmin',
               createdAt: DateTime.now(),
             );
           }
           return null;
         }
         final model = UserModel.fromFirestore(doc);
-        if (isSuperAdmin && model.role != 'admin') {
+        if (isSuperAdmin && model.role != 'superadmin') {
           return UserModel(
             id: model.id,
             email: model.email,
             name: model.name,
-            role: 'admin',
+            role: 'superadmin',
             createdAt: model.createdAt,
             updatedAt: model.updatedAt,
           );
@@ -197,10 +210,28 @@ class AuthRepository {
     return snap.docs.map((d) => UserModel.fromFirestore(d)).toList();
   }
 
-  Future<void> updateUserRole(String userId, String newRole) async {
+  Stream<List<UserModel>> watchAllUsers() {
+    return _firestore.collection('users').orderBy('createdAt', descending: true).snapshots().map(
+      (snap) => snap.docs.map((d) => UserModel.fromFirestore(d)).toList(),
+    );
+  }
+
+  Future<void> updateUserRole(String userId, String newRole, {String? targetName}) async {
+    final currentUser = _auth.currentUser;
     await _firestore.collection('users').doc(userId).update({
       'role': newRole,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    try {
+      await _firestore.collection('activity_logs').add({
+        'actorId': currentUser?.uid ?? 'system',
+        'actorName': currentUser?.email ?? 'Admin',
+        'action': 'UPDATE_ROLE',
+        'category': 'SECURITY',
+        'details': 'Peran pengguna ${targetName ?? userId} diubah menjadi $newRole.',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {}
   }
 }

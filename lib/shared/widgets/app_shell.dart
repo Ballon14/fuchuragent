@@ -641,7 +641,7 @@ class AppShell extends ConsumerWidget {
                       ctx,
                       icon: Icons.manage_accounts_rounded,
                       title: 'Pengguna & Hak Akses',
-                      subtitle: 'Kelola akun administrator dan staf FuchurHost',
+                      subtitle: 'Kelola akun Super Admin, Administrator, dan staf',
                       route: '/users',
                       isDark: isDark,
                     ),
