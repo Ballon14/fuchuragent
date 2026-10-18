@@ -179,10 +179,14 @@ class SystemSettingsModel {
   final bool enableHapticFeedback;
 
   // 6. Keamanan & Sesi
-  final int autoLockMinutes; // 0 = disabled, 5, 15, 30
+  final int autoLockMinutes;
   final bool requirePasswordOnSensitiveActions;
 
-  // 7. Metadata
+  // 7. Integrasi Backup Google Spreadsheet
+  final String spreadsheetBackupUrl;
+  final String spreadsheetWebhookUrl;
+
+  // 8. Metadata
   final DateTime? updatedAt;
   final String? updatedBy;
 
@@ -216,6 +220,8 @@ class SystemSettingsModel {
     required this.enableHapticFeedback,
     required this.autoLockMinutes,
     required this.requirePasswordOnSensitiveActions,
+    this.spreadsheetBackupUrl = 'https://docs.google.com/spreadsheets/d/1Rdcg6rgp4K7qBO328qeqHfzpaaYZjcRgvsI_OQGjLkE/edit?usp=sharing',
+    this.spreadsheetWebhookUrl = '',
     this.updatedAt,
     this.updatedBy,
   });
@@ -295,6 +301,8 @@ class SystemSettingsModel {
       enableHapticFeedback: true,
       autoLockMinutes: 0,
       requirePasswordOnSensitiveActions: true,
+      spreadsheetBackupUrl: 'https://docs.google.com/spreadsheets/d/1Rdcg6rgp4K7qBO328qeqHfzpaaYZjcRgvsI_OQGjLkE/edit?usp=sharing',
+      spreadsheetWebhookUrl: '',
       updatedAt: DateTime.now(),
       updatedBy: 'System Default',
     );
@@ -330,6 +338,8 @@ class SystemSettingsModel {
     bool? enableHapticFeedback,
     int? autoLockMinutes,
     bool? requirePasswordOnSensitiveActions,
+    String? spreadsheetBackupUrl,
+    String? spreadsheetWebhookUrl,
     DateTime? updatedAt,
     String? updatedBy,
   }) {
@@ -367,6 +377,8 @@ class SystemSettingsModel {
       autoLockMinutes: autoLockMinutes ?? this.autoLockMinutes,
       requirePasswordOnSensitiveActions:
           requirePasswordOnSensitiveActions ?? this.requirePasswordOnSensitiveActions,
+      spreadsheetBackupUrl: spreadsheetBackupUrl ?? this.spreadsheetBackupUrl,
+      spreadsheetWebhookUrl: spreadsheetWebhookUrl ?? this.spreadsheetWebhookUrl,
       updatedAt: updatedAt ?? this.updatedAt,
       updatedBy: updatedBy ?? this.updatedBy,
     );
@@ -403,6 +415,8 @@ class SystemSettingsModel {
       'enableHapticFeedback': enableHapticFeedback,
       'autoLockMinutes': autoLockMinutes,
       'requirePasswordOnSensitiveActions': requirePasswordOnSensitiveActions,
+      'spreadsheetBackupUrl': spreadsheetBackupUrl,
+      'spreadsheetWebhookUrl': spreadsheetWebhookUrl,
       'updatedAt': updatedAt?.toIso8601String(),
       'updatedBy': updatedBy,
     };
@@ -463,6 +477,8 @@ class SystemSettingsModel {
       autoLockMinutes: (map['autoLockMinutes'] as num?)?.toInt() ?? defaults.autoLockMinutes,
       requirePasswordOnSensitiveActions:
           map['requirePasswordOnSensitiveActions'] ?? defaults.requirePasswordOnSensitiveActions,
+      spreadsheetBackupUrl: map['spreadsheetBackupUrl'] ?? defaults.spreadsheetBackupUrl,
+      spreadsheetWebhookUrl: map['spreadsheetWebhookUrl'] ?? defaults.spreadsheetWebhookUrl,
       updatedAt: parsedUpdatedAt ?? defaults.updatedAt,
       updatedBy: map['updatedBy'] ?? defaults.updatedBy,
     );

@@ -5,12 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../models/system_settings_model.dart';
 import '../repositories/settings_repository.dart';
 import '../../notifications/services/local_notification_service.dart';
+import 'google_sheets_backup_dialog.dart';
+import '../services/google_sheets_backup_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -41,6 +44,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   final _waGreetingCtrl = TextEditingController();
   final _waClosingCtrl = TextEditingController();
   final _waSignatureCtrl = TextEditingController();
+
+  // Controllers for Google Spreadsheet Backup
+  final _spreadsheetUrlCtrl = TextEditingController();
+  final _spreadsheetWebhookCtrl = TextEditingController();
 
   // Infrastructure & Diagnostics
   bool _isTestingConnection = false;
@@ -76,6 +83,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     _waGreetingCtrl.dispose();
     _waClosingCtrl.dispose();
     _waSignatureCtrl.dispose();
+    _spreadsheetUrlCtrl.dispose();
+    _spreadsheetWebhookCtrl.dispose();
     super.dispose();
   }
 
@@ -106,6 +115,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     _waGreetingCtrl.text = settings.waGreeting;
     _waClosingCtrl.text = settings.waClosing;
     _waSignatureCtrl.text = settings.waAdminSignature;
+    _spreadsheetUrlCtrl.text = settings.spreadsheetBackupUrl;
+    _spreadsheetWebhookCtrl.text = settings.spreadsheetWebhookUrl;
     _hasUnsavedChanges = false;
   }
 
@@ -151,6 +162,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         waGreeting: _waGreetingCtrl.text.trim(),
         waClosing: _waClosingCtrl.text.trim(),
         waAdminSignature: _waSignatureCtrl.text.trim(),
+        spreadsheetBackupUrl: _spreadsheetUrlCtrl.text.trim(),
+        spreadsheetWebhookUrl: _spreadsheetWebhookCtrl.text.trim(),
       );
 
       final user = FirebaseAuth.instance.currentUser;
@@ -1703,16 +1716,172 @@ ${_waClosingCtrl.text}
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
+                  child: OutlinedButton.icon(
                     icon: const Icon(Icons.download_rounded, size: 16),
                     label: const Text('Ekspor Cadangan Lengkap Sistem (JSON Backup)'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryAccent,
-                      foregroundColor: Colors.white,
+                    style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     onPressed: _handleExportBackupJson,
                   ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Google Spreadsheet Backup & Integration Card
+          AppCard(
+            title: 'Cadangan & Sinkronisasi Google Spreadsheet',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F9D58).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.table_chart_rounded,
+                        color: Color(0xFF0F9D58),
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Google Spreadsheet Target',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0F9D58).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF0F9D58)),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Target Terhubung',
+                                      style: TextStyle(
+                                        color: Color(0xFF0F9D58),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Cadangkan seluruh data Firebase (VPS, Pengeluaran, Tagihan, dan Riwayat Pembayaran) ke Google Spreadsheet resmi.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Target URL field
+                TextField(
+                  controller: _spreadsheetUrlCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'URL Google Spreadsheet Target',
+                    prefixIcon: const Icon(Icons.link_rounded, color: Color(0xFF0F9D58)),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.copy_rounded, size: 18),
+                          tooltip: 'Salin URL Spreadsheet',
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: _spreadsheetUrlCtrl.text.trim()));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('URL Spreadsheet disalin ke clipboard.'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                          tooltip: 'Buka di Browser',
+                          onPressed: () => _openSpreadsheetUrl(_spreadsheetUrlCtrl.text.trim()),
+                        ),
+                      ],
+                    ),
+                    helperText: 'Default: https://docs.google.com/spreadsheets/d/1Rdcg6rgp4K7qBO328qeqHfzpaaYZjcRgvsI_OQGjLkE/edit',
+                  ),
+                  onChanged: (val) => _markChanged(),
+                ),
+                const SizedBox(height: 14),
+
+                // Webhook Apps Script field
+                TextField(
+                  controller: _spreadsheetWebhookCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'URL Webhook Google Apps Script (Opsional untuk Otomasi 1-Klik)',
+                    prefixIcon: const Icon(Icons.cloud_sync_rounded, color: AppColors.electricBlue),
+                    hintText: 'https://script.google.com/macros/s/.../exec',
+                    helperText: 'Gunakan tab "Otomasi Apps Script" pada dialog cadangan untuk mendapatkan script siap pakai.',
+                    suffixIcon: _spreadsheetWebhookCtrl.text.trim().isNotEmpty
+                        ? const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 18)
+                        : null,
+                  ),
+                  onChanged: (val) => _markChanged(),
+                ),
+                const SizedBox(height: 16),
+
+                // Action Buttons
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F9D58),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+                        elevation: 2,
+                      ),
+                      icon: const Icon(Icons.sync_rounded, size: 18),
+                      label: const Text(
+                        'Cadangkan ke Google Spreadsheet Sekarang',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: _openGoogleSheetsBackupDialog,
+                    ),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+                      ),
+                      icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                      label: const Text('Buka Spreadsheet'),
+                      onPressed: () => _openSpreadsheetUrl(_spreadsheetUrlCtrl.text.trim()),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -2143,5 +2312,44 @@ ${_waClosingCtrl.text}
         ],
       ),
     );
+  }
+
+  void _openGoogleSheetsBackupDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => GoogleSheetsBackupDialog(
+        initialSpreadsheetUrl: _spreadsheetUrlCtrl.text.trim().isNotEmpty
+            ? _spreadsheetUrlCtrl.text.trim()
+            : GoogleSheetsBackupService.defaultSpreadsheetUrl,
+        initialWebhookUrl: _spreadsheetWebhookCtrl.text.trim(),
+        onWebhookSaved: (savedWebhook) {
+          setState(() {
+            _spreadsheetWebhookCtrl.text = savedWebhook;
+            _settings = _settings?.copyWith(spreadsheetWebhookUrl: savedWebhook);
+            _hasUnsavedChanges = true;
+          });
+        },
+      ),
+    );
+  }
+
+  Future<void> _openSpreadsheetUrl(String url) async {
+    try {
+      final target = url.trim().isNotEmpty ? url.trim() : GoogleSheetsBackupService.defaultSpreadsheetUrl;
+      final uri = Uri.parse(target);
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal membuka URL Spreadsheet: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
   }
 }

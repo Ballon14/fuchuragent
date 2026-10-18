@@ -10,6 +10,8 @@ import '../../../shared/widgets/stat_card.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../services/services/whatsapp_reminder_service.dart';
 import '../../customers/models/customer_model.dart';
+import '../../settings/views/google_sheets_backup_dialog.dart';
+import '../../settings/services/google_sheets_backup_service.dart';
 import '../models/financial_summary_model.dart';
 
 class FinanceMonitoringScreen extends ConsumerStatefulWidget {
@@ -67,6 +69,11 @@ class _FinanceMonitoringScreenState extends ConsumerState<FinanceMonitoringScree
             ),
             loading: () => const SizedBox.shrink(),
             error: (_, _) => const SizedBox.shrink(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.table_chart_rounded, color: Color(0xFF0F9D58)),
+            tooltip: 'Cadangkan ke Google Spreadsheet',
+            onPressed: () => _openSpreadsheetBackupDialog(context),
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -1483,5 +1490,25 @@ class _FinanceMonitoringScreenState extends ConsumerState<FinanceMonitoringScree
       return '${(amount / 1000).toStringAsFixed(0)} rb';
     }
     return amount.toString();
+  }
+
+  void _openSpreadsheetBackupDialog(BuildContext context) async {
+    String spreadsheetUrl = GoogleSheetsBackupService.defaultSpreadsheetUrl;
+    String webhookUrl = '';
+    try {
+      final settings = await ref.read(settingsRepositoryProvider).getSettings();
+      spreadsheetUrl = settings.spreadsheetBackupUrl;
+      webhookUrl = settings.spreadsheetWebhookUrl;
+    } catch (_) {}
+
+    if (context.mounted) {
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => GoogleSheetsBackupDialog(
+          initialSpreadsheetUrl: spreadsheetUrl,
+          initialWebhookUrl: webhookUrl,
+        ),
+      );
+    }
   }
 }
