@@ -145,6 +145,35 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
     Navigator.of(context).pop(result);
   }
 
+  Widget _buildDurationPreset(String label, int days, Color primaryColor, bool isDark) {
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _endDate = _startDate.add(Duration(days: days));
+        });
+      },
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceLightDark : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isDark ? AppColors.borderDark : const Color(0xFFCBD5E1),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white70 : const Color(0xFF334155),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final customersAsync = ref.watch(customerRepositoryProvider).watchCustomers();
@@ -156,7 +185,45 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
     final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
 
     return AlertDialog(
-      title: Text(isEdit ? 'Edit Layanan VPS' : 'Tambah Layanan VPS Baru'),
+      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+      contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+      actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              isEdit ? Icons.edit_note_rounded : Icons.dns_rounded,
+              color: primaryColor,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isEdit ? 'Edit Layanan VPS' : 'Tambah Layanan VPS Baru',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  isEdit ? 'Perbarui konfigurasi & status VPS' : 'Daftarkan server VPS baru untuk pelanggan',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.normal,
+                    color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
       content: SizedBox(
         width: isMobile ? double.maxFinite : 540,
         child: SingleChildScrollView(
@@ -390,34 +457,99 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                   const SizedBox(height: 12),
                 ],
 
-                // Package quick select chips
-                Text(
-                  'Pilih Template Paket VPS:',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.white70 : const Color(0xFF475569),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6,
-                  children: packages.map((pkg) {
-                    final selected = _selectedPackageName == pkg.name;
-                    return ChoiceChip(
-                      label: Text(
-                        pkg.name,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: selected
-                              ? (isDark ? Colors.black : Colors.white)
-                              : (isDark ? Colors.white70 : const Color(0xFF334155)),
-                        ),
+                // Package quick select cards
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Pilih Template Paket VPS:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white70 : const Color(0xFF475569),
                       ),
-                      selected: selected,
-                      selectedColor: primaryColor,
-                      onSelected: (_) => _onPackageSelected(pkg),
-                    );
-                  }).toList(),
+                    ),
+                    Text(
+                      'Auto-isi spesifikasi & harga',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 72,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: packages.length,
+                    separatorBuilder: (context, index) => const SizedBox(width: 8),
+                    itemBuilder: (context, idx) {
+                      final pkg = packages[idx];
+                      final isSelected = _selectedPackageName == pkg.name;
+                      return InkWell(
+                        onTap: () => _onPackageSelected(pkg),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          width: 130,
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? primaryColor.withValues(alpha: isDark ? 0.2 : 0.1)
+                                : (isDark ? AppColors.surfaceLightDark : const Color(0xFFF8FAFC)),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected
+                                  ? primaryColor
+                                  : (isDark ? AppColors.borderDark : const Color(0xFFE2E8F0)),
+                              width: isSelected ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    pkg.name,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected ? primaryColor : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    Icon(Icons.check_circle_rounded, size: 14, color: primaryColor),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${pkg.vcpu} Core • ${pkg.ramGb}GB • ${pkg.storageGb}GB',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                AppConstants.formatRupiah(pkg.basePrice),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected ? primaryColor : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
                 const SizedBox(height: 14),
 
@@ -425,8 +557,17 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                   controller: _domainCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Domain / Hostname (FQDN) *',
-                    hintText: 'https://mysite.buildsys.site',
+                    hintText: 'mysite.buildsys.site',
+                    prefixIcon: Icon(Icons.language_rounded, size: 20),
                   ),
+                  onChanged: (val) {
+                    if (_serviceNameCtrl.text.isEmpty || _serviceNameCtrl.text.startsWith('VPS ')) {
+                      final clean = val.replaceAll(RegExp(r'https?:\/\/'), '').trim();
+                      if (clean.isNotEmpty) {
+                        _serviceNameCtrl.text = 'VPS $clean';
+                      }
+                    }
+                  },
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Domain wajib diisi' : null,
                 ),
                 const SizedBox(height: 14),
@@ -435,7 +576,11 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                   TextFormField(
                     controller: _priceCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Harga Sewa (IDR/Bln) *'),
+                    decoration: const InputDecoration(
+                      labelText: 'Harga Sewa (IDR/Bln) *',
+                      prefixIcon: Icon(Icons.payments_outlined, size: 20),
+                    ),
+                    onChanged: (_) => setState(() {}),
                     validator: (v) => (v == null || int.tryParse(v) == null) ? 'Harga angka tidak valid' : null,
                   ),
                   const SizedBox(height: 14),
@@ -459,7 +604,11 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                         child: TextFormField(
                           controller: _priceCtrl,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Harga Sewa (IDR/Bln) *'),
+                          decoration: const InputDecoration(
+                            labelText: 'Harga Sewa (IDR/Bln) *',
+                            prefixIcon: Icon(Icons.payments_outlined, size: 20),
+                          ),
+                          onChanged: (_) => setState(() {}),
                           validator: (v) => (v == null || int.tryParse(v) == null) ? 'Harga angka tidak valid' : null,
                         ),
                       ),
@@ -492,6 +641,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                         controller: _vcpuCtrl,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(labelText: 'vCPU'),
+                        onChanged: (_) => setState(() {}),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -500,6 +650,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                         controller: _ramCtrl,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(labelText: 'RAM (GB)'),
+                        onChanged: (_) => setState(() {}),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -508,6 +659,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                         controller: _storageCtrl,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(labelText: 'Disk (GB)'),
+                        onChanged: (_) => setState(() {}),
                       ),
                     ),
                   ],
@@ -521,7 +673,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                       child: ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Mulai Aktif', style: TextStyle(fontSize: 12)),
-                        subtitle: Text('${_startDate.day}/${_startDate.month}/${_startDate.year}'),
+                        subtitle: Text(AppConstants.formatDate(_startDate)),
                         trailing: const Icon(Icons.calendar_today, size: 16),
                         onTap: () async {
                           final picked = await showDatePicker(
@@ -538,7 +690,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                       child: ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Jatuh Tempo', style: TextStyle(fontSize: 12)),
-                        subtitle: Text('${_endDate.day}/${_endDate.month}/${_endDate.year}'),
+                        subtitle: Text(AppConstants.formatDate(_endDate)),
                         trailing: const Icon(Icons.calendar_today, size: 16),
                         onTap: () async {
                           final picked = await showDatePicker(
@@ -553,7 +705,40 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+
+                // Quick Duration Presets (+1 Bulan, +3 Bulan, +6 Bulan, +1 Tahun)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, bottom: 8),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Preset Durasi:',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildDurationPreset('+1 Bulan', 30, primaryColor, isDark),
+                              const SizedBox(width: 6),
+                              _buildDurationPreset('+3 Bulan', 90, primaryColor, isDark),
+                              const SizedBox(width: 6),
+                              _buildDurationPreset('+6 Bulan', 180, primaryColor, isDark),
+                              const SizedBox(width: 6),
+                              _buildDurationPreset('+1 Tahun', 365, primaryColor, isDark),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
 
                 // Worker info
                 Row(
@@ -579,7 +764,60 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
 
                 TextFormField(
                   controller: _notesCtrl,
-                  decoration: const InputDecoration(labelText: 'Catatan Teknis'),
+                  decoration: const InputDecoration(labelText: 'Catatan Teknis (Opsional)'),
+                ),
+                const SizedBox(height: 14),
+
+                // Live Summary Preview Card
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withValues(alpha: isDark ? 0.12 : 0.06),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: primaryColor.withValues(alpha: 0.25)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Paket & Spek:',
+                            style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
+                          ),
+                          Text(
+                            '$_selectedPackageName (${_vcpuCtrl.text} vCPU / ${_ramCtrl.text}GB / ${_storageCtrl.text}GB)',
+                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Masa Sewa:',
+                            style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
+                          ),
+                          Text(
+                            '${AppConstants.formatDate(_startDate)} s/d ${AppConstants.formatDate(_endDate)}',
+                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Biaya Sewa Bulanan:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          Text(
+                            '${AppConstants.formatRupiah(int.tryParse(_priceCtrl.text) ?? 0)}/bln',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primaryColor),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -588,7 +826,11 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
       ),
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
-        ElevatedButton(onPressed: _submit, child: Text(isEdit ? 'Simpan' : 'Tambah Layanan')),
+        ElevatedButton.icon(
+          icon: Icon(isEdit ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded, size: 18),
+          label: Text(isEdit ? 'Simpan' : 'Tambah Layanan'),
+          onPressed: _submit,
+        ),
       ],
     );
   }

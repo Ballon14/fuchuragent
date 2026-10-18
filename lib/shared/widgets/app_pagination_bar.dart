@@ -85,11 +85,11 @@ class AppPaginationBar extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 620;
+        final isCompact = constraints.maxWidth < 680;
 
         return Container(
           padding: EdgeInsets.symmetric(
-            horizontal: isCompact ? 12 : 16,
+            horizontal: isCompact ? 10 : 16,
             vertical: isCompact ? 8 : 10,
           ),
           decoration: BoxDecoration(
@@ -105,8 +105,8 @@ class AppPaginationBar extends StatelessWidget {
             ],
           ),
           child: isCompact
-              ? _buildMobileLayout(context, primaryColor, textMuted, textBold, borderColor)
-              : _buildDesktopLayout(context, primaryColor, textMuted, textBold, borderColor),
+              ? _buildMobileLayout(context, primaryColor, textMuted, textBold, borderColor, containerBg)
+              : _buildDesktopLayout(context, primaryColor, textMuted, textBold, borderColor, containerBg),
         );
       },
     );
@@ -118,6 +118,7 @@ class AppPaginationBar extends StatelessWidget {
     Color textMuted,
     Color textBold,
     Color borderColor,
+    Color containerBg,
   ) {
     final pages = _buildPageList();
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -125,7 +126,7 @@ class AppPaginationBar extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Left info
+        // Left info + Items per page selector
         Flexible(
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -138,7 +139,7 @@ class AppPaginationBar extends StatelessWidget {
                 ),
                 child: Icon(Icons.layers_rounded, size: 16, color: primaryColor),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Flexible(
                 child: Text.rich(
                   TextSpan(
@@ -160,90 +161,123 @@ class AppPaginationBar extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-
-        // Right controls
-        Flexible(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-            // Previous button
-            _buildNavButton(
-              icon: Icons.chevron_left_rounded,
-              label: 'Sebelumnya',
-              enabled: currentPage > 1,
-              onTap: () => onPageChanged(currentPage - 1),
-              isDark: isDark,
-              borderColor: borderColor,
-              primaryColor: primaryColor,
-            ),
-            const SizedBox(width: 6),
-
-            // Page pills
-            ...pages.map((p) {
-              if (p < 0) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Text('...', style: TextStyle(color: textMuted, fontWeight: FontWeight.bold)),
-                );
-              }
-
-              final isSelected = p == currentPage;
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: InkWell(
-                  onTap: () => onPageChanged(p),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isSelected ? primaryColor : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      border: isSelected
-                          ? null
-                          : Border.all(
-                              color: isDark ? AppColors.borderDark : const Color(0xFFCBD5E1),
-                            ),
-                    ),
-                    child: Text(
-                      '$p',
+              if (onItemsPerPageChanged != null) ...[
+                const SizedBox(width: 10),
+                Container(
+                  height: 28,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surfaceDark : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: borderColor),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      value: availableItemsPerPage.contains(itemsPerPage)
+                          ? itemsPerPage
+                          : availableItemsPerPage.first,
+                      icon: Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: textMuted),
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        color: isSelected ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white70 : const Color(0xFF334155),
                       ),
+                      dropdownColor: isDark ? AppColors.surfaceLightDark : Colors.white,
+                      items: availableItemsPerPage.map((val) {
+                        return DropdownMenuItem(
+                          value: val,
+                          child: Text('$val / hal'),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) onItemsPerPageChanged!(val);
+                      },
                     ),
                   ),
                 ),
-              );
-            }),
-
-            const SizedBox(width: 6),
-            // Next button
-            _buildNavButton(
-              icon: Icons.chevron_right_rounded,
-              label: 'Berikutnya',
-              enabled: currentPage < totalPages,
-              onTap: () => onPageChanged(currentPage + 1),
-              isDark: isDark,
-              borderColor: borderColor,
-              primaryColor: primaryColor,
-              isTrailingIcon: true,
-            ),
-          ],
+              ],
+            ],
+          ),
         ),
-      ),
-    ),
-  ],
-);
-}
+        const SizedBox(width: 8),
+
+        // Right controls
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Previous button
+              _buildNavButton(
+                icon: Icons.chevron_left_rounded,
+                label: 'Sebelumnya',
+                enabled: currentPage > 1,
+                onTap: () => onPageChanged(currentPage - 1),
+                isDark: isDark,
+                borderColor: borderColor,
+                primaryColor: primaryColor,
+              ),
+              const SizedBox(width: 6),
+
+              // Page pills
+              ...pages.map((p) {
+                if (p < 0) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text('...', style: TextStyle(color: textMuted, fontWeight: FontWeight.bold)),
+                  );
+                }
+
+                final isSelected = p == currentPage;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: InkWell(
+                    onTap: () => onPageChanged(p),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isSelected ? primaryColor : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        border: isSelected
+                            ? null
+                            : Border.all(
+                                color: isDark ? AppColors.borderDark : const Color(0xFFCBD5E1),
+                              ),
+                      ),
+                      child: Text(
+                        '$p',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          color: isSelected ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+
+              const SizedBox(width: 6),
+              // Next button
+              _buildNavButton(
+                icon: Icons.chevron_right_rounded,
+                label: 'Berikutnya',
+                enabled: currentPage < totalPages,
+                onTap: () => onPageChanged(currentPage + 1),
+                isDark: isDark,
+                borderColor: borderColor,
+                primaryColor: primaryColor,
+                isTrailingIcon: true,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildMobileLayout(
     BuildContext context,
@@ -251,6 +285,7 @@ class AppPaginationBar extends StatelessWidget {
     Color textMuted,
     Color textBold,
     Color borderColor,
+    Color containerBg,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -258,53 +293,206 @@ class AppPaginationBar extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Compact info
-        Text.rich(
-          TextSpan(
-            text: '$startItem-$endItem',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textBold),
-            children: [
-              TextSpan(
-                text: ' / $totalItems data',
-                style: TextStyle(fontWeight: FontWeight.normal, color: textMuted),
-              ),
-            ],
+        Flexible(
+          child: Text.rich(
+            TextSpan(
+              text: '$startItem-$endItem',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textBold),
+              children: [
+                TextSpan(
+                  text: ' / $totalItems data',
+                  style: TextStyle(fontWeight: FontWeight.normal, color: textMuted),
+                ),
+              ],
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
 
-        // Compact navigation
+        // Compact navigation + Quick Jump
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (totalPages > 2) ...[
+              IconButton(
+                icon: const Icon(Icons.first_page_rounded, size: 20),
+                tooltip: 'Halaman Pertama',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                onPressed: currentPage > 1 ? () => onPageChanged(1) : null,
+              ),
+            ],
             IconButton(
               icon: const Icon(Icons.chevron_left_rounded, size: 20),
               tooltip: 'Sebelumnya',
               visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               onPressed: currentPage > 1 ? () => onPageChanged(currentPage - 1) : null,
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                '$currentPage / $totalPages',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: primaryColor,
+            const SizedBox(width: 2),
+            InkWell(
+              onTap: totalPages > 1 ? () => _showPagePicker(context, isDark, primaryColor) : null,
+              borderRadius: BorderRadius.circular(6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$currentPage / $totalPages',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
+                    ),
+                    if (totalPages > 1) ...[
+                      const SizedBox(width: 2),
+                      Icon(Icons.arrow_drop_down, size: 14, color: primaryColor),
+                    ],
+                  ],
                 ),
               ),
             ),
+            const SizedBox(width: 2),
             IconButton(
               icon: const Icon(Icons.chevron_right_rounded, size: 20),
               tooltip: 'Berikutnya',
               visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               onPressed: currentPage < totalPages ? () => onPageChanged(currentPage + 1) : null,
             ),
+            if (totalPages > 2) ...[
+              IconButton(
+                icon: const Icon(Icons.last_page_rounded, size: 20),
+                tooltip: 'Halaman Terakhir',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                onPressed: currentPage < totalPages ? () => onPageChanged(totalPages) : null,
+              ),
+            ],
           ],
         ),
       ],
+    );
+  }
+
+  void _showPagePicker(BuildContext context, bool isDark, Color primaryColor) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Pilih Halaman',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 220),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 5,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      childAspectRatio: 1.3,
+                    ),
+                    itemCount: totalPages,
+                    itemBuilder: (context, index) {
+                      final page = index + 1;
+                      final isSelected = page == currentPage;
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          onPageChanged(page);
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: isSelected ? primaryColor : (isDark ? AppColors.surfaceLightDark : const Color(0xFFF1F5F9)),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isSelected ? primaryColor : (isDark ? AppColors.borderDark : const Color(0xFFE2E8F0)),
+                            ),
+                          ),
+                          child: Text(
+                            '$page',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                              color: isSelected ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                if (onItemsPerPageChanged != null) ...[
+                  const Divider(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Data per halaman:',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                      Wrap(
+                        spacing: 6,
+                        children: availableItemsPerPage.map((val) {
+                          final isSelected = val == itemsPerPage;
+                          return ChoiceChip(
+                            label: Text('$val'),
+                            selected: isSelected,
+                            selectedColor: primaryColor,
+                            labelStyle: TextStyle(
+                              fontSize: 11,
+                              color: isSelected ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                            onSelected: (_) {
+                              Navigator.pop(ctx);
+                              onItemsPerPageChanged!(val);
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

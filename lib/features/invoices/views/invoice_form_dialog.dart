@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/invoice_model.dart';
 import '../../customers/models/customer_model.dart';
 import '../../customers/views/customer_search_dialog.dart';
+import '../../services/models/service_model.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
@@ -76,6 +77,7 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
     if (picked != null) {
       setState(() {
         _selectedCustomerId = picked.id;
+        _selectedServiceId = null; // Reset linked service to let user pick from newly selected customer
       });
     }
   }
@@ -124,16 +126,91 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
     Navigator.of(context).pop(invoice);
   }
 
+  Widget _buildDueDatePreset(String label, int days, Color primaryColor, bool isDark) {
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _dueDate = DateTime.now().add(Duration(days: days));
+        });
+      },
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceLightDark : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isDark ? AppColors.borderDark : const Color(0xFFCBD5E1),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white70 : const Color(0xFF334155),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final customersAsync = ref.watch(customerRepositoryProvider).watchCustomers();
+    final servicesAsync = ref.watch(serviceRepositoryProvider).watchServices();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    final unitPrice = int.tryParse(_unitPriceCtrl.text) ?? 0;
+    final quantity = int.tryParse(_quantityCtrl.text) ?? 1;
+    final discount = int.tryParse(_discountCtrl.text) ?? 0;
+    final subtotal = unitPrice * quantity;
+    final total = (subtotal - discount).clamp(0, double.infinity).toInt();
 
     return AlertDialog(
-      title: const Text('Buat Tagihan Baru'),
+      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+      contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+      actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.receipt_long_rounded,
+              color: primaryColor,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Buat Tagihan Baru',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Terbitkan invoice perpanjangan atau aktivasi layanan VPS',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.normal,
+                    color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
       content: SizedBox(
-        width: 500,
+        width: isMobile ? double.maxFinite : 520,
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
@@ -354,9 +431,73 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
                   const SizedBox(height: 14),
                 ],
 
+                // Auto-link Customer VPS Services dropdown
+                if (_selectedCustomerId != null) ...[
+                  StreamBuilder<List<VpsServiceModel>>(
+                    stream: servicesAsync,
+                    builder: (context, snapshot) {
+                      final allServices = snapshot.data ?? [];
+                      final customerServices = allServices
+                          .where((s) => s.customerId == _selectedCustomerId)
+                          .toList();
+
+                      if (customerServices.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _selectedServiceId,
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: 'Tautkan Layanan VPS Pelanggan',
+                            prefixIcon: Icon(Icons.dns_rounded, size: 20, color: primaryColor),
+                            helperText: 'Otomatis mengisi deskripsi & nominal tagihan',
+                          ),
+                          items: [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('-- Tagihan Manual / Tanpa Tautan VPS --'),
+                            ),
+                            ...customerServices.map((svc) {
+                              final domainText = svc.domain.isNotEmpty ? svc.domain : svc.serviceName;
+                              return DropdownMenuItem(
+                                value: svc.id,
+                                child: Text(
+                                  '$domainText (${AppConstants.formatRupiah(svc.price)}/bln)',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedServiceId = val;
+                              if (val != null) {
+                                final svc = customerServices.firstWhere((s) => s.id == val);
+                                final domainText = svc.domain.isNotEmpty ? svc.domain : svc.serviceName;
+                                _itemDescCtrl.text = 'Perpanjangan Layanan VPS - $domainText';
+                                _unitPriceCtrl.text = svc.price.toString();
+                                if (svc.endDate != null) {
+                                  _dueDate = svc.endDate!;
+                                }
+                              }
+                            });
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ],
+
                 TextFormField(
                   controller: _itemDescCtrl,
-                  decoration: const InputDecoration(labelText: 'Deskripsi Item Tagihan *'),
+                  decoration: const InputDecoration(
+                    labelText: 'Deskripsi Item Tagihan *',
+                    hintText: 'Contoh: Perpanjangan Layanan VPS - client.com',
+                    prefixIcon: Icon(Icons.description_outlined, size: 20),
+                  ),
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Deskripsi wajib diisi' : null,
                 ),
                 const SizedBox(height: 14),
@@ -368,7 +509,11 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
                       child: TextFormField(
                         controller: _unitPriceCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Harga Satuan (IDR) *'),
+                        decoration: const InputDecoration(
+                          labelText: 'Harga Satuan (IDR) *',
+                          prefixIcon: Icon(Icons.payments_outlined, size: 20),
+                        ),
+                        onChanged: (_) => setState(() {}),
                         validator: (v) => (v == null || int.tryParse(v) == null) ? 'Nominal harus angka' : null,
                       ),
                     ),
@@ -378,6 +523,7 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
                         controller: _quantityCtrl,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(labelText: 'Qty *'),
+                        onChanged: (_) => setState(() {}),
                         validator: (v) => (v == null || int.tryParse(v) == null) ? 'Qty angka' : null,
                       ),
                     ),
@@ -388,7 +534,12 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
                 TextFormField(
                   controller: _discountCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Potongan / Diskon (IDR)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Potongan / Diskon (IDR)',
+                    hintText: '0',
+                    prefixIcon: Icon(Icons.discount_outlined, size: 20),
+                  ),
+                  onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 14),
 
@@ -407,11 +558,108 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
                     if (picked != null) setState(() => _dueDate = picked);
                   },
                 ),
-                const SizedBox(height: 10),
+
+                // Quick presets for Due date
+                Padding(
+                  padding: const EdgeInsets.only(top: 2, bottom: 8),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Jatuh Tempo:',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildDueDatePreset('Hari Ini', 0, primaryColor, isDark),
+                              const SizedBox(width: 6),
+                              _buildDueDatePreset('+3 Hari', 3, primaryColor, isDark),
+                              const SizedBox(width: 6),
+                              _buildDueDatePreset('+7 Hari', 7, primaryColor, isDark),
+                              const SizedBox(width: 6),
+                              _buildDueDatePreset('+14 Hari', 14, primaryColor, isDark),
+                              const SizedBox(width: 6),
+                              _buildDueDatePreset('+30 Hari', 30, primaryColor, isDark),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
 
                 TextFormField(
                   controller: _notesCtrl,
-                  decoration: const InputDecoration(labelText: 'Catatan Tagihan'),
+                  decoration: const InputDecoration(
+                    labelText: 'Catatan Tagihan (Opsional)',
+                    hintText: 'Nomor rekening transfer BCA/Mandiri, ketentuan, dll.',
+                    prefixIcon: Icon(Icons.notes_rounded, size: 20),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Live Calculation Card
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withValues(alpha: isDark ? 0.12 : 0.06),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: primaryColor.withValues(alpha: 0.25)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Subtotal ($quantity item):',
+                            style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
+                          ),
+                          Text(
+                            AppConstants.formatRupiah(subtotal),
+                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      if (discount > 0) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Diskon / Potongan:',
+                              style: TextStyle(fontSize: 11.5, color: AppColors.success),
+                            ),
+                            Text(
+                              '- ${AppConstants.formatRupiah(discount)}',
+                              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.success),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const Divider(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total Pembayaran:',
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            AppConstants.formatRupiah(total),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: primaryColor),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -419,8 +667,15 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
-        ElevatedButton(onPressed: _submit, child: const Text('Terbitkan Tagihan')),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Batal'),
+        ),
+        ElevatedButton.icon(
+          icon: const Icon(Icons.send_rounded, size: 18),
+          label: const Text('Terbitkan Tagihan'),
+          onPressed: _submit,
+        ),
       ],
     );
   }

@@ -94,5 +94,43 @@ void main() {
       await tester.pumpAndSettle();
       expect(selectedPage, equals(2));
     });
+
+    testWidgets('Allows changing itemsPerPage via dropdown when onItemsPerPageChanged is provided', (tester) async {
+      int currentItemsPerPage = 10;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                return AppPaginationBar(
+                  currentPage: 1,
+                  totalItems: 60,
+                  itemsPerPage: currentItemsPerPage,
+                  availableItemsPerPage: const [10, 20, 50],
+                  onPageChanged: (_) {},
+                  onItemsPerPageChanged: (newVal) {
+                    setState(() => currentItemsPerPage = newVal);
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      // Verify dropdown displays '10 / hal'
+      expect(find.text('10 / hal'), findsOneWidget);
+
+      // Tap dropdown to open items
+      await tester.tap(find.text('10 / hal'));
+      await tester.pumpAndSettle();
+
+      // Tap '20 / hal' in dropdown
+      await tester.tap(find.text('20 / hal').last);
+      await tester.pumpAndSettle();
+
+      expect(currentItemsPerPage, equals(20));
+    });
   });
 }

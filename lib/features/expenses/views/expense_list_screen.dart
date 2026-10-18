@@ -20,7 +20,7 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
   String _searchQuery = '';
   String _categoryFilter = 'all';
   int _currentPage = 1;
-  static const int _itemsPerPage = 10;
+  int _itemsPerPage = 10;
 
   @override
   void dispose() {
@@ -195,8 +195,15 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
                     currentPage: safeCurrentPage,
                     totalItems: totalItems,
                     itemsPerPage: _itemsPerPage,
+                    availableItemsPerPage: const [10, 20, 50],
                     onPageChanged: (newPage) {
                       setState(() => _currentPage = newPage);
+                    },
+                    onItemsPerPageChanged: (newLimit) {
+                      setState(() {
+                        _itemsPerPage = newLimit;
+                        _currentPage = 1;
+                      });
                     },
                   ),
                 ],

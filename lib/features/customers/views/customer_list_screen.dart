@@ -21,7 +21,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
   String _statusFilter = 'all';
   String _searchQuery = '';
   int _currentPage = 1;
-  static const int _itemsPerPage = 10;
+  int _itemsPerPage = 10;
 
   @override
   void dispose() {
@@ -201,8 +201,15 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                     currentPage: safeCurrentPage,
                     totalItems: totalItems,
                     itemsPerPage: _itemsPerPage,
+                    availableItemsPerPage: const [10, 20, 50],
                     onPageChanged: (newPage) {
                       setState(() => _currentPage = newPage);
+                    },
+                    onItemsPerPageChanged: (newLimit) {
+                      setState(() {
+                        _itemsPerPage = newLimit;
+                        _currentPage = 1;
+                      });
                     },
                   ),
                 ],
