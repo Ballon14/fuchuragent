@@ -48,3 +48,6 @@ app.*.map.json
 .runtimeconfig.json
 .env
 .env.local
+# Widget Preview related
+.widget_preview/
+devtools_options.yaml

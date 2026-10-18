@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../customers/models/customer_model.dart';
 import '../models/service_model.dart';
 import '../../invoices/models/invoice_model.dart';
+import '../../settings/models/system_settings_model.dart';
 
 enum WhatsAppTemplateType {
   expiringSoon,
@@ -27,11 +28,20 @@ class WhatsAppReminderService {
     return cleaned;
   }
 
+  /// Formats bank account list for WhatsApp messages
+  static String formatBankAccounts(List<BankAccountModel>? banks) {
+    if (banks == null || banks.isEmpty) {
+      return '• Bank BCA: *1234567890* a.n *Fuchur Agent*\n• Bank Mandiri: *0987654321* a.n *Fuchur Agent*';
+    }
+    return banks.map((b) => '• ${b.bankName}: *${b.accountNumber}* a.n *${b.accountHolder}*').join('\n');
+  }
+
   /// Generates template for VPS service that is expiring soon
   static String generateExpiringSoonTemplate({
     required CustomerModel customer,
     required VpsServiceModel service,
     String? adminContact,
+    SystemSettingsModel? settings,
   }) {
     final customerName = customer.name.isNotEmpty ? customer.name : 'Pelanggan';
     final domain = service.domain.isNotEmpty ? service.domain : service.serviceName;
@@ -43,9 +53,16 @@ class WhatsAppReminderService {
         ? 'hari ini'
         : (daysLeft == 1 ? 'besok (1 hari lagi)' : '$daysLeft hari lagi');
 
-    return '''Halo Kak *$customerName*,
+    final bankListStr = formatBankAccounts(settings?.bankAccounts);
+    final brand = settings?.brandName ?? 'Fuchur Agent';
+    final greeting = settings != null
+        ? settings.waGreeting.replaceAll('{name}', customerName)
+        : 'Halo Kak *$customerName*,';
+    final closing = settings?.waClosing ?? 'Terima kasih atas kepercayaan Kakak menggunakan layanan Fuchur Agent! 🙏';
 
-Kami dari *Fuchur Agent* ingin menginformasikan bahwa masa aktif layanan VPS Anda akan segera berakhir:
+    return '''$greeting
+
+Kami dari *$brand* ingin menginformasikan bahwa masa aktif layanan VPS Anda akan segera berakhir:
 
 🌐 *Detail Layanan VPS:*
 • Domain / Host: *$domain*
@@ -56,12 +73,11 @@ Kami dari *Fuchur Agent* ingin menginformasikan bahwa masa aktif layanan VPS And
 Untuk menjaga agar website dan sistem Anda tetap online tanpa interupsi, silakan lakukan konfirmasi perpanjangan sewa sebelum tanggal jatuh tempo.
 
 💳 *Rekening Pembayaran Resmi:*
-• Bank BCA: *1234567890* a.n *Fuchur Agent*
-• Bank Mandiri: *0987654321* a.n *Fuchur Agent*
+$bankListStr
 
 Setelah melakukan pembayaran, mohon kirimkan bukti transfer melalui chat WhatsApp ini.
 
-Terima kasih atas kepercayaan Kakak menggunakan layanan Fuchur Agent! 🙏''';
+$closing''';
   }
 
   /// Generates template for VPS service that is already expired
@@ -69,15 +85,23 @@ Terima kasih atas kepercayaan Kakak menggunakan layanan Fuchur Agent! 🙏''';
     required CustomerModel customer,
     required VpsServiceModel service,
     String? adminContact,
+    SystemSettingsModel? settings,
   }) {
     final customerName = customer.name.isNotEmpty ? customer.name : 'Pelanggan';
     final domain = service.domain.isNotEmpty ? service.domain : service.serviceName;
     final expiryDate = AppConstants.formatDate(service.endDate);
     final priceStr = AppConstants.formatRupiah(service.price);
 
-    return '''Halo Kak *$customerName*,
+    final bankListStr = formatBankAccounts(settings?.bankAccounts);
+    final brand = settings?.brandName ?? 'Fuchur Agent';
+    final greeting = settings != null
+        ? settings.waGreeting.replaceAll('{name}', customerName)
+        : 'Halo Kak *$customerName*,';
+    final signature = settings?.waAdminSignature ?? 'Fuchur Agent Team';
 
-Kami dari *Fuchur Agent* menginformasikan bahwa masa aktif layanan VPS Anda telah *berakhir*:
+    return '''$greeting
+
+Kami dari *$brand* menginformasikan bahwa masa aktif layanan VPS Anda telah *berakhir*:
 
 ⚠️ *Status Layanan: Kedaluwarsa / Nonaktif*
 • Domain / Host: *$domain*
@@ -88,13 +112,12 @@ Kami dari *Fuchur Agent* menginformasikan bahwa masa aktif layanan VPS Anda tela
 Saat ini server Anda sedang dalam masa tenggang. Agar data server tetap aman dan tidak dinonaktifkan permanen, mohon segera melakukan konfirmasi perpanjangan sewa.
 
 💳 *Rekening Pembayaran Transfer:*
-• Bank BCA: *1234567890* a.n *Fuchur Agent*
-• Bank Mandiri: *0987654321* a.n *Fuchur Agent*
+$bankListStr
 
 Silakan balas pesan ini dan kirimkan bukti transfer jika perpanjangan sudah dilakukan.
 
 Terima kasih atas kerja samanya,
-*Fuchur Agent Team* 🙏''';
+*$signature* 🙏''';
   }
 
   /// Generates template for specific invoice reminder
@@ -102,18 +125,25 @@ Terima kasih atas kerja samanya,
     required CustomerModel customer,
     required InvoiceModel invoice,
     VpsServiceModel? service,
+    SystemSettingsModel? settings,
   }) {
     final customerName = customer.name.isNotEmpty ? customer.name : 'Pelanggan';
     final invoiceNumber = invoice.invoiceNumber.isNotEmpty ? invoice.invoiceNumber : 'INV-TAGIHAN';
     final dueDate = AppConstants.formatDate(invoice.dueDate);
     final totalAmount = AppConstants.formatRupiah(invoice.total);
+    final brand = settings?.brandName ?? 'Fuchur Agent';
+    final greeting = settings != null
+        ? settings.waGreeting.replaceAll('{name}', customerName)
+        : 'Halo Kak *$customerName*,';
+    final bankListStr = formatBankAccounts(settings?.bankAccounts);
+
     final description = invoice.items.isNotEmpty
         ? invoice.items.first.description
-        : (service != null ? 'Perpanjangan VPS ${service.domain}' : 'Layanan VPS Fuchur Agent');
+        : (service != null ? 'Perpanjangan VPS ${service.domain}' : 'Layanan VPS $brand');
 
-    return '''Halo Kak *$customerName*,
+    return '''$greeting
 
-Berikut pemberitahuan tagihan invoice dari *Fuchur Agent*:
+Berikut pemberitahuan tagihan invoice dari *$brand*:
 
 📄 *Detail Tagihan Invoice:*
 • No. Tagihan: *$invoiceNumber*
@@ -122,8 +152,7 @@ Berikut pemberitahuan tagihan invoice dari *Fuchur Agent*:
 • Total Tagihan: *$totalAmount*
 
 💳 *Rekening Pembayaran Transfer:*
-• Bank BCA: *1234567890* a.n *Fuchur Agent*
-• Bank Mandiri: *0987654321* a.n *Fuchur Agent*
+$bankListStr
 
 Mohon konfirmasikan bukti transfer ke WhatsApp ini setelah transaksi berhasil agar status tagihan dapat segera diupdate.
 

@@ -15,6 +15,8 @@ import '../../features/imports/repositories/import_repository.dart';
 import '../../features/dashboard/repositories/dashboard_repository.dart';
 import '../../features/dashboard/models/dashboard_stats.dart';
 import '../../features/expenses/repositories/expense_repository.dart';
+import '../../features/settings/models/system_settings_model.dart';
+import '../../features/settings/repositories/settings_repository.dart';
 
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
@@ -55,8 +57,15 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) =>
 final importRepositoryProvider = Provider<ImportRepository>((ref) => ImportRepository());
 final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) => ExpenseRepository());
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) => DashboardRepository());
+final settingsRepositoryProvider = Provider<SettingsRepository>((ref) => SettingsRepository());
+
+// System Settings Provider (real-time stream)
+final systemSettingsProvider = StreamProvider<SystemSettingsModel>((ref) {
+  return ref.watch(settingsRepositoryProvider).watchSettings();
+});
 
 // Dashboard Stats Provider (auto-refreshable)
 final dashboardStatsProvider = FutureProvider.autoDispose<DashboardStats>((ref) async {
   return await ref.watch(dashboardRepositoryProvider).getDashboardStats();
 });
+

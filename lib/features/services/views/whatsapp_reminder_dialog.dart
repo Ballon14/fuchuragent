@@ -97,18 +97,22 @@ class _WhatsAppReminderDialogState extends ConsumerState<WhatsAppReminderDialog>
           updatedAt: DateTime.now(),
         );
 
+    final settings = ref.read(systemSettingsProvider).asData?.value;
+
     String template = '';
     switch (_selectedType) {
       case WhatsAppTemplateType.expiringSoon:
         template = WhatsAppReminderService.generateExpiringSoonTemplate(
           customer: cust,
           service: widget.service,
+          settings: settings,
         );
         break;
       case WhatsAppTemplateType.expired:
         template = WhatsAppReminderService.generateExpiredTemplate(
           customer: cust,
           service: widget.service,
+          settings: settings,
         );
         break;
       case WhatsAppTemplateType.invoiceReminder:
@@ -117,6 +121,7 @@ class _WhatsAppReminderDialogState extends ConsumerState<WhatsAppReminderDialog>
             customer: cust,
             invoice: widget.invoice!,
             service: widget.service,
+            settings: settings,
           );
         } else {
           // Synthetic invoice template based on service price
@@ -145,6 +150,7 @@ class _WhatsAppReminderDialogState extends ConsumerState<WhatsAppReminderDialog>
             customer: cust,
             invoice: dummyInv,
             service: widget.service,
+            settings: settings,
           );
         }
         break;
