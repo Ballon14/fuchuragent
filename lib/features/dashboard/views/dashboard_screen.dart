@@ -348,11 +348,6 @@ class DashboardScreen extends ConsumerWidget {
                     onPressed: () => context.go('/payments'),
                   ),
                   OutlinedButton.icon(
-                    icon: const Icon(Icons.account_balance_wallet_rounded, size: 15),
-                    label: const Text('Catat Pengeluaran'),
-                    onPressed: () => context.go('/expenses'),
-                  ),
-                  OutlinedButton.icon(
                     icon: const Icon(Icons.person_add_rounded, size: 15),
                     label: const Text('Pelanggan Baru'),
                     onPressed: () => context.go('/customers'),
