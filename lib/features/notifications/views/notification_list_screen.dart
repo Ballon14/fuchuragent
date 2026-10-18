@@ -49,6 +49,7 @@ class _NotificationListScreenState extends ConsumerState<NotificationListScreen>
 
   Future<void> _sendTestNotification() async {
     await LocalNotificationService().showTestNotification();
+    await _checkPermission();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

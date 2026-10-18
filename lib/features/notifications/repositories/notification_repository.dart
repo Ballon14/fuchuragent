@@ -62,11 +62,22 @@ class NotificationRepository {
 
     try {
       final notifId = docRef.id.hashCode.abs() % 1000000;
+      String? channelId;
+      final cat = category.toUpperCase();
+      if (cat == 'PAYMENT' || cat == 'INVOICE' || cat == 'EXPENSE') {
+        channelId = LocalNotificationService.financialChannelId;
+      } else if (cat == 'SYSTEM' || cat == 'BACKUP') {
+        channelId = LocalNotificationService.systemChannelId;
+      } else {
+        channelId = LocalNotificationService.channelId;
+      }
+
       await LocalNotificationService().showNotification(
         id: notifId,
         title: title,
         body: message,
         payload: '/notifications',
+        targetChannelId: channelId,
       );
     } catch (_) {}
 
