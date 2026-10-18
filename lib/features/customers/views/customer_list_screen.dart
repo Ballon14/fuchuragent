@@ -7,6 +7,7 @@ import '../models/customer_model.dart';
 import 'customer_form_dialog.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_pagination_bar.dart';
 
 class CustomerListScreen extends ConsumerStatefulWidget {
   const CustomerListScreen({super.key});
@@ -19,6 +20,8 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
   final _searchCtrl = TextEditingController();
   String _statusFilter = 'all';
   String _searchQuery = '';
+  int _currentPage = 1;
+  static const int _itemsPerPage = 10;
 
   @override
   void dispose() {
@@ -95,6 +98,12 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
             }).toList();
           }
 
+          final totalItems = customers.length;
+          final totalPages = totalItems == 0 ? 1 : (totalItems / _itemsPerPage).ceil();
+          final safeCurrentPage = _currentPage.clamp(1, totalPages);
+          final startIndex = (safeCurrentPage - 1) * _itemsPerPage;
+          final pageCustomers = customers.skip(startIndex).take(_itemsPerPage).toList();
+
           return Padding(
             padding: EdgeInsets.all(isDesktop ? 24 : 14),
             child: Column(
@@ -137,13 +146,20 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                               DropdownMenuItem(value: 'archived', child: Text('Diarsipkan')),
                             ],
                             onChanged: (val) {
-                              if (val != null) setState(() => _statusFilter = val);
+                              if (val != null) {
+                                setState(() {
+                                  _statusFilter = val;
+                                  _currentPage = 1;
+                                });
+                              }
                             },
                           ),
                         ),
                       ),
                       Text(
-                        'Menampilkan ${customers.length} Pelanggan',
+                        totalItems > _itemsPerPage
+                            ? 'Total $totalItems Pelanggan (Hal. $safeCurrentPage/$totalPages)'
+                            : 'Menampilkan $totalItems Pelanggan',
                         style: TextStyle(
                           color: isDark ? Colors.white54 : const Color(0xFF64748B),
                           fontSize: 13,
@@ -175,8 +191,21 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                 Expanded(
                   child: customers.isEmpty
                       ? _buildEmptyState()
-                      : (isDesktop ? _buildDesktopTable(customers) : _buildMobileList(customers)),
+                      : (isDesktop ? _buildDesktopTable(pageCustomers) : _buildMobileList(pageCustomers)),
                 ),
+
+                // Pagination Bar (Only when data exceeds itemsPerPage)
+                if (totalItems > _itemsPerPage) ...[
+                  const SizedBox(height: 14),
+                  AppPaginationBar(
+                    currentPage: safeCurrentPage,
+                    totalItems: totalItems,
+                    itemsPerPage: _itemsPerPage,
+                    onPageChanged: (newPage) {
+                      setState(() => _currentPage = newPage);
+                    },
+                  ),
+                ],
               ],
             ),
           );
@@ -196,12 +225,18 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                 icon: const Icon(Icons.clear, size: 18),
                 onPressed: () {
                   _searchCtrl.clear();
-                  setState(() => _searchQuery = '');
+                  setState(() {
+                    _searchQuery = '';
+                    _currentPage = 1;
+                  });
                 },
               )
             : null,
       ),
-      onChanged: (val) => setState(() => _searchQuery = val.trim()),
+      onChanged: (val) => setState(() {
+        _searchQuery = val.trim();
+        _currentPage = 1;
+      }),
     );
   }
 
@@ -214,7 +249,12 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
-        if (selected) setState(() => _statusFilter = value);
+        if (selected) {
+          setState(() {
+            _statusFilter = value;
+            _currentPage = 1;
+          });
+        }
       },
       backgroundColor: isDark ? AppColors.surfaceLightDark : Colors.white,
       selectedColor: primaryColor.withValues(alpha: isDark ? 0.25 : 0.15),

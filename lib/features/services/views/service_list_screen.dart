@@ -7,6 +7,7 @@ import '../models/service_model.dart';
 import 'service_form_dialog.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_pagination_bar.dart';
 
 class ServiceListScreen extends ConsumerStatefulWidget {
   const ServiceListScreen({super.key});
@@ -19,6 +20,8 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
   final _searchCtrl = TextEditingController();
   String _statusFilter = 'all';
   String _searchQuery = '';
+  int _currentPage = 1;
+  static const int _itemsPerPage = 10;
 
   @override
   void dispose() {
@@ -95,6 +98,12 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
             }).toList();
           }
 
+          final totalItems = services.length;
+          final totalPages = totalItems == 0 ? 1 : (totalItems / _itemsPerPage).ceil();
+          final safeCurrentPage = _currentPage.clamp(1, totalPages);
+          final startIndex = (safeCurrentPage - 1) * _itemsPerPage;
+          final pageServices = services.skip(startIndex).take(_itemsPerPage).toList();
+
           return Padding(
             padding: EdgeInsets.all(isDesktop ? 24 : 14),
             child: Column(
@@ -138,13 +147,20 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                               DropdownMenuItem(value: 'suspended', child: Text('Ditangguhkan')),
                             ],
                             onChanged: (val) {
-                              if (val != null) setState(() => _statusFilter = val);
+                              if (val != null) {
+                                setState(() {
+                                  _statusFilter = val;
+                                  _currentPage = 1;
+                                });
+                              }
                             },
                           ),
                         ),
                       ),
                       Text(
-                        'Menampilkan ${services.length} Layanan VPS',
+                        totalItems > _itemsPerPage
+                            ? 'Total $totalItems Layanan VPS (Hal. $safeCurrentPage/$totalPages)'
+                            : 'Menampilkan $totalItems Layanan VPS',
                         style: TextStyle(
                           color: isDark ? Colors.white54 : const Color(0xFF64748B),
                           fontSize: 13,
@@ -178,8 +194,21 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                 Expanded(
                   child: services.isEmpty
                       ? _buildEmptyState()
-                      : (isDesktop ? _buildDesktopTable(services) : _buildMobileList(services)),
+                      : (isDesktop ? _buildDesktopTable(pageServices) : _buildMobileList(pageServices)),
                 ),
+
+                // Pagination Bar (Only when data exceeds itemsPerPage)
+                if (totalItems > _itemsPerPage) ...[
+                  const SizedBox(height: 14),
+                  AppPaginationBar(
+                    currentPage: safeCurrentPage,
+                    totalItems: totalItems,
+                    itemsPerPage: _itemsPerPage,
+                    onPageChanged: (newPage) {
+                      setState(() => _currentPage = newPage);
+                    },
+                  ),
+                ],
               ],
             ),
           );
@@ -199,12 +228,18 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
                 icon: const Icon(Icons.clear, size: 18),
                 onPressed: () {
                   _searchCtrl.clear();
-                  setState(() => _searchQuery = '');
+                  setState(() {
+                    _searchQuery = '';
+                    _currentPage = 1;
+                  });
                 },
               )
             : null,
       ),
-      onChanged: (val) => setState(() => _searchQuery = val.trim()),
+      onChanged: (val) => setState(() {
+        _searchQuery = val.trim();
+        _currentPage = 1;
+      }),
     );
   }
 
@@ -217,7 +252,12 @@ class _ServiceListScreenState extends ConsumerState<ServiceListScreen> {
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
-        if (selected) setState(() => _statusFilter = value);
+        if (selected) {
+          setState(() {
+            _statusFilter = value;
+            _currentPage = 1;
+          });
+        }
       },
       backgroundColor: isDark ? AppColors.surfaceLightDark : Colors.white,
       selectedColor: primaryColor.withValues(alpha: isDark ? 0.25 : 0.15),

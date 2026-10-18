@@ -7,6 +7,7 @@ import '../models/invoice_model.dart';
 import 'invoice_form_dialog.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_pagination_bar.dart';
 
 class InvoiceListScreen extends ConsumerStatefulWidget {
   const InvoiceListScreen({super.key});
@@ -19,6 +20,8 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
   final _searchCtrl = TextEditingController();
   String _statusFilter = 'all';
   String _searchQuery = '';
+  int _currentPage = 1;
+  static const int _itemsPerPage = 10;
 
   @override
   void dispose() {
@@ -98,6 +101,12 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
             invoices = invoices.where((i) => i.invoiceNumber.toLowerCase().contains(q)).toList();
           }
 
+          final totalItems = invoices.length;
+          final totalPages = totalItems == 0 ? 1 : (totalItems / _itemsPerPage).ceil();
+          final safeCurrentPage = _currentPage.clamp(1, totalPages);
+          final startIndex = (safeCurrentPage - 1) * _itemsPerPage;
+          final pageInvoices = invoices.skip(startIndex).take(_itemsPerPage).toList();
+
           return Padding(
             padding: EdgeInsets.all(isDesktop ? 24 : 14),
             child: Column(
@@ -142,13 +151,20 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
                               DropdownMenuItem(value: 'cancelled', child: Text('Dibatalkan')),
                             ],
                             onChanged: (val) {
-                              if (val != null) setState(() => _statusFilter = val);
+                              if (val != null) {
+                                setState(() {
+                                  _statusFilter = val;
+                                  _currentPage = 1;
+                                });
+                              }
                             },
                           ),
                         ),
                       ),
                       Text(
-                        'Menampilkan ${invoices.length} Tagihan',
+                        totalItems > _itemsPerPage
+                            ? 'Total $totalItems Tagihan (Hal. $safeCurrentPage/$totalPages)'
+                            : 'Menampilkan $totalItems Tagihan',
                         style: TextStyle(
                           color: isDark ? Colors.white54 : const Color(0xFF64748B),
                           fontSize: 13,
@@ -182,8 +198,21 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
                 Expanded(
                   child: invoices.isEmpty
                       ? _buildEmptyState()
-                      : (isDesktop ? _buildDesktopTable(invoices) : _buildMobileList(invoices)),
+                      : (isDesktop ? _buildDesktopTable(pageInvoices) : _buildMobileList(pageInvoices)),
                 ),
+
+                // Pagination Bar (Only when data exceeds itemsPerPage)
+                if (totalItems > _itemsPerPage) ...[
+                  const SizedBox(height: 14),
+                  AppPaginationBar(
+                    currentPage: safeCurrentPage,
+                    totalItems: totalItems,
+                    itemsPerPage: _itemsPerPage,
+                    onPageChanged: (newPage) {
+                      setState(() => _currentPage = newPage);
+                    },
+                  ),
+                ],
               ],
             ),
           );
@@ -203,12 +232,18 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
                 icon: const Icon(Icons.clear, size: 18),
                 onPressed: () {
                   _searchCtrl.clear();
-                  setState(() => _searchQuery = '');
+                  setState(() {
+                    _searchQuery = '';
+                    _currentPage = 1;
+                  });
                 },
               )
             : null,
       ),
-      onChanged: (val) => setState(() => _searchQuery = val.trim()),
+      onChanged: (val) => setState(() {
+        _searchQuery = val.trim();
+        _currentPage = 1;
+      }),
     );
   }
 
@@ -221,7 +256,12 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
-        if (selected) setState(() => _statusFilter = value);
+        if (selected) {
+          setState(() {
+            _statusFilter = value;
+            _currentPage = 1;
+          });
+        }
       },
       backgroundColor: isDark ? AppColors.surfaceLightDark : Colors.white,
       selectedColor: primaryColor.withValues(alpha: isDark ? 0.25 : 0.15),
@@ -232,7 +272,6 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
       labelStyle: TextStyle(
         color: isSelected ? primaryColor : (isDark ? Colors.white70 : const Color(0xFF475569)),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        fontSize: 12,
       ),
     );
   }
