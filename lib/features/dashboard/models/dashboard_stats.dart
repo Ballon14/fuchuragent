@@ -14,6 +14,7 @@ class DashboardStats {
   final int overdueInvoicesCount;
   final int unpaidAmount;
   final int totalRevenue;
+  final int totalExpenses;
   final List<PaymentModel> recentPayments;
   final List<CustomerModel> recentCustomers;
   final List<ActivityLogModel> recentActivities;
@@ -30,11 +31,14 @@ class DashboardStats {
     required this.overdueInvoicesCount,
     required this.unpaidAmount,
     required this.totalRevenue,
+    this.totalExpenses = 0,
     required this.recentPayments,
     required this.recentCustomers,
     required this.recentActivities,
     required this.followUpServices,
   });
+
+  int get netProfit => totalRevenue - totalExpenses;
 
   factory DashboardStats.empty() {
     return DashboardStats(
@@ -48,6 +52,7 @@ class DashboardStats {
       overdueInvoicesCount: 0,
       unpaidAmount: 0,
       totalRevenue: 0,
+      totalExpenses: 0,
       recentPayments: [],
       recentCustomers: [],
       recentActivities: [],

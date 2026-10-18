@@ -67,6 +67,24 @@ class ReportScreen extends ConsumerWidget {
                       const Divider(height: 16),
                       _buildReportRow(
                         context,
+                        'Total Pengeluaran Operasional (Kas Keluar)',
+                        AppConstants.formatRupiah(stats.totalExpenses),
+                        color: isDark ? AppColors.danger : const Color(0xFFDC2626),
+                        isBold: true,
+                      ),
+                      const Divider(height: 16),
+                      _buildReportRow(
+                        context,
+                        'Laba Bersih Operasional (Net Profit)',
+                        AppConstants.formatRupiah(stats.netProfit),
+                        color: stats.netProfit >= 0
+                            ? (isDark ? AppColors.cyan : const Color(0xFF0284C7))
+                            : (isDark ? AppColors.danger : const Color(0xFFDC2626)),
+                        isBold: true,
+                      ),
+                      const Divider(height: 16),
+                      _buildReportRow(
+                        context,
                         'Total Piutang / Tagihan Belum Dibayar',
                         AppConstants.formatRupiah(stats.unpaidAmount),
                         color: isDark ? AppColors.warning : const Color(0xFFB45309),

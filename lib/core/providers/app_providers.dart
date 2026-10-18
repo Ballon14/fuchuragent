@@ -14,6 +14,7 @@ import '../../features/notifications/repositories/notification_repository.dart';
 import '../../features/imports/repositories/import_repository.dart';
 import '../../features/dashboard/repositories/dashboard_repository.dart';
 import '../../features/dashboard/models/dashboard_stats.dart';
+import '../../features/expenses/repositories/expense_repository.dart';
 
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
@@ -52,6 +53,7 @@ final renewalRepositoryProvider = Provider<RenewalRepository>((ref) => RenewalRe
 final auditRepositoryProvider = Provider<AuditRepository>((ref) => AuditRepository());
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) => NotificationRepository());
 final importRepositoryProvider = Provider<ImportRepository>((ref) => ImportRepository());
+final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) => ExpenseRepository());
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) => DashboardRepository());
 
 // Dashboard Stats Provider (auto-refreshable)

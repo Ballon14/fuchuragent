@@ -35,6 +35,7 @@ class AppShell extends ConsumerStatefulWidget {
     NavItem(title: 'Paket VPS', icon: Icons.inventory_2_rounded, route: '/packages'),
     NavItem(title: 'Tagihan', icon: Icons.receipt_long_rounded, route: '/invoices'),
     NavItem(title: 'Pembayaran', icon: Icons.payments_rounded, route: '/payments'),
+    NavItem(title: 'Pengeluaran', icon: Icons.account_balance_wallet_rounded, route: '/expenses'),
     NavItem(title: 'Perpanjangan', icon: Icons.autorenew_rounded, route: '/renewals'),
     NavItem(title: 'Laporan', icon: Icons.bar_chart_rounded, route: '/reports'),
     NavItem(title: 'Notifikasi', icon: Icons.notifications_rounded, route: '/notifications'),

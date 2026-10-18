@@ -83,7 +83,16 @@ class DashboardRepository {
     }
     final recentPayments = allPayments.take(5).toList();
 
-    // 5. Activity Logs
+    // 5. Expenses (Total Pengeluaran Operasional)
+    final expensesSnap = await _firestore.collection('expenses').get();
+    int totalExpenses = 0;
+    for (final doc in expensesSnap.docs) {
+      final data = doc.data();
+      final amount = (data['amount'] as num?)?.toInt() ?? 0;
+      totalExpenses += amount;
+    }
+
+    // 6. Activity Logs
     final logsSnap = await _firestore.collection('activity_logs').orderBy('timestamp', descending: true).limit(6).get();
     final recentActivities = logsSnap.docs.map((d) => ActivityLogModel.fromFirestore(d)).toList();
 
@@ -98,6 +107,7 @@ class DashboardRepository {
       overdueInvoicesCount: overdueCount,
       unpaidAmount: unpaidAmount,
       totalRevenue: totalRevenue,
+      totalExpenses: totalExpenses,
       recentPayments: recentPayments,
       recentCustomers: recentCustomers,
       recentActivities: recentActivities,

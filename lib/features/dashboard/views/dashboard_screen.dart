@@ -120,7 +120,7 @@ class DashboardScreen extends ConsumerWidget {
                           StatCard(
                             title: 'Pendapatan Diterima',
                             value: AppConstants.formatRupiah(stats.totalRevenue),
-                            subtitle: 'Tagihan Tertunggak: ${AppConstants.formatRupiah(stats.unpaidAmount)}',
+                            subtitle: 'Pengeluaran: ${AppConstants.formatRupiah(stats.totalExpenses)} • Laba: ${AppConstants.formatRupiah(stats.netProfit)}',
                             icon: Icons.account_balance_wallet_rounded,
                             accentColor: AppColors.success,
                             onTap: () => context.go('/payments'),
@@ -346,6 +346,11 @@ class DashboardScreen extends ConsumerWidget {
                     icon: const Icon(Icons.add_card_rounded, size: 15),
                     label: const Text('Catat Pembayaran'),
                     onPressed: () => context.go('/payments'),
+                  ),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.account_balance_wallet_rounded, size: 15),
+                    label: const Text('Catat Pengeluaran'),
+                    onPressed: () => context.go('/expenses'),
                   ),
                   OutlinedButton.icon(
                     icon: const Icon(Icons.person_add_rounded, size: 15),
