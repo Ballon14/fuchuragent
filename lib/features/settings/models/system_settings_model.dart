@@ -42,9 +42,99 @@ class BankAccountModel {
   factory BankAccountModel.fromMap(Map<String, dynamic> map) {
     return BankAccountModel(
       id: map['id'] ?? '',
-      bankName: map['bankName'] ?? '',
+      bankName: map['bankName'] ?? map['name'] ?? '',
       accountNumber: map['accountNumber'] ?? '',
       accountHolder: map['accountHolder'] ?? '',
+      isDefault: map['isDefault'] ?? false,
+    );
+  }
+}
+
+class PaymentMethodModel {
+  final String id;
+  final String name; // e.g. "Bank BCA", "Bank Mandiri", "QRIS", "Tunai (Cash)"
+  final String accountNumber; // Rekening / ID / Merchant No (dynamic, dapat dirubah-rubah)
+  final String accountHolder; // Atas Nama Pemilik Rekening
+  final String type; // 'bank_transfer', 'qris', 'ewallet', 'cash', 'other'
+  final String notes; // Catatan atau petunjuk transfer
+  final bool isActive;
+  final bool isDefault;
+
+  const PaymentMethodModel({
+    required this.id,
+    required this.name,
+    required this.accountNumber,
+    required this.accountHolder,
+    this.type = 'bank_transfer',
+    this.notes = '',
+    this.isActive = true,
+    this.isDefault = false,
+  });
+
+  /// Formatted label for display in dropdowns & invoice screens
+  String get formattedDisplay {
+    if (accountNumber.isNotEmpty && accountHolder.isNotEmpty) {
+      return '$name - $accountNumber (a.n $accountHolder)';
+    } else if (accountNumber.isNotEmpty) {
+      return '$name ($accountNumber)';
+    }
+    return name;
+  }
+
+  BankAccountModel toBankAccount() {
+    return BankAccountModel(
+      id: id,
+      bankName: name,
+      accountNumber: accountNumber,
+      accountHolder: accountHolder,
+      isDefault: isDefault,
+    );
+  }
+
+  PaymentMethodModel copyWith({
+    String? id,
+    String? name,
+    String? accountNumber,
+    String? accountHolder,
+    String? type,
+    String? notes,
+    bool? isActive,
+    bool? isDefault,
+  }) {
+    return PaymentMethodModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      accountNumber: accountNumber ?? this.accountNumber,
+      accountHolder: accountHolder ?? this.accountHolder,
+      type: type ?? this.type,
+      notes: notes ?? this.notes,
+      isActive: isActive ?? this.isActive,
+      isDefault: isDefault ?? this.isDefault,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'accountNumber': accountNumber,
+      'accountHolder': accountHolder,
+      'type': type,
+      'notes': notes,
+      'isActive': isActive,
+      'isDefault': isDefault,
+    };
+  }
+
+  factory PaymentMethodModel.fromMap(Map<String, dynamic> map) {
+    return PaymentMethodModel(
+      id: map['id'] ?? '',
+      name: map['name'] ?? map['bankName'] ?? '',
+      accountNumber: map['accountNumber'] ?? '',
+      accountHolder: map['accountHolder'] ?? '',
+      type: map['type'] ?? 'bank_transfer',
+      notes: map['notes'] ?? '',
+      isActive: map['isActive'] ?? true,
       isDefault: map['isDefault'] ?? false,
     );
   }
@@ -59,7 +149,8 @@ class SystemSettingsModel {
   final String officeAddress;
   final String website;
 
-  // 2. Rekening Pembayaran
+  // 2. Metode Pembayaran & Rekening Dinamis
+  final List<PaymentMethodModel> paymentMethods;
   final List<BankAccountModel> bankAccounts;
 
   // 3. Konfigurasi Pesan WhatsApp
@@ -102,6 +193,7 @@ class SystemSettingsModel {
     required this.supportPhone,
     required this.officeAddress,
     required this.website,
+    required this.paymentMethods,
     required this.bankAccounts,
     required this.waGreeting,
     required this.waClosing,
@@ -130,6 +222,49 @@ class SystemSettingsModel {
 
   /// Default baseline configuration
   factory SystemSettingsModel.defaultSettings() {
+    const defaultMethods = [
+      PaymentMethodModel(
+        id: 'pm-bca',
+        name: 'Bank BCA',
+        accountNumber: '1234567890',
+        accountHolder: 'Fuchur Agent',
+        type: 'bank_transfer',
+        notes: 'Transfer via ATM, m-BCA, atau KlikBCA',
+        isActive: true,
+        isDefault: true,
+      ),
+      PaymentMethodModel(
+        id: 'pm-mandiri',
+        name: 'Bank Mandiri',
+        accountNumber: '0987654321',
+        accountHolder: 'Fuchur Agent',
+        type: 'bank_transfer',
+        notes: 'Transfer via Livin by Mandiri atau ATM',
+        isActive: true,
+        isDefault: false,
+      ),
+      PaymentMethodModel(
+        id: 'pm-bri',
+        name: 'Bank BRI',
+        accountNumber: '556677889900',
+        accountHolder: 'Fuchur Agent',
+        type: 'bank_transfer',
+        notes: 'Transfer via BRImo atau ATM',
+        isActive: true,
+        isDefault: false,
+      ),
+      PaymentMethodModel(
+        id: 'pm-qris',
+        name: 'QRIS / E-Wallet',
+        accountNumber: 'ID1020030040',
+        accountHolder: 'Fuchur Agent Store',
+        type: 'qris',
+        notes: 'Scan QRIS via GoPay, OVO, Dana, ShopeePay',
+        isActive: true,
+        isDefault: false,
+      ),
+    ];
+
     return SystemSettingsModel(
       companyName: 'FuchurHost Solutions',
       brandName: 'Fuchur Agent',
@@ -137,29 +272,8 @@ class SystemSettingsModel {
       supportPhone: '081234567890',
       officeAddress: 'Cyber 2 Tower Lt. 8, Jl. H. R. Rasuna Said, Jakarta Selatan 12950',
       website: 'https://fuchuragent.id',
-      bankAccounts: const [
-        BankAccountModel(
-          id: 'bank-bca',
-          bankName: 'Bank BCA',
-          accountNumber: '1234567890',
-          accountHolder: 'Fuchur Agent',
-          isDefault: true,
-        ),
-        BankAccountModel(
-          id: 'bank-mandiri',
-          bankName: 'Bank Mandiri',
-          accountNumber: '0987654321',
-          accountHolder: 'Fuchur Agent',
-          isDefault: false,
-        ),
-        BankAccountModel(
-          id: 'bank-bri',
-          bankName: 'Bank BRI',
-          accountNumber: '556677889900',
-          accountHolder: 'Fuchur Agent',
-          isDefault: false,
-        ),
-      ],
+      paymentMethods: defaultMethods,
+      bankAccounts: defaultMethods.map((m) => m.toBankAccount()).toList(),
       waGreeting: 'Halo Kak *{name}*,',
       waClosing: 'Terima kasih atas kepercayaan Kakak menggunakan layanan Fuchur Agent! 🙏',
       waAdminSignature: 'Fuchur Agent Team',
@@ -193,6 +307,7 @@ class SystemSettingsModel {
     String? supportPhone,
     String? officeAddress,
     String? website,
+    List<PaymentMethodModel>? paymentMethods,
     List<BankAccountModel>? bankAccounts,
     String? waGreeting,
     String? waClosing,
@@ -218,6 +333,9 @@ class SystemSettingsModel {
     DateTime? updatedAt,
     String? updatedBy,
   }) {
+    final updatedMethods = paymentMethods ?? this.paymentMethods;
+    final updatedBanks = bankAccounts ?? updatedMethods.map((m) => m.toBankAccount()).toList();
+
     return SystemSettingsModel(
       companyName: companyName ?? this.companyName,
       brandName: brandName ?? this.brandName,
@@ -225,7 +343,8 @@ class SystemSettingsModel {
       supportPhone: supportPhone ?? this.supportPhone,
       officeAddress: officeAddress ?? this.officeAddress,
       website: website ?? this.website,
-      bankAccounts: bankAccounts ?? this.bankAccounts,
+      paymentMethods: updatedMethods,
+      bankAccounts: updatedBanks,
       waGreeting: waGreeting ?? this.waGreeting,
       waClosing: waClosing ?? this.waClosing,
       waAdminSignature: waAdminSignature ?? this.waAdminSignature,
@@ -261,7 +380,8 @@ class SystemSettingsModel {
       'supportPhone': supportPhone,
       'officeAddress': officeAddress,
       'website': website,
-      'bankAccounts': bankAccounts.map((b) => b.toMap()).toList(),
+      'paymentMethods': paymentMethods.map((p) => p.toMap()).toList(),
+      'bankAccounts': paymentMethods.map((p) => p.toBankAccount().toMap()).toList(),
       'waGreeting': waGreeting,
       'waClosing': waClosing,
       'waAdminSignature': waAdminSignature,
@@ -291,10 +411,14 @@ class SystemSettingsModel {
   factory SystemSettingsModel.fromMap(Map<String, dynamic> map) {
     final defaults = SystemSettingsModel.defaultSettings();
 
-    List<BankAccountModel> banks = defaults.bankAccounts;
-    if (map['bankAccounts'] != null && map['bankAccounts'] is List) {
-      banks = (map['bankAccounts'] as List)
-          .map((item) => BankAccountModel.fromMap(Map<String, dynamic>.from(item)))
+    List<PaymentMethodModel> methods = defaults.paymentMethods;
+    if (map['paymentMethods'] != null && map['paymentMethods'] is List) {
+      methods = (map['paymentMethods'] as List)
+          .map((item) => PaymentMethodModel.fromMap(Map<String, dynamic>.from(item)))
+          .toList();
+    } else if (map['bankAccounts'] != null && map['bankAccounts'] is List) {
+      methods = (map['bankAccounts'] as List)
+          .map((item) => PaymentMethodModel.fromMap(Map<String, dynamic>.from(item)))
           .toList();
     }
 
@@ -315,7 +439,8 @@ class SystemSettingsModel {
       supportPhone: map['supportPhone'] ?? defaults.supportPhone,
       officeAddress: map['officeAddress'] ?? defaults.officeAddress,
       website: map['website'] ?? defaults.website,
-      bankAccounts: banks.isNotEmpty ? banks : defaults.bankAccounts,
+      paymentMethods: methods.isNotEmpty ? methods : defaults.paymentMethods,
+      bankAccounts: methods.map((m) => m.toBankAccount()).toList(),
       waGreeting: map['waGreeting'] ?? defaults.waGreeting,
       waClosing: map['waClosing'] ?? defaults.waClosing,
       waAdminSignature: map['waAdminSignature'] ?? defaults.waAdminSignature,

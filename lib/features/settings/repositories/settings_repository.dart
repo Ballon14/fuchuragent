@@ -78,6 +78,62 @@ class SettingsRepository {
     await _configRef.set(updated.toMap(), SetOptions(merge: true));
   }
 
+  /// Add a new dynamic payment method (e.g. new bank account / QRIS)
+  Future<void> addPaymentMethod(PaymentMethodModel newMethod, {String? updatedBy}) async {
+    final current = await getSettings();
+    final methods = List<PaymentMethodModel>.from(current.paymentMethods);
+
+    // If new method is marked as default, clear default flag from others
+    if (newMethod.isDefault) {
+      for (int i = 0; i < methods.length; i++) {
+        methods[i] = methods[i].copyWith(isDefault: false);
+      }
+    }
+
+    methods.add(newMethod);
+    final updated = current.copyWith(paymentMethods: methods);
+    await saveSettings(updated, updatedBy: updatedBy);
+  }
+
+  /// Update an existing dynamic payment method (e.g. changing account number, bank name, or holder)
+  Future<void> updatePaymentMethod(PaymentMethodModel updatedMethod, {String? updatedBy}) async {
+    final current = await getSettings();
+    final methods = List<PaymentMethodModel>.from(current.paymentMethods);
+    final index = methods.indexWhere((m) => m.id == updatedMethod.id);
+
+    if (index >= 0) {
+      if (updatedMethod.isDefault) {
+        for (int i = 0; i < methods.length; i++) {
+          methods[i] = methods[i].copyWith(isDefault: false);
+        }
+      }
+      methods[index] = updatedMethod;
+      final updated = current.copyWith(paymentMethods: methods);
+      await saveSettings(updated, updatedBy: updatedBy);
+    }
+  }
+
+  /// Delete a dynamic payment method
+  Future<void> deletePaymentMethod(String methodId, {String? updatedBy}) async {
+    final current = await getSettings();
+    final methods = List<PaymentMethodModel>.from(current.paymentMethods);
+    methods.removeWhere((m) => m.id == methodId);
+    final updated = current.copyWith(paymentMethods: methods);
+    await saveSettings(updated, updatedBy: updatedBy);
+  }
+
+  /// Toggle active/inactive status of a payment method
+  Future<void> togglePaymentMethodStatus(String methodId, bool isActive, {String? updatedBy}) async {
+    final current = await getSettings();
+    final methods = List<PaymentMethodModel>.from(current.paymentMethods);
+    final index = methods.indexWhere((m) => m.id == methodId);
+    if (index >= 0) {
+      methods[index] = methods[index].copyWith(isActive: isActive);
+      final updated = current.copyWith(paymentMethods: methods);
+      await saveSettings(updated, updatedBy: updatedBy);
+    }
+  }
+
   /// Reset settings back to initial defaults
   Future<void> resetToDefaults({String? updatedBy}) async {
     final defaults = SystemSettingsModel.defaultSettings().copyWith(

@@ -113,6 +113,16 @@ class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
     final invoicesAsync = ref.watch(invoiceRepositoryProvider).watchInvoices(statusFilter: 'unpaid');
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+    final settings = ref.watch(systemSettingsProvider).asData?.value;
+    final dynamicMethods = settings?.paymentMethods
+        .where((p) => p.isActive)
+        .map((p) => p.formattedDisplay)
+        .toList() ?? [];
+
+    final availableMethods = dynamicMethods.isNotEmpty ? dynamicMethods : _methods;
+    final currentMethod = availableMethods.contains(_paymentMethod)
+        ? _paymentMethod
+        : availableMethods.first;
 
     return AlertDialog(
       title: const Text('Catat Pembayaran Tagihan'),
@@ -210,9 +220,17 @@ class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
                 const SizedBox(height: 14),
 
                 DropdownButtonFormField<String>(
-                  initialValue: _paymentMethod,
-                  decoration: const InputDecoration(labelText: 'Metode Pembayaran *'),
-                  items: _methods.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                  key: ValueKey(currentMethod),
+                  initialValue: currentMethod,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Metode Pembayaran & Rekening *',
+                    prefixIcon: Icon(Icons.account_balance_wallet_rounded),
+                  ),
+                  items: availableMethods.map((m) => DropdownMenuItem(
+                    value: m,
+                    child: Text(m, overflow: TextOverflow.ellipsis),
+                  )).toList(),
                   onChanged: (v) {
                     if (v != null) setState(() => _paymentMethod = v);
                   },

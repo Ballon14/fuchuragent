@@ -13,28 +13,32 @@ void main() {
       expect(settings.brandName, 'Fuchur Agent');
       expect(settings.supportEmail, 'support@fuchuragent.id');
       expect(settings.supportPhone, '081234567890');
+      expect(settings.paymentMethods.length, greaterThanOrEqualTo(3));
+      expect(settings.paymentMethods.first.name, 'Bank BCA');
+      expect(settings.paymentMethods.first.isDefault, true);
       expect(settings.bankAccounts.length, greaterThanOrEqualTo(2));
-      expect(settings.bankAccounts.first.bankName, 'Bank BCA');
-      expect(settings.bankAccounts.first.isDefault, true);
       expect(settings.enableDueReminders, true);
       expect(settings.reminderDays, containsAll([7, 3, 1, 0]));
       expect(settings.currencyCode, 'IDR');
       expect(settings.defaultItemsPerPage, 10);
     });
 
-    test('Serialization toMap and fromMap should preserve all fields', () {
+    test('Serialization toMap and fromMap should preserve all fields and paymentMethods', () {
       final original = SystemSettingsModel.defaultSettings().copyWith(
         companyName: 'Custom Host Indo',
         brandName: 'CustomAgent',
         currencyCode: 'USD',
         defaultItemsPerPage: 25,
         reminderHour: 10,
-        bankAccounts: [
-          const BankAccountModel(
-            id: 'bank-bsi',
-            bankName: 'Bank Syariah (BSI)',
+        paymentMethods: [
+          const PaymentMethodModel(
+            id: 'pm-bsi',
+            name: 'Bank Syariah (BSI)',
             accountNumber: '9988776655',
             accountHolder: 'Custom Host',
+            type: 'bank_transfer',
+            notes: 'Transfer antar bank syariah',
+            isActive: true,
             isDefault: true,
           ),
         ],
@@ -48,9 +52,34 @@ void main() {
       expect(restored.currencyCode, 'USD');
       expect(restored.defaultItemsPerPage, 25);
       expect(restored.reminderHour, 10);
-      expect(restored.bankAccounts.length, 1);
-      expect(restored.bankAccounts.first.bankName, 'Bank Syariah (BSI)');
-      expect(restored.bankAccounts.first.accountNumber, '9988776655');
+      expect(restored.paymentMethods.length, 1);
+      expect(restored.paymentMethods.first.name, 'Bank Syariah (BSI)');
+      expect(restored.paymentMethods.first.accountNumber, '9988776655');
+      expect(restored.paymentMethods.first.notes, 'Transfer antar bank syariah');
+    });
+
+    test('PaymentMethodModel allows dynamic modification of account number (rekening) without affecting pricing', () {
+      const initialMethod = PaymentMethodModel(
+        id: 'pm-bca',
+        name: 'Bank BCA',
+        accountNumber: '1111222233',
+        accountHolder: 'Fuchur Host Indo',
+        type: 'bank_transfer',
+        isActive: true,
+        isDefault: true,
+      );
+
+      expect(initialMethod.formattedDisplay, 'Bank BCA - 1111222233 (a.n Fuchur Host Indo)');
+
+      // User changes rekening dynamically in Settings
+      final updatedMethod = initialMethod.copyWith(
+        accountNumber: '9999888877',
+        accountHolder: 'PT Fuchur Solusi Digital',
+      );
+
+      expect(updatedMethod.accountNumber, '9999888877');
+      expect(updatedMethod.accountHolder, 'PT Fuchur Solusi Digital');
+      expect(updatedMethod.formattedDisplay, 'Bank BCA - 9999888877 (a.n PT Fuchur Solusi Digital)');
     });
 
     test('BankAccountModel serialization should work correctly', () {
@@ -72,14 +101,14 @@ void main() {
       expect(fromMap.isDefault, true);
     });
 
-    test('WhatsAppReminderService integrates with custom SystemSettingsModel', () {
+    test('WhatsAppReminderService integrates with dynamic payment method accounts', () {
       final customSettings = SystemSettingsModel.defaultSettings().copyWith(
         brandName: 'Mega Cloud Agent',
         waGreeting: 'Salam hangat untuk Kak *{name}*,',
-        bankAccounts: const [
-          BankAccountModel(
-            id: 'bank-bni',
-            bankName: 'Bank BNI',
+        paymentMethods: const [
+          PaymentMethodModel(
+            id: 'pm-bni',
+            name: 'Bank BNI',
             accountNumber: '7788990011',
             accountHolder: 'Mega Cloud PT',
             isDefault: true,

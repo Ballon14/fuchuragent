@@ -363,7 +363,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           unselectedLabelColor: isDark ? Colors.white60 : const Color(0xFF64748B),
           tabs: const [
             Tab(icon: Icon(Icons.business_rounded, size: 18), text: 'Profil & Bisnis'),
-            Tab(icon: Icon(Icons.account_balance_wallet_rounded, size: 18), text: 'Rekening Bank'),
+            Tab(icon: Icon(Icons.account_balance_wallet_rounded, size: 18), text: 'Metode Pembayaran'),
             Tab(icon: Icon(Icons.chat_bubble_outline_rounded, size: 18), text: 'Template WhatsApp'),
             Tab(icon: Icon(Icons.notifications_active_outlined, size: 18), text: 'Notifikasi & Otomasi'),
             Tab(icon: Icon(Icons.palette_outlined, size: 18), text: 'Tampilan & Regional'),
@@ -375,7 +375,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         controller: _tabController,
         children: [
           _buildBusinessProfileTab(currentSettings, isDark, primaryAccent),
-          _buildBankAccountsTab(currentSettings, isDark, primaryAccent),
+          _buildPaymentMethodsTab(currentSettings, isDark, primaryAccent),
           _buildWhatsAppTab(currentSettings, isDark, primaryAccent),
           _buildNotificationsTab(currentSettings, isDark, primaryAccent),
           _buildAppearanceTab(currentSettings, isDark, primaryAccent),
@@ -532,14 +532,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   // ===========================================================================
-  // TAB 2: REKENING BANK & PEMBAYARAN
   // ===========================================================================
-  Widget _buildBankAccountsTab(
+  // TAB 2: METODE PEMBAYARAN & REKENING DINAMIS
+  // ===========================================================================
+  Widget _buildPaymentMethodsTab(
     SystemSettingsModel settings,
     bool isDark,
     Color primaryAccent,
   ) {
-    final banks = settings.bankAccounts;
+    final methods = settings.paymentMethods;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(18),
@@ -547,7 +548,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppCard(
-            title: 'Daftar Rekening Pembayaran Resmi',
+            title: 'Metode Pembayaran & Rekening Dinamis',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -556,7 +557,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   children: [
                     Expanded(
                       child: Text(
-                        'Rekening-rekening ini otomatis dimuat ke dalam tagihan invoice dan pesan pengingat WhatsApp ke pelanggan.',
+                        'Kelola rekening bank dan channel pembayaran secara dinamis. Anda dapat menambah atau mengubah nomor rekening, atas nama, catatan, atau menonaktifkan rekening kapan saja tanpa mengubah nominal transaksi.',
                         style: TextStyle(
                           fontSize: 13,
                           color: isDark ? Colors.white70 : const Color(0xFF475569),
@@ -565,18 +566,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton.icon(
-                      icon: const Icon(Icons.add_rounded, size: 16),
-                      label: const Text('Tambah Rekening'),
+                      icon: const Icon(Icons.add_card_rounded, size: 16),
+                      label: const Text('Tambah Metode Pembayaran'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryAccent,
                         foregroundColor: Colors.white,
                       ),
-                      onPressed: () => _showAddEditBankDialog(null),
+                      onPressed: () => _showAddEditPaymentMethodDialog(null),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                if (banks.isEmpty)
+                if (methods.isEmpty)
                   Container(
                     padding: const EdgeInsets.all(24),
                     alignment: Alignment.center,
@@ -585,7 +586,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         Icon(Icons.account_balance_wallet_outlined,
                             size: 48, color: isDark ? Colors.white38 : Colors.grey),
                         const SizedBox(height: 8),
-                        const Text('Belum ada rekening pembayaran yang terdaftar.'),
+                        const Text('Belum ada metode pembayaran yang terdaftar.'),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.add_rounded, size: 16),
+                          label: const Text('Tambah Metode Pembayaran Pertama'),
+                          onPressed: () => _showAddEditPaymentMethodDialog(null),
+                        ),
                       ],
                     ),
                   )
@@ -593,116 +600,213 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: banks.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 10),
+                    itemCount: methods.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
                     itemBuilder: (ctx, index) {
-                      final bank = banks[index];
+                      final item = methods[index];
+                      final iconData = item.type == 'qris'
+                          ? Icons.qr_code_2_rounded
+                          : (item.type == 'ewallet'
+                              ? Icons.account_balance_wallet_rounded
+                              : (item.type == 'cash'
+                                  ? Icons.payments_rounded
+                                  : (item.type == 'credit_card'
+                                      ? Icons.credit_card_rounded
+                                      : Icons.account_balance_rounded)));
+
+                      final typeLabel = item.type == 'qris'
+                          ? 'QRIS'
+                          : (item.type == 'ewallet'
+                              ? 'E-Wallet'
+                              : (item.type == 'cash'
+                                  ? 'Kas Tunai'
+                                  : (item.type == 'credit_card'
+                                      ? 'Kartu Kredit'
+                                      : 'Transfer Bank')));
+
                       return Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: isDark
-                              ? (bank.isDefault
+                              ? (item.isDefault
                                   ? primaryAccent.withValues(alpha: 0.1)
                                   : AppColors.surfaceLightDark)
-                              : (bank.isDefault
+                              : (item.isDefault
                                   ? const Color(0xFFE0F2FE)
                                   : const Color(0xFFF1F5F9)),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: bank.isDefault
+                            color: item.isDefault
                                 ? primaryAccent.withValues(alpha: 0.6)
                                 : (isDark ? AppColors.borderDark : const Color(0xFFE2E8F0)),
-                            width: bank.isDefault ? 1.5 : 1.0,
+                            width: item.isDefault ? 1.5 : 1.0,
                           ),
                         ),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: primaryAccent.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(Icons.account_balance_rounded,
-                                  color: primaryAccent, size: 24),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
+                            Row(
+                              children: [
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: primaryAccent.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(iconData, color: primaryAccent, size: 24),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        bank.bankName,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                      if (bank.isDefault) ...[
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.success.withValues(alpha: 0.15),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: const Text(
-                                            'UTAMA',
-                                            style: TextStyle(
-                                              color: AppColors.success,
-                                              fontSize: 10,
+                                      Row(
+                                        children: [
+                                          Text(
+                                            item.name,
+                                            style: const TextStyle(
                                               fontWeight: FontWeight.bold,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: (isDark ? Colors.white12 : Colors.black12),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              typeLabel,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600,
+                                                color: isDark ? Colors.white70 : const Color(0xFF475569),
+                                              ),
+                                            ),
+                                          ),
+                                          if (item.isDefault) ...[
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.success.withValues(alpha: 0.15),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: const Text(
+                                                'UTAMA',
+                                                style: TextStyle(
+                                                  color: AppColors.success,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                          if (!item.isActive) ...[
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.danger.withValues(alpha: 0.15),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: const Text(
+                                                'NONAKTIF',
+                                                style: TextStyle(
+                                                  color: AppColors.danger,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          const Text(
+                                            'No. Rekening / ID: ',
+                                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                                          ),
+                                          SelectableText(
+                                            item.accountNumber.isNotEmpty ? item.accountNumber : '-',
+                                            style: const TextStyle(
+                                              fontFamily: 'monospace',
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          if (item.accountNumber.isNotEmpty) ...[
+                                            const SizedBox(width: 4),
+                                            InkWell(
+                                              onTap: () {
+                                                Clipboard.setData(ClipboardData(text: item.accountNumber));
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text('Nomor rekening ${item.name} (${item.accountNumber}) disalin ke clipboard.'),
+                                                  ),
+                                                );
+                                              },
+                                              borderRadius: BorderRadius.circular(4),
+                                              child: const Padding(
+                                                padding: EdgeInsets.all(2.0),
+                                                child: Icon(Icons.copy_rounded, size: 14),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      if (item.accountHolder.isNotEmpty)
+                                        Text(
+                                          'Atas Nama: ${item.accountHolder}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      if (item.notes.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            'Catatan: ${item.notes}',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontStyle: FontStyle.italic,
+                                              color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
                                             ),
                                           ),
                                         ),
-                                      ],
                                     ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'No. Rekening: ${bank.accountNumber}',
-                                    style: const TextStyle(
-                                      fontFamily: 'monospace',
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
+                                ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Tooltip(
+                                      message: item.isActive ? 'Nonaktifkan Rekening' : 'Aktifkan Rekening',
+                                      child: Switch(
+                                        value: item.isActive,
+                                        activeThumbColor: AppColors.success,
+                                        onChanged: (val) => _togglePaymentMethodActive(item.id, val),
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    'Atas Nama: ${bank.accountHolder}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_note_rounded, size: 20),
+                                      tooltip: 'Ubah Nomor Rekening & Data',
+                                      onPressed: () => _showAddEditPaymentMethodDialog(item),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.copy_rounded, size: 16),
-                              tooltip: 'Salin No. Rekening',
-                              onPressed: () {
-                                Clipboard.setData(ClipboardData(text: bank.accountNumber));
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('No. Rekening ${bank.bankName} disalin ke clipboard.'),
-                                  ),
-                                );
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.edit_rounded, size: 16),
-                              tooltip: 'Edit Rekening',
-                              onPressed: () => _showAddEditBankDialog(bank),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline_rounded,
-                                  size: 16, color: AppColors.danger),
-                              tooltip: 'Hapus Rekening',
-                              onPressed: () => _deleteBankAccount(bank.id),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline_rounded,
+                                          size: 18, color: AppColors.danger),
+                                      tooltip: 'Hapus Metode Pembayaran',
+                                      onPressed: () => _deletePaymentMethod(item.id),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -717,32 +821,89 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     );
   }
 
-  void _showAddEditBankDialog(BankAccountModel? existing) {
-    final nameCtrl = TextEditingController(text: existing?.bankName ?? 'Bank BCA');
+  void _showAddEditPaymentMethodDialog(PaymentMethodModel? existing) {
+    String selectedType = existing?.type ?? 'bank_transfer';
+    final nameCtrl = TextEditingController(text: existing?.name ?? 'Bank BCA');
     final numCtrl = TextEditingController(text: existing?.accountNumber ?? '');
     final holderCtrl = TextEditingController(text: existing?.accountHolder ?? 'Fuchur Agent');
+    final notesCtrl = TextEditingController(text: existing?.notes ?? '');
     bool isDefault = existing?.isDefault ?? false;
+    bool isActive = existing?.isActive ?? true;
 
     showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDlgState) {
           return AlertDialog(
-            title: Text(existing == null ? 'Tambah Rekening Bank' : 'Edit Rekening Bank'),
+            title: Row(
+              children: [
+                Icon(
+                  existing == null ? Icons.add_card_rounded : Icons.edit_note_rounded,
+                  color: AppColors.cyan,
+                ),
+                const SizedBox(width: 8),
+                Text(existing == null ? 'Tambah Metode Pembayaran' : 'Ubah Rekening & Metode'),
+              ],
+            ),
             content: SizedBox(
-              width: 400,
+              width: 440,
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text(
+                      'Nomor rekening dan identitas pembayaran dapat dirubah-rubah secara dinamis.',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
-                      initialValue: ['Bank BCA', 'Bank Mandiri', 'Bank BRI', 'Bank BNI', 'Bank Syariah (BSI)', 'Bank Jago', 'QRIS'].contains(nameCtrl.text)
-                          ? nameCtrl.text
-                          : 'Bank BCA',
+                      initialValue: selectedType,
                       decoration: const InputDecoration(
-                        labelText: 'Nama Bank / E-Wallet',
+                        labelText: 'Tipe Saluran Pembayaran',
+                        prefixIcon: Icon(Icons.category_rounded),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'bank_transfer', child: Text('Transfer Bank')),
+                        DropdownMenuItem(value: 'qris', child: Text('QRIS Statis / Dinamis')),
+                        DropdownMenuItem(value: 'ewallet', child: Text('E-Wallet Dompet Digital')),
+                        DropdownMenuItem(value: 'credit_card', child: Text('Kartu Kredit / Debit')),
+                        DropdownMenuItem(value: 'cash', child: Text('Tunai / Kas Langsung')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDlgState(() => selectedType = val);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: [
+                        'Bank BCA',
+                        'Bank Mandiri',
+                        'Bank BRI',
+                        'Bank BNI',
+                        'Bank Syariah (BSI)',
+                        'Bank Jago',
+                        'BCA Syariah',
+                        'Seabank',
+                        'Bank Permata',
+                        'Bank Danamon',
+                        'Bank CIMB Niaga',
+                        'QRIS Semua Pembayaran',
+                        'GoPay',
+                        'OVO',
+                        'Dana',
+                        'ShopeePay',
+                        'Kas Tunai',
+                      ].contains(nameCtrl.text)
+                          ? nameCtrl.text
+                          : null,
+                      decoration: const InputDecoration(
+                        labelText: 'Pilih Bank / Saluran Populer',
                         prefixIcon: Icon(Icons.account_balance_rounded),
                       ),
+                      hint: const Text('Pilih atau ketik di bawah'),
                       items: const [
                         DropdownMenuItem(value: 'Bank BCA', child: Text('Bank BCA')),
                         DropdownMenuItem(value: 'Bank Mandiri', child: Text('Bank Mandiri')),
@@ -750,7 +911,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         DropdownMenuItem(value: 'Bank BNI', child: Text('Bank BNI')),
                         DropdownMenuItem(value: 'Bank Syariah (BSI)', child: Text('Bank Syariah (BSI)')),
                         DropdownMenuItem(value: 'Bank Jago', child: Text('Bank Jago')),
-                        DropdownMenuItem(value: 'QRIS', child: Text('QRIS / E-Wallet')),
+                        DropdownMenuItem(value: 'BCA Syariah', child: Text('BCA Syariah')),
+                        DropdownMenuItem(value: 'Seabank', child: Text('Seabank')),
+                        DropdownMenuItem(value: 'Bank Permata', child: Text('Bank Permata')),
+                        DropdownMenuItem(value: 'Bank Danamon', child: Text('Bank Danamon')),
+                        DropdownMenuItem(value: 'Bank CIMB Niaga', child: Text('Bank CIMB Niaga')),
+                        DropdownMenuItem(value: 'QRIS Semua Pembayaran', child: Text('QRIS Semua Pembayaran')),
+                        DropdownMenuItem(value: 'GoPay', child: Text('GoPay')),
+                        DropdownMenuItem(value: 'OVO', child: Text('OVO')),
+                        DropdownMenuItem(value: 'Dana', child: Text('Dana')),
+                        DropdownMenuItem(value: 'ShopeePay', child: Text('ShopeePay')),
+                        DropdownMenuItem(value: 'Kas Tunai', child: Text('Kas Tunai')),
                       ],
                       onChanged: (val) {
                         if (val != null) {
@@ -758,29 +929,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         }
                       },
                     ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: nameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Metode / Bank *',
+                        hintText: 'Contoh: Bank BCA / QRIS',
+                        prefixIcon: Icon(Icons.label_outline_rounded),
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: numCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Nomor Rekening / Merchant ID',
-                        hintText: '1234567890',
+                        labelText: 'Nomor Rekening / No. HP / Merchant ID *',
+                        hintText: 'Contoh: 1234567890 (Dapat dirubah sewaktu-waktu)',
                         prefixIcon: Icon(Icons.numbers_rounded),
+                        helperText: 'Rekening ini dinamis dan dapat diubah tanpa mempengaruhi nominal.',
                       ),
-                      keyboardType: TextInputType.number,
+                      keyboardType: TextInputType.text,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: holderCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Atas Nama Pemilik Rekening',
-                        hintText: 'Fuchur Agent',
+                        labelText: 'Atas Nama Pemilik Rekening *',
+                        hintText: 'Contoh: Fuchur Agent',
                         prefixIcon: Icon(Icons.person_outline_rounded),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: notesCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Petunjuk Transfer / Catatan (Opsional)',
+                        hintText: 'Contoh: Cantumkan ID Invoice di berita transfer',
+                        prefixIcon: Icon(Icons.notes_rounded),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Jadikan Rekening Utama'),
+                      title: const Text('Status Aktif'),
+                      subtitle: const Text('Tampilkan metode ini pada form penagihan invoice & WhatsApp'),
+                      value: isActive,
+                      onChanged: (val) => setDlgState(() => isActive = val),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Jadikan Metode Pembayaran Utama (Default)'),
                       value: isDefault,
                       onChanged: (val) => setDlgState(() => isDefault = val),
                     ),
@@ -795,40 +992,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               ),
               ElevatedButton(
                 onPressed: () {
-                  if (numCtrl.text.trim().isEmpty) return;
+                  if (nameCtrl.text.trim().isEmpty) return;
 
-                  final currentBanks = List<BankAccountModel>.from(_settings!.bankAccounts);
-                  final bankId = existing?.id ?? 'bank-${DateTime.now().millisecondsSinceEpoch}';
+                  final currentMethods = List<PaymentMethodModel>.from(_settings!.paymentMethods);
+                  final methodId = existing?.id ?? 'pm-${DateTime.now().millisecondsSinceEpoch}';
 
                   if (isDefault) {
-                    for (int i = 0; i < currentBanks.length; i++) {
-                      currentBanks[i] = currentBanks[i].copyWith(isDefault: false);
+                    for (int i = 0; i < currentMethods.length; i++) {
+                      currentMethods[i] = currentMethods[i].copyWith(isDefault: false);
                     }
                   }
 
-                  final newBank = BankAccountModel(
-                    id: bankId,
-                    bankName: nameCtrl.text.trim(),
+                  final newMethod = PaymentMethodModel(
+                    id: methodId,
+                    name: nameCtrl.text.trim(),
                     accountNumber: numCtrl.text.trim(),
                     accountHolder: holderCtrl.text.trim(),
+                    type: selectedType,
+                    notes: notesCtrl.text.trim(),
+                    isActive: isActive,
                     isDefault: isDefault,
                   );
 
-                  final idx = currentBanks.indexWhere((b) => b.id == bankId);
+                  final idx = currentMethods.indexWhere((m) => m.id == methodId);
                   if (idx >= 0) {
-                    currentBanks[idx] = newBank;
+                    currentMethods[idx] = newMethod;
                   } else {
-                    currentBanks.add(newBank);
+                    currentMethods.add(newMethod);
                   }
 
                   setState(() {
-                    _settings = _settings!.copyWith(bankAccounts: currentBanks);
+                    _settings = _settings!.copyWith(
+                      paymentMethods: currentMethods,
+                      bankAccounts: currentMethods.map((m) => m.toBankAccount()).toList(),
+                    );
                     _hasUnsavedChanges = true;
                   });
 
                   Navigator.pop(ctx);
                 },
-                child: const Text('Simpan Rekening'),
+                child: const Text('Simpan Metode Pembayaran'),
               ),
             ],
           );
@@ -837,11 +1040,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     );
   }
 
-  void _deleteBankAccount(String id) {
-    final currentBanks = List<BankAccountModel>.from(_settings!.bankAccounts);
-    currentBanks.removeWhere((b) => b.id == id);
+  void _togglePaymentMethodActive(String id, bool isActive) {
+    final currentMethods = List<PaymentMethodModel>.from(_settings!.paymentMethods);
+    final idx = currentMethods.indexWhere((m) => m.id == id);
+    if (idx >= 0) {
+      currentMethods[idx] = currentMethods[idx].copyWith(isActive: isActive);
+      setState(() {
+        _settings = _settings!.copyWith(
+          paymentMethods: currentMethods,
+          bankAccounts: currentMethods.map((m) => m.toBankAccount()).toList(),
+        );
+        _hasUnsavedChanges = true;
+      });
+    }
+  }
+
+  void _deletePaymentMethod(String id) {
+    final currentMethods = List<PaymentMethodModel>.from(_settings!.paymentMethods);
+    currentMethods.removeWhere((m) => m.id == id);
     setState(() {
-      _settings = _settings!.copyWith(bankAccounts: currentBanks);
+      _settings = _settings!.copyWith(
+        paymentMethods: currentMethods,
+        bankAccounts: currentMethods.map((m) => m.toBankAccount()).toList(),
+      );
       _hasUnsavedChanges = true;
     });
   }

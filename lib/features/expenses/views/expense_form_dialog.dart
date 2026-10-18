@@ -180,6 +180,19 @@ class _ExpenseFormDialogState extends ConsumerState<ExpenseFormDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryAccent = isDark ? AppColors.cyan : const Color(0xFF0284C7);
     final isEdit = widget.expense != null;
+    final settings = ref.watch(systemSettingsProvider).asData?.value;
+    final activeDynamicMethods = settings?.paymentMethods
+        .where((p) => p.isActive)
+        .map((p) => p.formattedDisplay)
+        .toList() ?? [];
+
+    final availableMethods = activeDynamicMethods.isNotEmpty
+        ? [...activeDynamicMethods, 'PayPal', 'Kartu Kredit / Debit', 'Tunai (Cash)']
+        : _paymentMethods;
+
+    final currentPaymentMethod = availableMethods.contains(_paymentMethod)
+        ? _paymentMethod
+        : availableMethods.first;
 
     final dummyModel = ExpenseModel(
       id: '',
@@ -408,12 +421,13 @@ class _ExpenseFormDialogState extends ConsumerState<ExpenseFormDialog> {
                       Expanded(
                         flex: 5,
                         child: DropdownButtonFormField<String>(
-                          initialValue: _paymentMethods.contains(_paymentMethod) ? _paymentMethod : _paymentMethods.first,
+                          key: ValueKey(currentPaymentMethod),
+                          initialValue: currentPaymentMethod,
                           decoration: const InputDecoration(
-                            labelText: 'Metode Pembayaran',
+                            labelText: 'Metode Pembayaran & Rekening',
                             prefixIcon: Icon(Icons.payment_rounded, size: 18),
                           ),
-                          items: _paymentMethods.map((m) {
+                          items: availableMethods.map((m) {
                             return DropdownMenuItem<String>(
                               value: m,
                               child: Text(m, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
