@@ -4,6 +4,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
 import '../models/notification_model.dart';
 import '../repositories/notification_repository.dart';
+import '../services/local_notification_service.dart';
 
 class NotificationListScreen extends ConsumerStatefulWidget {
   const NotificationListScreen({super.key});
@@ -15,6 +16,84 @@ class NotificationListScreen extends ConsumerStatefulWidget {
 class _NotificationListScreenState extends ConsumerState<NotificationListScreen> {
   String _selectedFilter = 'ALL'; // 'ALL', 'UNREAD', 'EXPIRATION', 'FINANCE', 'SYSTEM'
   bool _isSyncing = false;
+  bool? _isPermissionGranted;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPermission();
+  }
+
+  Future<void> _checkPermission() async {
+    final granted = await LocalNotificationService().areNotificationsEnabled();
+    if (mounted) {
+      setState(() => _isPermissionGranted = granted);
+    }
+  }
+
+  Future<void> _requestPermission() async {
+    final granted = await LocalNotificationService().requestPermission();
+    if (mounted) {
+      setState(() => _isPermissionGranted = granted);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(granted
+              ? 'Izin notifikasi sistem berhasil diaktifkan!'
+              : 'Izin notifikasi belum diaktifkan. Buka Pengaturan Perangkat untuk mengizinkan.'),
+          backgroundColor: granted ? AppColors.success : AppColors.warning,
+        ),
+      );
+    }
+  }
+
+  Future<void> _sendTestNotification() async {
+    await LocalNotificationService().showTestNotification();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Notifikasi uji coba telah dikirim ke status bar / tray sistem!'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
+  }
+
+  void _showBackgroundInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.battery_charging_full_rounded, color: AppColors.cyan),
+            SizedBox(width: 8),
+            Text('Izin Latar Belakang'),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Agar notifikasi peringatan VPS & tagihan dapat muncul saat aplikasi tidak dibuka:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 12),
+            Text('• Android: Buka Pengaturan HP > Aplikasi > Fuchur Agent > Baterai / Penggunaan Daya > Pilih "Tidak Dibatasi" (Unrestricted).'),
+            SizedBox(height: 8),
+            Text('• Android 13+: Izinkan "Notifikasi" saat dialog izin sistem muncul.'),
+            SizedBox(height: 8),
+            Text('• Windows: Pastikan "Notifikasi & Tindakan" (Notifications & Actions) aktif di Windows Settings.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Mengerti'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _handleSync() async {
     if (_isSyncing) return;
@@ -118,6 +197,9 @@ class _NotificationListScreenState extends ConsumerState<NotificationListScreen>
       ),
       body: Column(
         children: [
+          // Banner Status Izin Notifikasi Sistem (Android & Windows)
+          _buildSystemPermissionBanner(isDark, primaryAccent),
+
           // Filter Chips Row
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -478,6 +560,121 @@ class _NotificationListScreenState extends ConsumerState<NotificationListScreen>
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSystemPermissionBanner(bool isDark, Color primaryAccent) {
+    final granted = _isPermissionGranted;
+
+    if (granted == false) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.warning.withValues(alpha: isDark ? 0.15 : 0.1),
+          border: Border(
+            bottom: BorderSide(
+              color: AppColors.warning.withValues(alpha: 0.3),
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.notifications_off_rounded, size: 20, color: AppColors.warning),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Izin Notifikasi Sistem Belum Aktif',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Aktifkan agar peringatan VPS & tagihan muncul di status bar Android dan desktop Windows.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? Colors.white70 : const Color(0xFF475569),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.warning,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                visualDensity: VisualDensity.compact,
+              ),
+              onPressed: _requestPermission,
+              child: const Text('Izinkan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: const Icon(Icons.help_outline_rounded, size: 18),
+              tooltip: 'Petunjuk Latar Belakang',
+              onPressed: _showBackgroundInfoDialog,
+            ),
+          ],
+        ),
+      );
+    }
+
+    // When granted (or checking)
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: (isDark ? AppColors.surfaceLightDark : const Color(0xFFF8FAFC)),
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.notifications_active_rounded, size: 16, color: AppColors.success),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Notifikasi Sistem & Latar Belakang Aktif',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white70 : const Color(0xFF334155),
+              ),
+            ),
+          ),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            ),
+            icon: const Icon(Icons.send_rounded, size: 12),
+            label: const Text('Uji Notifikasi', style: TextStyle(fontSize: 11)),
+            onPressed: _sendTestNotification,
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.info_outline_rounded, size: 16),
+            tooltip: 'Panduan Latar Belakang (Android/Windows)',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            onPressed: _showBackgroundInfoDialog,
+          ),
+        ],
       ),
     );
   }

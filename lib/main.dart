@@ -7,6 +7,7 @@ import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/providers/app_providers.dart';
 import 'core/constants/app_constants.dart';
+import 'features/notifications/services/local_notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,13 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize Local & Background Notifications for Android & Windows
+  try {
+    await LocalNotificationService().initialize();
+  } catch (e) {
+    debugPrint('Failed to initialize local notifications: $e');
+  }
 
   runApp(
     const ProviderScope(

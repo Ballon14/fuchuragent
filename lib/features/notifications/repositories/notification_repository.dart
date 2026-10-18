@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/constants/app_constants.dart';
 import '../models/notification_model.dart';
+import '../services/local_notification_service.dart';
 
 class NotificationRepository {
   final FirebaseFirestore _firestore;
@@ -58,6 +59,17 @@ class NotificationRepository {
       'isRead': false,
       'createdAt': FieldValue.serverTimestamp(),
     });
+
+    try {
+      final notifId = docRef.id.hashCode.abs() % 1000000;
+      await LocalNotificationService().showNotification(
+        id: notifId,
+        title: title,
+        body: message,
+        payload: '/notifications',
+      );
+    } catch (_) {}
+
     return docRef.id;
   }
 

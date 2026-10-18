@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/app_providers.dart';
+import '../../features/notifications/services/local_notification_service.dart';
 
 class NavItem {
   final String title;
@@ -52,13 +54,26 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell> {
   String get currentRoute => widget.currentRoute;
   Widget get child => widget.child;
+  Timer? _backgroundSyncTimer;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await LocalNotificationService().requestPermission();
       ref.read(notificationRepositoryProvider).syncSystemAlerts();
     });
+
+    // Background sync timer every 15 minutes to keep operational alerts active
+    _backgroundSyncTimer = Timer.periodic(const Duration(minutes: 15), (_) {
+      ref.read(notificationRepositoryProvider).syncSystemAlerts();
+    });
+  }
+
+  @override
+  void dispose() {
+    _backgroundSyncTimer?.cancel();
+    super.dispose();
   }
 
   @override
