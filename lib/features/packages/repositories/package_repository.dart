@@ -10,24 +10,7 @@ class PackageRepository {
 
   Stream<List<VpsPackageModel>> watchPackages() {
     return _pkgRef.snapshots().map((snap) {
-      List<VpsPackageModel> list;
-      if (snap.docs.isEmpty) {
-        list = List<VpsPackageModel>.from(VpsPackageModel.defaultCatalog);
-      } else {
-        final existing = snap.docs.map((d) => VpsPackageModel.fromFirestore(d)).toList();
-        final existingNames = existing.map((p) => p.name.toLowerCase()).toSet();
-        list = List<VpsPackageModel>.from(existing);
-        for (final def in VpsPackageModel.defaultCatalog) {
-          if (!existingNames.contains(def.name.toLowerCase())) {
-            list.add(def);
-          }
-        }
-      }
-      for (int i = 0; i < list.length; i++) {
-        if (list[i].name.toLowerCase() == 'basic' && list[i].basePrice == 80000) {
-          list[i] = list[i].copyWith(basePrice: 76000);
-        }
-      }
+      final list = snap.docs.map((d) => VpsPackageModel.fromFirestore(d)).toList();
       list.sort((a, b) => a.basePrice.compareTo(b.basePrice));
       return list;
     });
@@ -35,25 +18,7 @@ class PackageRepository {
 
   Future<List<VpsPackageModel>> getPackages() async {
     final snap = await _pkgRef.get();
-    List<VpsPackageModel> list;
-    if (snap.docs.isEmpty) {
-      await seedDefaultPackages();
-      list = List<VpsPackageModel>.from(VpsPackageModel.defaultCatalog);
-    } else {
-      final existing = snap.docs.map((d) => VpsPackageModel.fromFirestore(d)).toList();
-      final existingNames = existing.map((p) => p.name.toLowerCase()).toSet();
-      list = List<VpsPackageModel>.from(existing);
-      for (final def in VpsPackageModel.defaultCatalog) {
-        if (!existingNames.contains(def.name.toLowerCase())) {
-          list.add(def);
-        }
-      }
-    }
-    for (int i = 0; i < list.length; i++) {
-      if (list[i].name.toLowerCase() == 'basic' && list[i].basePrice == 80000) {
-        list[i] = list[i].copyWith(basePrice: 76000);
-      }
-    }
+    final list = snap.docs.map((d) => VpsPackageModel.fromFirestore(d)).toList();
     list.sort((a, b) => a.basePrice.compareTo(b.basePrice));
     return list;
   }

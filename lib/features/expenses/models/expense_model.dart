@@ -9,7 +9,7 @@ class ExpenseModel {
   final String category; // 'SERVER', 'LICENSE', 'WORKER', 'DOMAIN', 'NETWORK', 'OPERATIONAL', 'OTHER'
   final int amount; // Integer IDR
   final DateTime expenseDate;
-  final String recipient; // Vendor / Person (e.g. 'Hetzner', 'Worker Iqbal')
+  final String recipient; // Vendor / Person
   final String paymentMethod; // 'Transfer Bank', 'BCA', 'Mandiri', 'PayPal', 'Cash', 'QRIS'
   final String notes;
   final String? createdBy;

@@ -71,21 +71,6 @@ class AppConstants {
       return DateFormat('dd/MM/yyyy, HH:mm').format(dateTime);
     }
   }
-
-  // Parse US / Spreadsheet format: M/D/YYYY (e.g. 7/18/2026 or 7/4/2026)
-  static DateTime? parseSpreadsheetDate(String input) {
-    if (input.trim().isEmpty) return null;
-    try {
-      final parts = input.trim().split('/');
-      if (parts.length == 3) {
-        final month = int.parse(parts[0]);
-        final day = int.parse(parts[1]);
-        final year = int.parse(parts[2]);
-        return DateTime(year, month, day);
-      }
-    } catch (_) {}
-    return DateTime.tryParse(input.trim());
-  }
 }
 
 class AppColors {

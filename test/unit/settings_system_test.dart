@@ -6,18 +6,14 @@ import 'package:fuchuragent/features/services/models/service_model.dart';
 
 void main() {
   group('SystemSettingsModel Tests', () {
-    test('defaultSettings should initialize with standard values', () {
+    test('defaultSettings should initialize with standard values and empty payment accounts', () {
       final settings = SystemSettingsModel.defaultSettings();
 
-      expect(settings.companyName, 'FuchurHost Solutions');
-      expect(settings.brandName, 'Fuchur Agent');
-      expect(settings.supportEmail, 'support@fuchuragent.id');
-      expect(settings.paymentMethods.length, 1);
-      expect(settings.paymentMethods.first.name, 'Bank Jago');
-      expect(settings.paymentMethods.first.accountNumber, '1078-5455-7360');
-      expect(settings.paymentMethods.first.accountHolder, 'MUHAMMAD IQBAL FATCHURROHMAN');
-      expect(settings.paymentMethods.first.isDefault, true);
-      expect(settings.bankAccounts.length, 1);
+      expect(settings.companyName, '');
+      expect(settings.brandName, '');
+      expect(settings.supportEmail, '');
+      expect(settings.paymentMethods, isEmpty);
+      expect(settings.bankAccounts, isEmpty);
       expect(settings.enableDueReminders, true);
 
       expect(settings.reminderDays, containsAll([7, 3, 1, 0]));

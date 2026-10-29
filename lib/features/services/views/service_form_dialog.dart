@@ -40,7 +40,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
   late TextEditingController _notesCtrl;
 
   String? _selectedCustomerId;
-  String _selectedPackageName = 'Basic 1 Bulan';
+  String _selectedPackageName = '';
   String _status = 'active';
   String _deploymentType = 'Project Running / Public';
   DateTime _startDate = DateTime.now();
@@ -54,12 +54,12 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
     _selectedCustomerId = widget.preselectedCustomerId ?? s?.customerId;
     _domainCtrl = TextEditingController(text: s?.domain ?? '');
     _serviceNameCtrl = TextEditingController(text: s?.serviceName ?? '');
-    _priceCtrl = TextEditingController(text: s?.price != null ? s!.price.toString() : '76000');
-    _setupFeeCtrl = TextEditingController(text: s?.setupFee != null ? s!.setupFee.toString() : '10000');
-    _vcpuCtrl = TextEditingController(text: s?.vcpu != null ? s!.vcpu.toString() : '1');
-    _ramCtrl = TextEditingController(text: s?.ramGb != null ? s!.ramGb.toString() : '1');
-    _storageCtrl = TextEditingController(text: s?.storageGb != null ? s!.storageGb.toString() : '20');
-    _workerCtrl = TextEditingController(text: s?.worker ?? 'Iqbal');
+    _priceCtrl = TextEditingController(text: s?.price != null ? s!.price.toString() : '');
+    _setupFeeCtrl = TextEditingController(text: s?.setupFee != null ? s!.setupFee.toString() : '0');
+    _vcpuCtrl = TextEditingController(text: s?.vcpu != null ? s!.vcpu.toString() : '');
+    _ramCtrl = TextEditingController(text: s?.ramGb != null ? s!.ramGb.toString() : '');
+    _storageCtrl = TextEditingController(text: s?.storageGb != null ? s!.storageGb.toString() : '');
+    _workerCtrl = TextEditingController(text: s?.worker ?? '');
     _notesCtrl = TextEditingController(text: s?.notes ?? '');
     if (s != null) {
       _selectedPackageName = s.packageName;
@@ -265,38 +265,6 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
       onTap: () {
         setState(() {
           _endDate = _startDate.add(Duration(days: days));
-
-          // Auto-adjust package selection and price for popular durations
-          if (months == 3) {
-            final p3 = packages.cast<VpsPackageModel?>().firstWhere(
-              (p) => p != null && p.name.toLowerCase().contains('3 bulan'),
-              orElse: () => null,
-            );
-            if (p3 != null &&
-                (_selectedPackageName.toLowerCase().contains('basic') ||
-                    _selectedPackageName.toLowerCase().contains('1 bulan'))) {
-              _selectedPackageName = p3.name;
-              _priceCtrl.text = p3.basePrice.toString();
-              _vcpuCtrl.text = p3.vcpu.toString();
-              _ramCtrl.text = p3.ramGb.toString();
-              _storageCtrl.text = p3.storageGb.toString();
-            }
-          } else if (months == 1) {
-            final p1 = packages.cast<VpsPackageModel?>().firstWhere(
-              (p) =>
-                  p != null &&
-                  (p.name.toLowerCase().contains('basic 1 bulan') ||
-                      p.name.toLowerCase() == 'basic'),
-              orElse: () => null,
-            );
-            if (p1 != null && _selectedPackageName.toLowerCase().contains('3 bulan')) {
-              _selectedPackageName = p1.name;
-              _priceCtrl.text = p1.basePrice.toString();
-              _vcpuCtrl.text = p1.vcpu.toString();
-              _ramCtrl.text = p1.ramGb.toString();
-              _storageCtrl.text = p1.storageGb.toString();
-            }
-          }
         });
       },
       borderRadius: BorderRadius.circular(6),
@@ -333,9 +301,9 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
     return StreamBuilder<List<VpsPackageModel>>(
       stream: packagesStream,
       builder: (context, pkgSnapshot) {
-        final rawPackages = (pkgSnapshot.hasData && pkgSnapshot.data!.isNotEmpty)
+        final rawPackages = (pkgSnapshot.hasData && pkgSnapshot.data != null)
             ? pkgSnapshot.data!
-            : VpsPackageModel.defaultCatalog;
+            : <VpsPackageModel>[];
         final packages = List<VpsPackageModel>.from(rawPackages)
           ..sort((a, b) => a.basePrice.compareTo(b.basePrice));
 
@@ -625,101 +593,106 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                   const SizedBox(height: 12),
                 ],
 
-                // Package quick select cards
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Pilih Template Paket VPS:',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white70 : const Color(0xFF475569),
+                // Package quick select cards (only if available in Firestore)
+                if (packages.isNotEmpty) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Pilih Template Paket VPS:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white70 : const Color(0xFF475569),
+                        ),
                       ),
-                    ),
-                    Text(
-                      'Auto-isi spesifikasi & harga',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: primaryColor,
+                      Text(
+                        'Auto-isi spesifikasi & harga',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: primaryColor,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 72,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: packages.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 8),
-                    itemBuilder: (context, idx) {
-                      final pkg = packages[idx];
-                      final isSelected = _selectedPackageName == pkg.name;
-                      return InkWell(
-                        onTap: () => _onPackageSelected(pkg),
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          width: 130,
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? primaryColor.withValues(alpha: isDark ? 0.2 : 0.1)
-                                : (isDark ? AppColors.surfaceLightDark : const Color(0xFFF8FAFC)),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 72,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: packages.length,
+                      separatorBuilder: (context, index) => const SizedBox(width: 8),
+                      itemBuilder: (context, idx) {
+                        final pkg = packages[idx];
+                        final isSelected = _selectedPackageName == pkg.name;
+                        return InkWell(
+                          onTap: () => _onPackageSelected(pkg),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            width: 130,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
                               color: isSelected
-                                  ? primaryColor
-                                  : (isDark ? AppColors.borderDark : const Color(0xFFE2E8F0)),
-                              width: isSelected ? 1.5 : 1,
+                                  ? primaryColor.withValues(alpha: isDark ? 0.2 : 0.1)
+                                  : (isDark ? AppColors.surfaceLightDark : const Color(0xFFF8FAFC)),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isSelected
+                                    ? primaryColor
+                                    : (isDark ? AppColors.borderDark : const Color(0xFFE2E8F0)),
+                                width: isSelected ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        pkg.name,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: isSelected ? primaryColor : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      Icon(Icons.check_circle_rounded, size: 14, color: primaryColor),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${pkg.vcpu} Core • ${pkg.ramGb}GB • ${pkg.storageGb}GB',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  AppConstants.formatRupiah(pkg.basePrice),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected ? primaryColor : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    pkg.name,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: isSelected ? primaryColor : (isDark ? Colors.white : const Color(0xFF0F172A)),
-                                    ),
-                                  ),
-                                  if (isSelected)
-                                    Icon(Icons.check_circle_rounded, size: 14, color: primaryColor),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${pkg.vcpu} Core • ${pkg.ramGb}GB • ${pkg.storageGb}GB',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                AppConstants.formatRupiah(pkg.basePrice),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelected ? primaryColor : (isDark ? Colors.white70 : const Color(0xFF334155)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(height: 14),
+                  const SizedBox(height: 14),
+                ],
 
                 TextFormField(
                   controller: _domainCtrl,
@@ -746,7 +719,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
                       labelText: 'Biaya Sewa Layanan (IDR) *',
-                      hintText: 'Contoh: 76000 atau 135000',
+                      hintText: 'Contoh: 100000',
                       helperText: 'Harga sewa dinamis — dapat disesuaikan manual',
                       prefixIcon: Icon(Icons.payments_outlined, size: 20),
                     ),
@@ -777,7 +750,7 @@ class _ServiceFormDialogState extends ConsumerState<ServiceFormDialog> {
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(
                             labelText: 'Biaya Sewa Layanan (IDR) *',
-                            hintText: 'Contoh: 76000 atau 135000',
+                            hintText: 'Contoh: 100000',
                             helperText: 'Harga sewa dinamis — dapat disesuaikan manual',
                             prefixIcon: Icon(Icons.payments_outlined, size: 20),
                           ),

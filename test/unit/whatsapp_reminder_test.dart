@@ -3,6 +3,7 @@ import 'package:fuchuragent/features/customers/models/customer_model.dart';
 import 'package:fuchuragent/features/invoices/models/invoice_model.dart';
 import 'package:fuchuragent/features/services/models/service_model.dart';
 import 'package:fuchuragent/features/services/services/whatsapp_reminder_service.dart';
+import 'package:fuchuragent/features/settings/models/system_settings_model.dart';
 
 void main() {
   group('WhatsAppReminderService Phone Normalization Tests', () {
@@ -83,7 +84,36 @@ void main() {
       updatedAt: DateTime.now(),
     );
 
-    test('Expiring soon template contains customer name, domain, days left, and bank info', () {
+    final sampleSettings = SystemSettingsModel.defaultSettings().copyWith(
+      paymentMethods: const [
+        PaymentMethodModel(
+          id: 'pm-1',
+          name: 'Bank BCA',
+          accountNumber: '1234567890',
+          accountHolder: 'Fuchur Cloud Indo',
+          isDefault: true,
+        ),
+      ],
+    );
+
+    test('Expiring soon template contains customer name, domain, days left, and bank info when configured', () {
+      final message = WhatsAppReminderService.generateExpiringSoonTemplate(
+        customer: sampleCustomer,
+        service: sampleExpiringService,
+        settings: sampleSettings,
+      );
+
+      expect(message, contains('Budi Santoso'));
+      expect(message, contains('tokoonline.com'));
+      expect(message, contains('Standard'));
+      expect(message, contains('150.000'));
+      expect(message, contains('Bank BCA'));
+      expect(message, contains('1234567890'));
+      expect(message, contains('Fuchur Cloud Indo'));
+      expect(message, contains('hari lagi'));
+    });
+
+    test('Expiring soon template does not contain bank section if no payment methods configured', () {
       final message = WhatsAppReminderService.generateExpiringSoonTemplate(
         customer: sampleCustomer,
         service: sampleExpiringService,
@@ -91,19 +121,14 @@ void main() {
 
       expect(message, contains('Budi Santoso'));
       expect(message, contains('tokoonline.com'));
-      expect(message, contains('Standard'));
-      expect(message, contains('150.000'));
-      expect(message, contains('Fuchur Agent'));
-      expect(message, contains('Bank Jago'));
-      expect(message, contains('1078-5455-7360'));
-      expect(message, contains('MUHAMMAD IQBAL FATCHURROHMAN'));
-      expect(message, contains('hari lagi'));
+      expect(message, isNot(contains('Rekening Pembayaran')));
     });
 
     test('Expired template clearly warns service is inactive and urges renewal', () {
       final message = WhatsAppReminderService.generateExpiredTemplate(
         customer: sampleCustomer,
         service: sampleExpiredService,
+        settings: sampleSettings,
       );
 
       expect(message, contains('Budi Santoso'));
@@ -111,8 +136,8 @@ void main() {
       expect(message, contains('berakhir'));
       expect(message, contains('Kedaluwarsa / Nonaktif'));
       expect(message, contains('80.000'));
-      expect(message, contains('Bank Jago'));
-      expect(message, contains('1078-5455-7360'));
+      expect(message, contains('Bank BCA'));
+      expect(message, contains('1234567890'));
     });
 
     test('Invoice reminder template contains invoice number and total amount', () {
@@ -141,12 +166,14 @@ void main() {
       final message = WhatsAppReminderService.generateInvoiceReminderTemplate(
         customer: sampleCustomer,
         invoice: invoice,
+        settings: sampleSettings,
       );
 
       expect(message, contains('Budi Santoso'));
       expect(message, contains('INV-2026-0042'));
       expect(message, contains('150.000'));
-      expect(message, contains('Bank Jago'));
+      expect(message, contains('Bank BCA'));
+      expect(message, contains('1234567890'));
     });
 
 

@@ -89,12 +89,12 @@ class CsvCustomerRow {
       errors.add('Nominal harga tidak valid: "$rawNominal".');
     }
 
-    final startDate = AppConstants.parseSpreadsheetDate(rawMulai);
+    final startDate = _parseDate(rawMulai);
     if (!isPlaceholder && startDate == null) {
       errors.add('Format tanggal mulai salah: "$rawMulai".');
     }
 
-    final endDate = AppConstants.parseSpreadsheetDate(rawAkhir);
+    final endDate = _parseDate(rawAkhir);
     if (!isPlaceholder && endDate == null) {
       errors.add('Format tanggal akhir salah: "$rawAkhir".');
     }
@@ -134,6 +134,20 @@ class CsvCustomerRow {
       isPlaceholder: isPlaceholder,
       validationErrors: errors,
     );
+  }
+
+  static DateTime? _parseDate(String input) {
+    if (input.trim().isEmpty) return null;
+    try {
+      final parts = input.trim().split('/');
+      if (parts.length == 3) {
+        final month = int.parse(parts[0]);
+        final day = int.parse(parts[1]);
+        final year = int.parse(parts[2]);
+        return DateTime(year, month, day);
+      }
+    } catch (_) {}
+    return DateTime.tryParse(input.trim());
   }
 }
 

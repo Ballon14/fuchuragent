@@ -198,7 +198,7 @@ class _PaymentListScreenState extends ConsumerState<PaymentListScreen> {
           const Text('Belum ada transaksi pembayaran yang tercatat', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text(
-            'Catat pelunasan atau cicilan dari pelanggan FuchurHost Solutions.',
+            'Catat pelunasan atau cicilan dari pelanggan.',
             style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF64748B)),
           ),
           const SizedBox(height: 20),

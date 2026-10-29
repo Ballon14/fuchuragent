@@ -258,7 +258,7 @@ class _ExpenseFormDialogState extends ConsumerState<ExpenseFormDialog> {
                             Text(
                               isEdit
                                   ? 'Perbarui rincian biaya atau pengeluaran'
-                                  : 'Pencatatan kas keluar untuk operasional FuchurHost',
+                                  : 'Pencatatan kas keluar untuk operasional',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: isDark ? Colors.white60 : const Color(0xFF64748B),
@@ -432,7 +432,7 @@ class _ExpenseFormDialogState extends ConsumerState<ExpenseFormDialog> {
                           controller: _recipientCtrl,
                           decoration: const InputDecoration(
                             labelText: 'Vendor / Penerima',
-                            hintText: 'Hetzner, Worker Iqbal, dll.',
+                            hintText: 'Hetzner, Vendor, dll.',
                             prefixIcon: Icon(Icons.person_pin_rounded, size: 18),
                           ),
                         ),

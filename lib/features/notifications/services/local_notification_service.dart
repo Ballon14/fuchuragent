@@ -27,7 +27,7 @@ class LocalNotificationService {
   static const String systemChannelId = 'fuchur_system_alerts';
   static const String systemChannelName = 'Pemberitahuan Sistem & Backup Data';
   static const String systemChannelDesc =
-      'Informasi sinkronisasi Google Sheets, log audit keamanan, dan pemeliharaan sistem.';
+      'Informasi cadangan data sistem, log audit keamanan, dan pemeliharaan sistem.';
 
   Future<void> initialize() async {
     if (_isInitialized) return;

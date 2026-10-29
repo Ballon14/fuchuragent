@@ -8,6 +8,7 @@ import '../../../shared/widgets/status_badge.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../shared/widgets/confirmation_dialog.dart';
+import '../../packages/models/package_model.dart';
 
 class InvoiceFormDialog extends ConsumerStatefulWidget {
   final String? preselectedCustomerId;
@@ -57,7 +58,7 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
     super.initState();
     _selectedCustomerId = widget.preselectedCustomerId;
     _selectedServiceId = widget.preselectedServiceId;
-    _unitPriceCtrl.text = widget.suggestedAmount != null ? widget.suggestedAmount.toString() : '76000';
+    _unitPriceCtrl.text = widget.suggestedAmount != null ? widget.suggestedAmount.toString() : '';
   }
 
   @override
@@ -168,6 +169,7 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
   Widget build(BuildContext context) {
     final customersAsync = ref.watch(customerRepositoryProvider).watchCustomers();
     final servicesAsync = ref.watch(serviceRepositoryProvider).watchServices();
+    final packagesAsync = ref.watch(packageRepositoryProvider).watchPackages();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
     final isMobile = MediaQuery.of(context).size.width < 600;
@@ -500,52 +502,39 @@ class _InvoiceFormDialogState extends ConsumerState<InvoiceFormDialog> {
                   ),
                 ],
 
-                // Quick Item Template Chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      ActionChip(
-                        label: const Text('Sewa 1 Bln (76rb)', style: TextStyle(fontSize: 11)),
-                        onPressed: () {
-                          setState(() {
-                            _itemDescCtrl.text = 'Perpanjangan Sewa VPS (1 Bulan)';
-                            _unitPriceCtrl.text = '76000';
-                          });
-                        },
+                // Quick Item Template Chips from Firestore packages
+                StreamBuilder<List<VpsPackageModel>>(
+                  stream: packagesAsync,
+                  builder: (context, pkgSnap) {
+                    final pkgs = pkgSnap.data ?? [];
+                    if (pkgs.isEmpty) return const SizedBox.shrink();
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: pkgs.map((pkg) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: ActionChip(
+                                label: Text(
+                                  '${pkg.name} (${AppConstants.formatRupiah(pkg.basePrice)})',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _itemDescCtrl.text = 'Layanan VPS ${pkg.name}';
+                                    _unitPriceCtrl.text = pkg.basePrice.toString();
+                                  });
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
-                      const SizedBox(width: 6),
-                      ActionChip(
-                        label: const Text('Sewa 3 Bln (135rb)', style: TextStyle(fontSize: 11)),
-                        onPressed: () {
-                          setState(() {
-                            _itemDescCtrl.text = 'Sewa VPS Paket Hemat (3 Bulan)';
-                            _unitPriceCtrl.text = '135000';
-                          });
-                        },
-                      ),
-                      const SizedBox(width: 6),
-                      ActionChip(
-                        label: const Text('Setup Pertama (10rb)', style: TextStyle(fontSize: 11)),
-                        onPressed: () {
-                          setState(() {
-                            _itemDescCtrl.text = 'Biaya Setup Pertama Kali Layanan VPS';
-                            _unitPriceCtrl.text = '10000';
-                          });
-                        },
-                      ),
-                      const SizedBox(width: 6),
-                      ActionChip(
-                        label: const Text('Setup Running/Public (30rb)', style: TextStyle(fontSize: 11)),
-                        onPressed: () {
-                          setState(() {
-                            _itemDescCtrl.text = 'Biaya Setup Deploy s/d Project Running/Public';
-                            _unitPriceCtrl.text = '30000';
-                          });
-                        },
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 10),
 

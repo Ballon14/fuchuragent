@@ -39,7 +39,7 @@ class ReportScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Rekapitulasi Kinerja Bisnis FuchurHost Solutions',
+                  'Rekapitulasi Kinerja Bisnis',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),

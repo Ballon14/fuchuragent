@@ -1,31 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:csv/csv.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
 import '../models/import_models.dart';
 
 class ImportRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // 1. Fetch CSV from Live Google Sheets URL
-  Future<String> fetchCsvFromUrl(String url) async {
-    String csvUrl = url.trim();
-    if (csvUrl.contains('/pubhtml')) {
-      csvUrl = csvUrl.replaceAll('/pubhtml', '/pub');
-      if (!csvUrl.contains('output=csv')) {
-        csvUrl += csvUrl.contains('?') ? '&output=csv' : '?output=csv';
-      }
-    }
-
-    final response = await http.get(Uri.parse(csvUrl));
-    if (response.statusCode != 200) {
-      throw Exception('Gagal mengunduh spreadsheet dari URL (Status: ${response.statusCode})');
-    }
-    return response.body;
-  }
-
-  // 2. Parse CSV String into List of CsvCustomerRow
+  // 1. Parse CSV String into List of CsvCustomerRow
   Future<List<CsvCustomerRow>> parseCsv(String csvContent) async {
     final rawRows = csv.decode(csvContent);
 

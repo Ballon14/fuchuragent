@@ -49,10 +49,38 @@ class _PackageListScreenState extends ConsumerState<PackageListScreen> {
             return Center(child: CircularProgressIndicator(color: primaryColor));
           }
 
-          final packages = (snapshot.data != null && snapshot.data!.isNotEmpty)
+          final packages = (snapshot.data != null)
               ? List<VpsPackageModel>.from(snapshot.data!)
-              : List<VpsPackageModel>.from(VpsPackageModel.defaultCatalog);
+              : <VpsPackageModel>[];
           packages.sort((a, b) => a.basePrice.compareTo(b.basePrice));
+
+          if (packages.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.inventory_2_outlined, size: 48, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Belum ada data paket VPS di database.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white70 : const Color(0xFF334155),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Silakan klik "Tambah Paket" untuk menambahkan paket baru.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.white38 : const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
 
           final totalItems = packages.length;
           final totalPages = totalItems == 0 ? 1 : (totalItems / _itemsPerPage).ceil();

@@ -296,7 +296,7 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
           const Text('Belum ada tagihan yang ditemukan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text(
-            'Terbitkan tagihan baru untuk layanan VPS pelanggan FuchurHost.',
+            'Terbitkan tagihan baru untuk layanan VPS pelanggan.',
             style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF64748B)),
           ),
           const SizedBox(height: 20),

@@ -46,7 +46,7 @@ class WhatsAppReminderService {
             .join('\n');
       }
     }
-    return '• Bank Jago: *1078-5455-7360* a.n *MUHAMMAD IQBAL FATCHURROHMAN*';
+    return '';
   }
 
 
@@ -68,11 +68,17 @@ class WhatsAppReminderService {
         : (daysLeft == 1 ? 'besok (1 hari lagi)' : '$daysLeft hari lagi');
 
     final bankListStr = formatBankAccounts(settings?.bankAccounts, paymentMethods: settings?.paymentMethods);
-    final brand = settings?.brandName ?? 'Fuchur Agent';
-    final greeting = settings != null
-        ? settings.waGreeting.replaceAll('{name}', customerName)
+    final brand = (settings?.brandName.isNotEmpty ?? false) ? settings!.brandName : 'Fuchur Agent';
+    final greeting = (settings?.waGreeting.isNotEmpty ?? false)
+        ? settings!.waGreeting.replaceAll('{name}', customerName)
         : 'Halo Kak *$customerName*,';
-    final closing = settings?.waClosing ?? 'Terima kasih atas kepercayaan Kakak menggunakan layanan Fuchur Agent! 🙏';
+    final closing = (settings?.waClosing.isNotEmpty ?? false)
+        ? settings!.waClosing
+        : 'Terima kasih atas kepercayaan Kakak menggunakan layanan kami! 🙏';
+
+    final bankSection = bankListStr.isNotEmpty
+        ? '\n\n💳 *Rekening Pembayaran Resmi:*\n$bankListStr'
+        : '';
 
     return '''$greeting
 
@@ -84,10 +90,7 @@ Kami dari *$brand* ingin menginformasikan bahwa masa aktif layanan VPS Anda akan
 • Tanggal Jatuh Tempo: *$expiryDate* ($daysText)
 • Biaya Perpanjangan: *$priceStr* / bulan
 
-Untuk menjaga agar website dan sistem Anda tetap online tanpa interupsi, silakan lakukan konfirmasi perpanjangan sewa sebelum tanggal jatuh tempo.
-
-💳 *Rekening Pembayaran Resmi:*
-$bankListStr
+Untuk menjaga agar website dan sistem Anda tetap online tanpa interupsi, silakan lakukan konfirmasi perpanjangan sewa sebelum tanggal jatuh tempo.$bankSection
 
 Setelah melakukan pembayaran, mohon kirimkan bukti transfer melalui chat WhatsApp ini.
 
@@ -107,11 +110,15 @@ $closing''';
     final priceStr = AppConstants.formatRupiah(service.price);
 
     final bankListStr = formatBankAccounts(settings?.bankAccounts, paymentMethods: settings?.paymentMethods);
-    final brand = settings?.brandName ?? 'Fuchur Agent';
-    final greeting = settings != null
-        ? settings.waGreeting.replaceAll('{name}', customerName)
+    final brand = (settings?.brandName.isNotEmpty ?? false) ? settings!.brandName : 'Fuchur Agent';
+    final greeting = (settings?.waGreeting.isNotEmpty ?? false)
+        ? settings!.waGreeting.replaceAll('{name}', customerName)
         : 'Halo Kak *$customerName*,';
-    final signature = settings?.waAdminSignature ?? 'Fuchur Agent Team';
+    final signature = (settings?.waAdminSignature.isNotEmpty ?? false) ? settings!.waAdminSignature : '$brand Team';
+
+    final bankSection = bankListStr.isNotEmpty
+        ? '\n\n💳 *Rekening Pembayaran Transfer:*\n$bankListStr'
+        : '';
 
     return '''$greeting
 
@@ -123,10 +130,7 @@ Kami dari *$brand* menginformasikan bahwa masa aktif layanan VPS Anda telah *ber
 • Tanggal Berakhir: *$expiryDate*
 • Biaya Perpanjangan: *$priceStr* / bulan
 
-Saat ini server Anda sedang dalam masa tenggang. Agar data server tetap aman dan tidak dinonaktifkan permanen, mohon segera melakukan konfirmasi perpanjangan sewa.
-
-💳 *Rekening Pembayaran Transfer:*
-$bankListStr
+Saat ini server Anda sedang dalam masa tenggang. Agar data server tetap aman dan tidak dinonaktifkan permanen, mohon segera melakukan konfirmasi perpanjangan sewa.$bankSection
 
 Silakan balas pesan ini dan kirimkan bukti transfer jika perpanjangan sudah dilakukan.
 
@@ -145,16 +149,19 @@ Terima kasih atas kerja samanya,
     final invoiceNumber = invoice.invoiceNumber.isNotEmpty ? invoice.invoiceNumber : 'INV-TAGIHAN';
     final dueDate = AppConstants.formatDate(invoice.dueDate);
     final totalAmount = AppConstants.formatRupiah(invoice.total);
-    final brand = settings?.brandName ?? 'Fuchur Agent';
-    final greeting = settings != null
-        ? settings.waGreeting.replaceAll('{name}', customerName)
+    final brand = (settings?.brandName.isNotEmpty ?? false) ? settings!.brandName : 'Fuchur Agent';
+    final greeting = (settings?.waGreeting.isNotEmpty ?? false)
+        ? settings!.waGreeting.replaceAll('{name}', customerName)
         : 'Halo Kak *$customerName*,';
     final bankListStr = formatBankAccounts(settings?.bankAccounts, paymentMethods: settings?.paymentMethods);
-
 
     final description = invoice.items.isNotEmpty
         ? invoice.items.first.description
         : (service != null ? 'Perpanjangan VPS ${service.domain}' : 'Layanan VPS $brand');
+
+    final bankSection = bankListStr.isNotEmpty
+        ? '\n\n💳 *Rekening Pembayaran Transfer:*\n$bankListStr'
+        : '';
 
     return '''$greeting
 
@@ -164,10 +171,7 @@ Berikut pemberitahuan tagihan invoice dari *$brand*:
 • No. Tagihan: *$invoiceNumber*
 • Layanan: *$description*
 • Jatuh Tempo: *$dueDate*
-• Total Tagihan: *$totalAmount*
-
-💳 *Rekening Pembayaran Transfer:*
-$bankListStr
+• Total Tagihan: *$totalAmount*$bankSection
 
 Mohon konfirmasikan bukti transfer ke WhatsApp ini setelah transaksi berhasil agar status tagihan dapat segera diupdate.
 

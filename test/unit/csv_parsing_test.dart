@@ -18,19 +18,6 @@ void main() {
       expect(formatted.contains('Rp'), isTrue);
     });
 
-    test('Correctly parses spreadsheet M/D/YYYY dates', () {
-      final date1 = AppConstants.parseSpreadsheetDate('7/4/2026');
-      expect(date1, isNotNull);
-      expect(date1!.year, equals(2026));
-      expect(date1.month, equals(7));
-      expect(date1.day, equals(4));
-
-      final date2 = AppConstants.parseSpreadsheetDate('10/18/2026');
-      expect(date2, isNotNull);
-      expect(date2!.year, equals(2026));
-      expect(date2.month, equals(10));
-      expect(date2.day, equals(18));
-    });
 
     test('Identifies valid customer row and normalizes "Actice" typo to "active"', () {
       final rawRow = [

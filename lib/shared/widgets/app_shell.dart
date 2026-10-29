@@ -582,7 +582,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  userProfile?.name ?? 'Admin FuchurHost',
+                                  userProfile?.name ?? 'Admin',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
@@ -591,15 +591,16 @@ class _AppShellState extends ConsumerState<AppShell> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                Text(
-                                  userProfile?.email ?? 'admin@fuchurhost.com',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                if ((userProfile?.email ?? '').isNotEmpty)
+                                  Text(
+                                    userProfile!.email,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
                               ],
                             ),
                           ),

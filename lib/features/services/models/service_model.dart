@@ -18,7 +18,7 @@ class VpsServiceModel {
   final DateTime? endDate;
   final String _status; // 'active', 'deactive', 'expired', 'pending', 'suspended', 'cancelled'
   final String deploymentType; // 'Publish'
-  final String? worker; // 'Iqbal'
+  final String? worker;
   final bool workerPaid;
   final String notes;
   final DateTime? createdAt;

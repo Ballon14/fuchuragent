@@ -182,11 +182,7 @@ class SystemSettingsModel {
   final int autoLockMinutes;
   final bool requirePasswordOnSensitiveActions;
 
-  // 7. Integrasi Backup Google Spreadsheet
-  final String spreadsheetBackupUrl;
-  final String spreadsheetWebhookUrl;
-
-  // 8. Metadata
+  // 7. Metadata
   final DateTime? updatedAt;
   final String? updatedBy;
 
@@ -220,40 +216,24 @@ class SystemSettingsModel {
     required this.enableHapticFeedback,
     required this.autoLockMinutes,
     required this.requirePasswordOnSensitiveActions,
-    this.spreadsheetBackupUrl = 'https://docs.google.com/spreadsheets/d/1Rdcg6rgp4K7qBO328qeqHfzpaaYZjcRgvsI_OQGjLkE/edit?usp=sharing',
-    this.spreadsheetWebhookUrl = '',
     this.updatedAt,
     this.updatedBy,
   });
 
-  /// Default baseline configuration
+  /// Default baseline configuration with clean initial state
   factory SystemSettingsModel.defaultSettings() {
-    const defaultMethods = [
-      PaymentMethodModel(
-        id: 'pm-jago',
-        name: 'Bank Jago',
-        accountNumber: '1078-5455-7360',
-        accountHolder: 'MUHAMMAD IQBAL FATCHURROHMAN',
-        type: 'bank_transfer',
-        notes: 'Transfer via Aplikasi Bank Jago, ATM, atau Mobile Banking',
-        isActive: true,
-        isDefault: true,
-      ),
-    ];
-
-
     return SystemSettingsModel(
-      companyName: 'FuchurHost Solutions',
-      brandName: 'Fuchur Agent',
-      supportEmail: 'support@fuchuragent.id',
-      supportPhone: '081234567890',
-      officeAddress: 'Cyber 2 Tower Lt. 8, Jl. H. R. Rasuna Said, Jakarta Selatan 12950',
-      website: 'https://fuchuragent.id',
-      paymentMethods: defaultMethods,
-      bankAccounts: defaultMethods.map((m) => m.toBankAccount()).toList(),
+      companyName: '',
+      brandName: '',
+      supportEmail: '',
+      supportPhone: '',
+      officeAddress: '',
+      website: '',
+      paymentMethods: const [],
+      bankAccounts: const [],
       waGreeting: 'Halo Kak *{name}*,',
-      waClosing: 'Terima kasih atas kepercayaan Kakak menggunakan layanan Fuchur Agent! 🙏',
-      waAdminSignature: 'Fuchur Agent Team',
+      waClosing: 'Terima kasih atas kepercayaan Anda menggunakan layanan kami! 🙏',
+      waAdminSignature: '',
       includeBankDetailsInWa: true,
       waDefaultBankTarget: 'all',
       enableDueReminders: true,
@@ -272,10 +252,8 @@ class SystemSettingsModel {
       enableHapticFeedback: true,
       autoLockMinutes: 0,
       requirePasswordOnSensitiveActions: true,
-      spreadsheetBackupUrl: 'https://docs.google.com/spreadsheets/d/1Rdcg6rgp4K7qBO328qeqHfzpaaYZjcRgvsI_OQGjLkE/edit?usp=sharing',
-      spreadsheetWebhookUrl: '',
       updatedAt: DateTime.now(),
-      updatedBy: 'System Default',
+      updatedBy: 'System',
     );
   }
 
@@ -309,8 +287,6 @@ class SystemSettingsModel {
     bool? enableHapticFeedback,
     int? autoLockMinutes,
     bool? requirePasswordOnSensitiveActions,
-    String? spreadsheetBackupUrl,
-    String? spreadsheetWebhookUrl,
     DateTime? updatedAt,
     String? updatedBy,
   }) {
@@ -348,8 +324,6 @@ class SystemSettingsModel {
       autoLockMinutes: autoLockMinutes ?? this.autoLockMinutes,
       requirePasswordOnSensitiveActions:
           requirePasswordOnSensitiveActions ?? this.requirePasswordOnSensitiveActions,
-      spreadsheetBackupUrl: spreadsheetBackupUrl ?? this.spreadsheetBackupUrl,
-      spreadsheetWebhookUrl: spreadsheetWebhookUrl ?? this.spreadsheetWebhookUrl,
       updatedAt: updatedAt ?? this.updatedAt,
       updatedBy: updatedBy ?? this.updatedBy,
     );
@@ -386,8 +360,6 @@ class SystemSettingsModel {
       'enableHapticFeedback': enableHapticFeedback,
       'autoLockMinutes': autoLockMinutes,
       'requirePasswordOnSensitiveActions': requirePasswordOnSensitiveActions,
-      'spreadsheetBackupUrl': spreadsheetBackupUrl,
-      'spreadsheetWebhookUrl': spreadsheetWebhookUrl,
       'updatedAt': updatedAt?.toIso8601String(),
       'updatedBy': updatedBy,
     };
@@ -407,17 +379,6 @@ class SystemSettingsModel {
           .toList();
     }
 
-    // Filter out legacy dummy sample accounts
-    methods.removeWhere((m) =>
-        m.accountNumber == '1234567890' ||
-        m.accountNumber == '0987654321' ||
-        m.accountNumber == '556677889900');
-
-    if (methods.isEmpty) {
-      methods = defaults.paymentMethods;
-    }
-
-
     List<int> reminderDays = defaults.reminderDays;
     if (map['reminderDays'] != null && map['reminderDays'] is List) {
       reminderDays = (map['reminderDays'] as List).map((e) => (e as num).toInt()).toList();
@@ -429,40 +390,38 @@ class SystemSettingsModel {
     }
 
     return SystemSettingsModel(
-      companyName: map['companyName'] ?? defaults.companyName,
-      brandName: map['brandName'] ?? defaults.brandName,
-      supportEmail: map['supportEmail'] ?? defaults.supportEmail,
-      supportPhone: map['supportPhone'] ?? defaults.supportPhone,
-      officeAddress: map['officeAddress'] ?? defaults.officeAddress,
-      website: map['website'] ?? defaults.website,
-      paymentMethods: methods.isNotEmpty ? methods : defaults.paymentMethods,
+      companyName: map['companyName']?.toString() ?? '',
+      brandName: map['brandName']?.toString() ?? '',
+      supportEmail: map['supportEmail']?.toString() ?? '',
+      supportPhone: map['supportPhone']?.toString() ?? '',
+      officeAddress: map['officeAddress']?.toString() ?? '',
+      website: map['website']?.toString() ?? '',
+      paymentMethods: methods,
       bankAccounts: methods.map((m) => m.toBankAccount()).toList(),
-      waGreeting: map['waGreeting'] ?? defaults.waGreeting,
-      waClosing: map['waClosing'] ?? defaults.waClosing,
-      waAdminSignature: map['waAdminSignature'] ?? defaults.waAdminSignature,
-      includeBankDetailsInWa: map['includeBankDetailsInWa'] ?? defaults.includeBankDetailsInWa,
-      waDefaultBankTarget: map['waDefaultBankTarget'] ?? defaults.waDefaultBankTarget,
-      enableDueReminders: map['enableDueReminders'] ?? defaults.enableDueReminders,
+      waGreeting: map['waGreeting']?.toString() ?? defaults.waGreeting,
+      waClosing: map['waClosing']?.toString() ?? defaults.waClosing,
+      waAdminSignature: map['waAdminSignature']?.toString() ?? '',
+      includeBankDetailsInWa: map['includeBankDetailsInWa'] as bool? ?? defaults.includeBankDetailsInWa,
+      waDefaultBankTarget: map['waDefaultBankTarget']?.toString() ?? defaults.waDefaultBankTarget,
+      enableDueReminders: map['enableDueReminders'] as bool? ?? defaults.enableDueReminders,
       reminderDays: reminderDays,
       reminderHour: (map['reminderHour'] as num?)?.toInt() ?? defaults.reminderHour,
-      soundEnabled: map['soundEnabled'] ?? defaults.soundEnabled,
-      vibrationEnabled: map['vibrationEnabled'] ?? defaults.vibrationEnabled,
-      autoSyncBackground: map['autoSyncBackground'] ?? defaults.autoSyncBackground,
-      notifyNewExpenses: map['notifyNewExpenses'] ?? defaults.notifyNewExpenses,
-      notifyNewInvoices: map['notifyNewInvoices'] ?? defaults.notifyNewInvoices,
-      currencyCode: map['currencyCode'] ?? defaults.currencyCode,
-      currencySymbol: map['currencySymbol'] ?? defaults.currencySymbol,
-      dateFormat: map['dateFormat'] ?? defaults.dateFormat,
+      soundEnabled: map['soundEnabled'] as bool? ?? defaults.soundEnabled,
+      vibrationEnabled: map['vibrationEnabled'] as bool? ?? defaults.vibrationEnabled,
+      autoSyncBackground: map['autoSyncBackground'] as bool? ?? defaults.autoSyncBackground,
+      notifyNewExpenses: map['notifyNewExpenses'] as bool? ?? defaults.notifyNewExpenses,
+      notifyNewInvoices: map['notifyNewInvoices'] as bool? ?? defaults.notifyNewInvoices,
+      currencyCode: map['currencyCode']?.toString() ?? defaults.currencyCode,
+      currencySymbol: map['currencySymbol']?.toString() ?? defaults.currencySymbol,
+      dateFormat: map['dateFormat']?.toString() ?? defaults.dateFormat,
       defaultItemsPerPage: (map['defaultItemsPerPage'] as num?)?.toInt() ?? defaults.defaultItemsPerPage,
-      confirmBeforeDelete: map['confirmBeforeDelete'] ?? defaults.confirmBeforeDelete,
-      enableHapticFeedback: map['enableHapticFeedback'] ?? defaults.enableHapticFeedback,
+      confirmBeforeDelete: map['confirmBeforeDelete'] as bool? ?? defaults.confirmBeforeDelete,
+      enableHapticFeedback: map['enableHapticFeedback'] as bool? ?? defaults.enableHapticFeedback,
       autoLockMinutes: (map['autoLockMinutes'] as num?)?.toInt() ?? defaults.autoLockMinutes,
       requirePasswordOnSensitiveActions:
-          map['requirePasswordOnSensitiveActions'] ?? defaults.requirePasswordOnSensitiveActions,
-      spreadsheetBackupUrl: map['spreadsheetBackupUrl'] ?? defaults.spreadsheetBackupUrl,
-      spreadsheetWebhookUrl: map['spreadsheetWebhookUrl'] ?? defaults.spreadsheetWebhookUrl,
+          map['requirePasswordOnSensitiveActions'] as bool? ?? defaults.requirePasswordOnSensitiveActions,
       updatedAt: parsedUpdatedAt ?? defaults.updatedAt,
-      updatedBy: map['updatedBy'] ?? defaults.updatedBy,
+      updatedBy: map['updatedBy']?.toString() ?? defaults.updatedBy,
     );
   }
 }

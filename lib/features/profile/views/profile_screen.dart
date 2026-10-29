@@ -381,7 +381,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        user.name.isNotEmpty ? user.name : 'Pengguna FuchurHost',
+                        user.name.isNotEmpty ? user.name : 'Pengguna',
                         style: TextStyle(
                           fontSize: isDesktop ? 20 : 16,
                           fontWeight: FontWeight.bold,
