@@ -133,25 +133,32 @@ class _AppShellState extends ConsumerState<AppShell> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              effectiveAppName,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                effectiveAppName,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            Text(
-                              effectiveCompanyName,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                              Text(
+                                effectiveCompanyName,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -168,61 +175,64 @@ class _AppShellState extends ConsumerState<AppShell> {
 
                         final primaryAccent = isDark ? AppColors.cyan : const Color(0xFF0284C7);
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 4),
-                          decoration: BoxDecoration(
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Material(
                             color: isSelected
                                 ? primaryAccent.withValues(alpha: isDark ? 0.15 : 0.08)
                                 : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                            border: isSelected
-                                ? Border.all(color: primaryAccent.withValues(alpha: 0.3))
-                                : null,
-                          ),
-                          child: ListTile(
-                            dense: true,
-                            leading: Icon(
-                              item.icon,
-                              color: isSelected
-                                  ? primaryAccent
-                                  : (isDark ? Colors.white60 : const Color(0xFF64748B)),
-                              size: 20,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: isSelected
+                                  ? BorderSide(color: primaryAccent.withValues(alpha: 0.3))
+                                  : BorderSide.none,
                             ),
-                            title: Text(
-                              item.title,
-                              style: TextStyle(
+                            clipBehavior: Clip.antiAlias,
+                            child: ListTile(
+                              dense: true,
+                              leading: Icon(
+                                item.icon,
                                 color: isSelected
-                                    ? (isDark ? Colors.white : primaryAccent)
-                                    : (isDark ? Colors.white70 : const Color(0xFF334155)),
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                fontSize: 13,
+                                    ? primaryAccent
+                                    : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                size: 20,
                               ),
-                            ),
-                            trailing: item.route == '/notifications'
-                                ? StreamBuilder<int>(
-                                    stream: notifRepo.watchUnreadCount(),
-                                    builder: (context, snap) {
-                                      final count = snap.data ?? 0;
-                                      if (count == 0) return const SizedBox.shrink();
-                                      return Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.danger,
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: Text(
-                                          count > 99 ? '99+' : '$count',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
+                              title: Text(
+                                item.title,
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? (isDark ? Colors.white : primaryAccent)
+                                      : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              trailing: item.route == '/notifications'
+                                  ? StreamBuilder<int>(
+                                      stream: notifRepo.watchUnreadCount(),
+                                      builder: (context, snap) {
+                                        final count = snap.data ?? 0;
+                                        if (count == 0) return const SizedBox.shrink();
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.danger,
+                                            borderRadius: BorderRadius.circular(10),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  )
-                                : null,
-                            onTap: () => context.go(item.route),
+                                          child: Text(
+                                            count > 99 ? '99+' : '$count',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : null,
+                              onTap: () => context.go(item.route),
+                            ),
                           ),
                         );
                       }).toList(),
@@ -232,88 +242,90 @@ class _AppShellState extends ConsumerState<AppShell> {
                   // Footer: User profile & quick controls
                   const Divider(height: 1),
                   Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(10),
-                                onTap: () => context.go('/profile'),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
-                                  child: Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 18,
-                                        backgroundColor: (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: 0.15),
-                                        child: Text(
-                                          (userProfile?.name.isNotEmpty ?? false)
-                                              ? userProfile!.name[0].toUpperCase()
-                                              : 'A',
+                        Expanded(
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(10),
+                            onTap: () => context.go('/profile'),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: (isDark ? AppColors.cyan : const Color(0xFF0284C7)).withValues(alpha: 0.15),
+                                    child: Text(
+                                      (userProfile?.name.isNotEmpty ?? false)
+                                          ? userProfile!.name[0].toUpperCase()
+                                          : 'A',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: isDark ? AppColors.cyan : const Color(0xFF0284C7),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          userProfile?.name ?? 'Admin',
                                           style: TextStyle(
+                                            fontSize: 12,
                                             fontWeight: FontWeight.bold,
-                                            color: isDark ? AppColors.cyan : const Color(0xFF0284C7),
+                                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          userProfile?.isSuperAdmin == true ? 'SUPER ADMIN' : (userProfile?.role ?? 'staff').toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            color: isAdmin
+                                                ? (isDark ? AppColors.cyan : const Color(0xFF0284C7))
+                                                : (isDark ? Colors.white54 : const Color(0xFF64748B)),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              userProfile?.name ?? 'Admin',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.bold,
-                                                color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            Text(
-                                              userProfile?.isSuperAdmin == true ? 'SUPER ADMIN' : (userProfile?.role ?? 'staff').toUpperCase(),
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                                color: isAdmin
-                                                    ? (isDark ? AppColors.cyan : const Color(0xFF0284C7))
-                                                    : (isDark ? Colors.white54 : const Color(0xFF64748B)),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
                             ),
-                            // Theme toggle button
-                            IconButton(
-                              icon: Icon(
-                                themeMode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                                size: 18,
-                                color: isDark ? Colors.white70 : const Color(0xFF64748B),
-                              ),
-                              tooltip: 'Ganti Tema',
-                              onPressed: () {
-                                ref.read(themeModeProvider.notifier).toggle();
-                              },
-                            ),
-                            // Logout button
-                            IconButton(
-                              icon: Icon(
-                                Icons.logout_rounded,
-                                size: 18,
-                                color: isDark ? Colors.white54 : const Color(0xFF64748B),
-                              ),
-                              tooltip: 'Keluar',
-                              onPressed: () => ConfirmationDialog.confirmAndSignOut(context, ref),
-                            ),
-                          ],
+                          ),
+                        ),
+                        // Theme toggle button
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                          icon: Icon(
+                            themeMode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                            size: 18,
+                            color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                          ),
+                          tooltip: 'Ganti Tema',
+                          onPressed: () {
+                            ref.read(themeModeProvider.notifier).toggle();
+                          },
+                        ),
+                        // Logout button
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                          icon: Icon(
+                            Icons.logout_rounded,
+                            size: 18,
+                            color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                          ),
+                          tooltip: 'Keluar',
+                          onPressed: () => ConfirmationDialog.confirmAndSignOut(context, ref),
                         ),
                       ],
                     ),
