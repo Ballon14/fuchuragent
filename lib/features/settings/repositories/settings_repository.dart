@@ -148,10 +148,10 @@ class SettingsRepository {
   Future<DatabaseStats> getDatabaseStats() async {
     try {
       final customersCountFuture = _firestore.collection('customers').count().get();
-      final servicesCountFuture = _firestore.collection('services').count().get();
+      final servicesCountFuture = _firestore.collection('vps_services').count().get();
       final invoicesCountFuture = _firestore.collection('invoices').count().get();
       final expensesCountFuture = _firestore.collection('expenses').count().get();
-      final auditLogsCountFuture = _firestore.collection('audit_logs').count().get();
+      final auditLogsCountFuture = _firestore.collection('activity_logs').count().get();
 
       final results = await Future.wait([
         customersCountFuture,
@@ -179,22 +179,26 @@ class SettingsRepository {
   Future<String> exportSystemBackupJson() async {
     try {
       final customersSnap = await _firestore.collection('customers').get();
-      final servicesSnap = await _firestore.collection('services').get();
+      final servicesSnap = await _firestore.collection('vps_services').get();
       final invoicesSnap = await _firestore.collection('invoices').get();
       final expensesSnap = await _firestore.collection('expenses').get();
       final settingsDoc = await _configRef.get();
+      final settingsData = settingsDoc.data() ?? SystemSettingsModel.defaultSettings().toMap();
+      final resolvedAppName = (settingsData['brandName'] as String?)?.isNotEmpty == true
+          ? settingsData['brandName']
+          : 'Fuchur Agent';
 
       final backupData = {
         'version': '1.0.0',
         'exportDate': DateTime.now().toIso8601String(),
-        'appName': 'Fuchur Agent',
+        'appName': resolvedAppName,
         'counts': {
           'customers': customersSnap.docs.length,
           'services': servicesSnap.docs.length,
           'invoices': invoicesSnap.docs.length,
           'expenses': expensesSnap.docs.length,
         },
-        'settings': settingsDoc.data() ?? SystemSettingsModel.defaultSettings().toMap(),
+        'settings': settingsData,
         'customers': customersSnap.docs.map((d) => d.data()).toList(),
         'services': servicesSnap.docs.map((d) => d.data()).toList(),
         'invoices': invoicesSnap.docs.map((d) => d.data()).toList(),

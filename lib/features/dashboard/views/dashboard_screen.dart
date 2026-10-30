@@ -53,6 +53,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final isDesktop = MediaQuery.of(context).size.width >= 1000;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? AppColors.cyan : const Color(0xFF0284C7);
+    final settings = ref.watch(systemSettingsProvider).asData?.value;
+    final brandName = (settings?.brandName.isNotEmpty ?? false) ? settings!.brandName : AppConstants.appName;
 
     return Scaffold(
       appBar: AppBar(
@@ -131,7 +133,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 1. Welcome Banner & Direct Action Modals
-                  _buildQuickActionBanner(context, isDark, isDesktop),
+                  _buildQuickActionBanner(context, isDark, isDesktop, brandName),
                   SizedBox(height: isDesktop ? 20 : 14),
 
                   // 2. Interactive KPI Stats Grid
@@ -189,7 +191,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // ===========================================================================
   // 1. QUICK ACTION BANNER WITH ONE-CLICK MODAL LAUNCHERS
   // ===========================================================================
-  Widget _buildQuickActionBanner(BuildContext context, bool isDark, bool isDesktop) {
+  Widget _buildQuickActionBanner(BuildContext context, bool isDark, bool isDesktop, String brandName) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(isDesktop ? 20 : 16),
@@ -246,9 +248,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Pusat Kendali Operasional FuchurAgent',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    Text(
+                      'Pusat Kendali Operasional $brandName',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 3),
                     Text(

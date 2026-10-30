@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
@@ -46,6 +47,7 @@ class _WhatsAppReminderDialogState extends ConsumerState<WhatsAppReminderDialog>
   late TextEditingController _phoneCtrl;
   WhatsAppTemplateType _selectedType = WhatsAppTemplateType.expiringSoon;
   CustomerModel? _customer;
+  InvoiceModel? _fetchedInvoice;
   bool _isLoadingCustomer = false;
   SystemSettingsModel? _settings;
   bool _userHasEditedManually = false;
@@ -107,6 +109,26 @@ class _WhatsAppReminderDialogState extends ConsumerState<WhatsAppReminderDialog>
     } else {
       _updateTemplateText();
     }
+
+    // 3. Fetch latest invoice from Firestore if not provided directly
+    if (widget.invoice == null && widget.service.id.isNotEmpty) {
+      try {
+        final invSnap = await FirebaseFirestore.instance
+            .collection('invoices')
+            .where('serviceId', isEqualTo: widget.service.id)
+            .limit(5)
+            .get();
+        if (invSnap.docs.isNotEmpty) {
+          final invoices = invSnap.docs.map((d) => InvoiceModel.fromFirestore(d)).toList();
+          invoices.sort((a, b) => (b.dueDate ?? DateTime(2000)).compareTo(a.dueDate ?? DateTime(2000)));
+          final unpaid = invoices.where((i) => !i.isPaid && i.status != 'cancelled');
+          _fetchedInvoice = unpaid.isNotEmpty ? unpaid.first : invoices.first;
+          if (mounted && !_userHasEditedManually && _selectedType == WhatsAppTemplateType.invoiceReminder) {
+            _updateTemplateText();
+          }
+        }
+      } catch (_) {}
+    }
   }
 
   void _updateTemplateText() {
@@ -139,10 +161,11 @@ class _WhatsAppReminderDialogState extends ConsumerState<WhatsAppReminderDialog>
         );
         break;
       case WhatsAppTemplateType.invoiceReminder:
-        if (widget.invoice != null) {
+        final effectiveInv = widget.invoice ?? _fetchedInvoice;
+        if (effectiveInv != null) {
           template = WhatsAppReminderService.generateInvoiceReminderTemplate(
             customer: cust,
-            invoice: widget.invoice!,
+            invoice: effectiveInv,
             service: widget.service,
             settings: settings,
           );

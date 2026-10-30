@@ -87,6 +87,14 @@ class _AppShellState extends ConsumerState<AppShell> {
     final isAdmin = userProfile?.isAdmin ?? false;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final settings = ref.watch(systemSettingsProvider).asData?.value;
+    final effectiveAppName = (settings?.brandName.isNotEmpty ?? false)
+        ? settings!.brandName
+        : AppConstants.appName;
+    final effectiveCompanyName = (settings?.companyName.isNotEmpty ?? false)
+        ? settings!.companyName
+        : AppConstants.companyName;
+
     final visibleNavItems = AppShell.navItems.where((item) => !item.adminOnly || isAdmin).toList();
 
     if (isDesktop) {
@@ -129,7 +137,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              AppConstants.appName,
+                              effectiveAppName,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -137,7 +145,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                               ),
                             ),
                             Text(
-                              AppConstants.companyName,
+                              effectiveCompanyName,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: isDark ? Colors.white54 : const Color(0xFF64748B),
@@ -359,12 +367,12 @@ class _AppShellState extends ConsumerState<AppShell> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              AppConstants.appName,
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: -0.2),
+            Text(
+              effectiveAppName,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: -0.2),
             ),
             Text(
-              AppConstants.companyName,
+              effectiveCompanyName,
               style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6)),
             ),
           ],
